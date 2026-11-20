@@ -59,7 +59,7 @@ internal static class StartupManager
     }
     public static void Disable(StartupItem snapshot)
     {
-        RequireAdmin(); StartupPolicy.Validate(snapshot, Sid);
+        RequireAdmin(); StartupBackupSecurity.Protect(true); StartupPolicy.Validate(snapshot, Sid);
         if (!snapshot.Enabled) throw new InvalidOperationException("Entry is already disabled.");
         using var registry = Base(snapshot.Scope); using var key = registry.OpenSubKey(RunKey, true) ?? throw new InvalidOperationException("Startup key no longer exists.");
         var expectedKind = snapshot.Expand ? RegistryValueKind.ExpandString : RegistryValueKind.String;
@@ -76,7 +76,7 @@ internal static class StartupManager
     }
     public static void Restore(StartupItem snapshot)
     {
-        RequireAdmin(); StartupPolicy.Validate(snapshot, Sid);
+        RequireAdmin(); StartupBackupSecurity.Protect(false); StartupPolicy.Validate(snapshot, Sid);
         using var backupRegistry = BackupBase(); using var backups = backupRegistry.OpenSubKey(BackupsKey, true) ?? throw new InvalidOperationException("Backup no longer exists.");
         var saved = JsonSerializer.Deserialize<StartupItem>((string?)backups.GetValue(snapshot.Id) ?? "null") ?? throw new InvalidOperationException("Backup no longer exists.");
         StartupPolicy.Validate(saved, Sid);

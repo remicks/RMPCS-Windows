@@ -1,5 +1,7 @@
 # RMPCS roadmap
 
+The current v0.3 build is v0.3.1, including explicit Administrators/SYSTEM-only protection for startup backups. v0.3.0 is superseded.
+
 ## v0.3 - implemented, supervised validation pending
 
 - Optional verified Microsoft runtime setup before the MSI, with an embedded MSI installer launcher.

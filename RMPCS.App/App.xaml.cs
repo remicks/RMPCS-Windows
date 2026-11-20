@@ -8,6 +8,12 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Length == 1 && e.Args[0] == "--backup-acl-check")
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            try { StartupBackupSecurity.VerifyDescriptor(); Shutdown(0); } catch { Shutdown(1); }
+            return;
+        }
         if (e.Args.Length == 2 && e.Args[0] == "--read-only-check")
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;

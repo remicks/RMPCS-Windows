@@ -18,11 +18,12 @@ public partial class MainWindow : Window
         InitializeComponent();
         AdminStatus.Text = admin ? "Administrator session" : "Standard session";
         SetBusy(false);
-        Log("RMPCS 0.3 - Written by Wade. Health scan, cleanup previews and startup management are ready.");
+        Log("RMPCS 0.3.1 - Written by Wade. Health scan, cleanup previews and startup management are ready.");
         Log("Select full batch to include advanced tasks and reboot, or use recommended care.");
     }
     public void CheckAdministrator()
     {
+        if (admin) try { StartupBackupSecurity.Protect(false); } catch (Exception ex) { Log("Startup backup protection requires attention: " + ex.Message); }
         if (!admin)
         {
             Status.Text = "Administrator access required.";

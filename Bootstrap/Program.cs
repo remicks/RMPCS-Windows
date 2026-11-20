@@ -16,8 +16,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-[assembly: AssemblyVersion("0.3.0.0")]
-[assembly: AssemblyFileVersion("0.3.0.0")]
+[assembly: AssemblyVersion("0.3.1.0")]
+[assembly: AssemblyFileVersion("0.3.1.0")]
 [assembly: AssemblyProduct("RMPCS")]
 [assembly: AssemblyCompany("Degenerates Inc.")]
 
@@ -137,7 +137,7 @@ namespace RMPCS.Bootstrap
         private string offlinePath;
         public SetupForm()
         {
-            Text = Program.Installer ? "RMPCS 0.3 Setup" : "RMPCS portable - first-run setup";
+            Text = Program.Installer ? "RMPCS 0.3.1 Setup" : "RMPCS portable - first-run setup";
             ClientSize = new Size(650, 370); StartPosition = FormStartPosition.CenterScreen; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
             BackColor = Color.FromArgb(16,19,28); ForeColor = Color.White; Font = new Font("Segoe UI", 10);
             var title = new Label { Text = "DEGENERATES INC. / RMPCS 0.3", Left = 24, Top = 20, Width = 600, Height = 35, ForeColor = Color.FromArgb(241,91,120), Font = new Font("Segoe UI", 16, FontStyle.Bold) };

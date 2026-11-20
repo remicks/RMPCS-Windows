@@ -16,7 +16,7 @@ internal sealed class SessionLog : IDisposable
         CheckPath(Folder);
         FilePath = Path.Combine(Folder, $"RMPCS-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.txt");
         writer = new StreamWriter(new FileStream(FilePath, FileMode.CreateNew, FileAccess.Write, FileShare.Read));
-        writer.WriteLine($"RMPCS 0.3 | {label} | {DateTimeOffset.Now:O}");
+        writer.WriteLine($"RMPCS 0.3.1 | {label} | {DateTimeOffset.Now:O}");
         writer.Flush();
         // Retention uses the same handle-validated deletion as maintenance cleanup.
         var retention = new TempCleaner([Folder], 30, p => Path.GetFileName(p).StartsWith("RMPCS-", StringComparison.Ordinal) && Path.GetExtension(p) == ".txt");

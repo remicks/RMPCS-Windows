@@ -11,7 +11,7 @@
  <Grid Margin="26">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <Grid>
-   <StackPanel><TextBlock Text="DEGENERATES INC. / UTILITIES" Foreground="#F15B78" FontSize="12" FontWeight="Bold"/><TextBlock Text="RMPCS" FontSize="38" FontWeight="Bold" Margin="0,3,0,0"/><TextBlock Text="Wade's PC maintenance toolkit - Version 0.3" Foreground="#A5AEC6"/></StackPanel>
+   <StackPanel><TextBlock Text="DEGENERATES INC. / UTILITIES" Foreground="#F15B78" FontSize="12" FontWeight="Bold"/><TextBlock Text="RMPCS" FontSize="38" FontWeight="Bold" Margin="0,3,0,0"/><TextBlock Text="Wade's PC maintenance toolkit - Version 0.3.1" Foreground="#A5AEC6"/></StackPanel>
    <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock x:Name="AdminStatus" HorizontalAlignment="Right" Margin="0,0,10,8" Foreground="#A5AEC6"/><Button x:Name="ElevateButton" Content="Run as administrator" Click="Elevate_Click"/></StackPanel>
   </Grid>
   <Border Grid.Row="1" Background="#1A2030" CornerRadius="8" Padding="14" Margin="0,18,0,16"><TextBlock Text="All batch functions are available. Use recommended care for routine maintenance; advanced cleanup can remove troubleshooting data and temporarily slow app launches or search." TextWrapping="Wrap" Foreground="#BAC4DB"/></Border>
