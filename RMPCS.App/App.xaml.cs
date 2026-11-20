@@ -8,6 +8,20 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Length == 2 && e.Args[0] == "--read-only-check")
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            try
+            {
+                string report = await HealthScanner.ScanAsync();
+                var warnings = new List<string>();
+                var entries = StartupManager.List(warnings.Add);
+                System.IO.File.WriteAllText(e.Args[1], $"Health scan completed without maintenance. Report characters: {report.Length}. Startup inventory read completed; no entries changed. Read warnings: {warnings.Count}.\n");
+                Shutdown(0);
+            }
+            catch (Exception ex) { System.IO.File.WriteAllText(e.Args[1], "Read-only check failed: " + ex.Message); Shutdown(1); }
+            return;
+        }
         if (e.Args.Length == 1 && e.Args[0] is "--scheduled-light" or "--scheduled-repair")
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -36,7 +50,23 @@ public partial class App : Application
         }
         var window = new MainWindow(); MainWindow = window;
         bool smoke = e.Args.Contains("--smoke-test");
-        window.ContentRendered += (_, _) => { if (smoke) window.Close(); else window.CheckAdministrator(); };
+        bool preview = e.Args.Length == 2 && e.Args[0] == "--ui-preview";
+        window.ContentRendered += (_, _) =>
+        {
+            if (preview)
+            {
+                try
+                {
+                    var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                    bitmap.Render(window);
+                    var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                    using var stream = new System.IO.FileStream(e.Args[1], System.IO.FileMode.CreateNew); encoder.Save(stream);
+                }
+                catch { Shutdown(1); return; }
+                window.Close();
+            }
+            else if (smoke) window.Close(); else window.CheckAdministrator();
+        };
         window.Show();
     }
 }

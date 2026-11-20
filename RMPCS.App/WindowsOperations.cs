@@ -10,17 +10,27 @@ internal sealed class WindowsOperations(Action<string> log) : IMaintenanceOperat
     public static TempCleaner Cleaner(CleanupArea area, int days)
     {
         var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (area == CleanupArea.ErrorArchives) return new TempCleaner([
+            Path.Combine(local, "Microsoft", "Windows", "WER", "ReportArchive"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Microsoft", "Windows", "WER", "ReportArchive")], days);
         string root = area switch {
             CleanupArea.UserTemp => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp"),
             CleanupArea.WindowsTemp => Path.Combine(windows, "Temp"),
             CleanupArea.Prefetch => Path.Combine(windows, "Prefetch"),
             CleanupArea.WindowsLogs => Path.Combine(windows, "Logs"),
+            CleanupArea.Thumbnails => Path.Combine(local, "Microsoft", "Windows", "Explorer"),
+            CleanupArea.CrashDumps => Path.Combine(local, "CrashDumps"),
             _ => throw new ArgumentOutOfRangeException(nameof(area)) };
-        return new TempCleaner(new[] { root }, days, area == CleanupArea.Prefetch ? p => Path.GetExtension(p).Equals(".pf", StringComparison.OrdinalIgnoreCase) : null);
+        return new TempCleaner(new[] { root }, days, area switch {
+            CleanupArea.Prefetch => p => Path.GetExtension(p).Equals(".pf", StringComparison.OrdinalIgnoreCase),
+            CleanupArea.Thumbnails => p => Path.GetFileName(p).StartsWith("thumbcache_", StringComparison.OrdinalIgnoreCase) && Path.GetExtension(p).Equals(".db", StringComparison.OrdinalIgnoreCase),
+            CleanupArea.CrashDumps => p => Path.GetExtension(p).Equals(".dmp", StringComparison.OrdinalIgnoreCase), _ => null });
     }
 
     public Task<CleanupResult> CleanAsync(CleanupArea area, int minimumAgeDays) => Task.Run(() =>
     {
+        if (area == CleanupArea.RecycleBin) { log("Emptying this user's Recycle Bins; reported space is a before/after estimate."); return CleanupPreviewService.EmptyBin(); }
         log("Scanning " + area);
         var cleaner = Cleaner(area, minimumAgeDays);
         return cleaner.Clean(cleaner.Scan(DateTime.UtcNow));

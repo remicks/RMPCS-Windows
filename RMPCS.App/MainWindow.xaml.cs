@@ -18,7 +18,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         AdminStatus.Text = admin ? "Administrator session" : "Standard session";
         SetBusy(false);
-        Log("RMPCS 0.2 - Written by Wade. All WMPCS 0.3b task categories are available.");
+        Log("RMPCS 0.3 - Written by Wade. Health scan, cleanup previews and startup management are ready.");
         Log("Select full batch to include advanced tasks and reboot, or use recommended care.");
     }
     public void CheckAdministrator()
@@ -42,6 +42,8 @@ public partial class MainWindow : Window
     {
         busy = value;
         TaskPanel.IsEnabled = PreviewButton.IsEnabled = HistoryPanel.IsEnabled = !value;
+        HealthPanel.IsEnabled = StartupAppsPanel.IsEnabled = !value;
+        DisableStartupApp.IsEnabled = RestoreStartupApp.IsEnabled = !value && admin;
         RunButton.IsEnabled = CareButton.IsEnabled = AutomationPanel.IsEnabled = !value && admin;
         ElevateButton.IsEnabled = !value && !admin;
         StopButton.IsEnabled = value;
@@ -54,6 +56,8 @@ public partial class MainWindow : Window
         UserTemp = UserTemp.IsChecked == true, WindowsTemp = SystemTemp.IsChecked == true,
         Prefetch = Prefetch.IsChecked == true, WindowsLogs = WindowsLogs.IsChecked == true,
         ResetSearch = SearchIndex.IsChecked == true, FlushDns = Dns.IsChecked == true,
+        Thumbnails = Thumbnails.IsChecked == true, ErrorArchives = ErrorArchives.IsChecked == true,
+        CrashDumps = CrashDumps.IsChecked == true, RecycleBin = RecycleBin.IsChecked == true,
         RepairImage = Dism.IsChecked == true, ScanFiles = Sfc.IsChecked == true,
         RenewDhcp = Dhcp.IsChecked == true, Restart = RebootAfter.IsChecked == true,
         MinimumAgeDays = Age.SelectedIndex switch { 0 => 0, 1 => 1, 3 => 30, _ => 7 },
@@ -63,6 +67,8 @@ public partial class MainWindow : Window
     {
         UserTemp.IsChecked = plan.UserTemp; SystemTemp.IsChecked = plan.WindowsTemp;
         Prefetch.IsChecked = plan.Prefetch; WindowsLogs.IsChecked = plan.WindowsLogs; SearchIndex.IsChecked = plan.ResetSearch;
+        Thumbnails.IsChecked = plan.Thumbnails; ErrorArchives.IsChecked = plan.ErrorArchives;
+        CrashDumps.IsChecked = plan.CrashDumps; RecycleBin.IsChecked = plan.RecycleBin;
         Dns.IsChecked = plan.FlushDns; Dism.IsChecked = plan.RepairImage; Sfc.IsChecked = plan.ScanFiles;
         Dhcp.IsChecked = plan.RenewDhcp; RebootAfter.IsChecked = plan.Restart;
         Age.SelectedIndex = plan.MinimumAgeDays switch { 0 => 0, 1 => 1, 30 => 3, _ => 2 };
@@ -79,6 +85,8 @@ public partial class MainWindow : Window
         string notice = "Run these tasks?\n\n" + plan.Describe() + "\n\nFile deletion is permanent. Locked/protected files and links are skipped.";
         if (plan.Prefetch) notice += "\nPrefetch removal may temporarily slow application launches.";
         if (plan.WindowsLogs) notice += "\nWindows Logs cleanup removes troubleshooting history.";
+        if (plan.ErrorArchives || plan.CrashDumps) notice += "\nSelected diagnostic reports/dumps will be permanently removed and may be needed to investigate crashes.";
+        if (plan.RecycleBin) notice += "\nALL items currently in this Windows identity's Recycle Bins will be permanently removed, regardless of age.";
         if (plan.ResetSearch) notice += "\nSearch results may be incomplete during the background rebuild.";
         if (plan.RenewDhcp) notice += "\nDHCP release disconnects network/VPN/remote sessions; reconnection is not guaranteed.";
         if (plan.Restart) notice += "\nSAVE ALL WORK. Windows may force applications to close at the end of the restart countdown.";
@@ -110,19 +118,50 @@ public partial class MainWindow : Window
         try
         {
             long bytes = 0; int count = 0;
+            var rows = new List<CleanupPreviewRow>();
             foreach (var area in plan.CleanupAreas())
             {
                 if (stopRequested) break;
-                var preview = await Task.Run(() => WindowsOperations.Cleaner(area, plan.MinimumAgeDays).Scan(DateTime.UtcNow));
-                bytes += preview.Bytes; count += preview.Files.Count;
-                Log($"Preview {area}: {preview.Files.Count:N0} eligible files; {preview.Bytes:N0} bytes; {preview.Skipped} skipped entries.");
-                foreach (var path in preview.Files.Take(60)) Log(path);
-                if (preview.Files.Count > 60) Log("First 60 paths shown. Running rescans the selected roots.");
+                var preview = await Task.Run(() => CleanupPreviewService.Scan(area, plan.MinimumAgeDays));
+                rows.Add(preview); PreviewRows.ItemsSource = rows.ToArray();
+                bytes += preview.Bytes; count += (int)Math.Min(int.MaxValue - count, preview.Files);
+                Log($"Preview {area}: {preview.Files:N0} eligible entries; {preview.Bytes:N0} bytes; {preview.Skipped} skipped entries. {preview.Note}");
+                foreach (var path in preview.Paths.Take(60)) Log(path);
+                if (preview.Paths.Count > 60) Log("First 60 paths shown. Running rescans the selected roots.");
             }
             Status.Text = $"Preview only: {count:N0} files, {bytes / 1048576.0:N2} MB. Nothing deleted.";
         }
         catch (Exception ex) { Status.Text = "Preview failed."; Log(ex.Message); }
         finally { stopRequested = false; SetBusy(false); }
+    }
+    private async void HealthScan_Click(object sender, RoutedEventArgs e)
+    {
+        if (busy) return; SetBusy(true); Status.Text = "Reading health indicators...";
+        try { Activity.Text = await HealthScanner.ScanAsync(); Status.Text = "Health snapshot complete. No settings changed."; }
+        catch (Exception ex) { Log("Health scan could not finish: " + ex.Message); }
+        finally { SetBusy(false); }
+    }
+    private void RefreshStartupApps()
+    {
+        try { StartupEntries.ItemsSource = StartupManager.List(Log); StartupCommand.Text = "Select an entry to review its stored command."; }
+        catch (Exception ex) { Log("Startup list unavailable: " + ex.Message); }
+    }
+    private void StartupAppsRefresh_Click(object sender, RoutedEventArgs e) => RefreshStartupApps();
+    private void StartupSelection_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    { if (StartupEntries.SelectedItem is StartupItem item) StartupCommand.Text = $"{item.Name}\n{item.Scope} - {item.State}\n{item.Command}"; }
+    private void DisableStartupApp_Click(object sender, RoutedEventArgs e)
+    {
+        if (!admin || busy || StartupEntries.SelectedItem is not StartupItem { Enabled: true } item) return;
+        if (!Confirm($"Disable the Run entry '{item.Name}' ({item.Scope})?\n\n{item.Command}\n\nA protected backup is kept so you can restore it. The currently running program is not stopped. Disabling vendor utilities may affect their features at your next sign-in.")) return;
+        try { StartupManager.Disable(item); Log("Startup entry disabled with backup: " + item.Name); } catch (Exception ex) { Log("Startup change failed: " + ex.Message); }
+        RefreshStartupApps();
+    }
+    private void RestoreStartupApp_Click(object sender, RoutedEventArgs e)
+    {
+        if (!admin || busy || StartupEntries.SelectedItem is not StartupItem { Enabled: false } item) return;
+        if (!Confirm($"Restore the original Run entry '{item.Name}' ({item.Scope})?\n\n{item.Command}\n\nThis can allow it to start at sign-in, subject to Windows/app approvals. It will not be launched now.")) return;
+        try { StartupManager.Restore(item); Log("Startup entry restored: " + item.Name); } catch (Exception ex) { Log("Startup restore failed: " + ex.Message); }
+        RefreshStartupApps();
     }
     private void Stop_Click(object sender, RoutedEventArgs e) { stopRequested = true; StopButton.IsEnabled = false; Log("Stopping after current task; DHCP renewal is still attempted after release."); }
     private void Elevate_Click(object sender, RoutedEventArgs e)

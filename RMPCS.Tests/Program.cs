@@ -70,6 +70,7 @@ try
     Check(advanced.Clean(advancedScan).Deleted == 0 && File.Exists(pf), "read-only files are preserved");
     File.SetAttributes(pf, FileAttributes.Normal);
     await WorkflowChecks.RunAsync(Check);
+    await Version03Checks.RunAsync(Check);
     Console.WriteLine($"{checks} checks passed.");
 }
 finally

@@ -1,122 +1,96 @@
-# RMPCS 0.2 - Wade's PC Toolkit
+# RMPCS 0.3 - Wade's PC Toolkit
 
-## Downloads
+A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prerequisite setup, read-only health checks, cleanup previews, reversible Run-entry management, and scheduled care.
 
-- [Windows x64 installer (MSI)](https://github.com/remicks/RMPCS-Windows/releases/download/v0.2.0/RMPCS-Setup-0.2.0-x64.msi)
-- [Windows x64 portable ZIP](https://github.com/remicks/RMPCS-Windows/releases/download/v0.2.0/RMPCS-v0.2-win-x64-portable.zip)
-- [Complete v0.2 package with source](https://github.com/remicks/RMPCS-Windows/releases/download/v0.2.0/RMPCS-v0.2.zip)
-- [Required runtime and setup instructions](RUNTIMES.md)
-- [Planned v0.3 prerequisite installer / portable first-run setup](ROADMAP.md)
+## Downloads and first launch
 
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.3.0/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.3.0/RMPCS-Setup-0.3.0-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.3.0/RMPCS-v0.3-win-x64-portable.zip)
+- [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
-A Windows desktop app based on Wade's Multi-Purpose Cleanup Script (WMPCS) 0.3b. All of the batch file's maintenance categories are now available inside the app, with an MSI installer, optional sign-in startup, daily/weekly scheduling, saved run history, and clear completion results.
+**Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, adds a Start Menu shortcut and uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
 
-## Install and start
+**Portable edition:** extract every file and open `Launch-RMPCS.exe`. When a compatible runtime is present, it verifies its companion app files and launches RMPCS. Otherwise it offers the prerequisite setup screen. Use `Launch-RMPCS.exe --setup` to open that screen explicitly. Keep the EXE, DLL and JSON files together. A portable app can still require installing a shared system runtime.
 
-1. Extract the release ZIP.
-2. Run `RMPCS-Setup-0.2.0-x64.msi`. Accept Windows' administrator prompt to install.
-3. Open **RMPCS** from the Start Menu. Use its **Run as administrator** button if you see the startup warning. Maintenance and automation changes require administrator rights.
+The bootstrap launchers use the .NET Framework supplied with Windows 11 and do not require .NET 10 to show setup. The main application requires .NET 10 Desktop Runtime. See [Bootstrap/Build.ps1](Bootstrap/Build.ps1) for the launcher build process.
 
-Requires 64-bit Windows 11 and the **Microsoft .NET 10 Desktop Runtime (Windows x64)**. The installer checks that runtime prerequisite and tells you if it is missing. It does not download or install a runtime. Official runtime download: https://dotnet.microsoft.com/download/dotnet/10.0
+Microsoft runtime downloads use HTTPS, an exact pinned SHA-512 from official release metadata, and Windows Authenticode trust verification with a Microsoft Corporation publisher check. A failed integrity/trust check stops execution. No certificate-validation bypass or unknown-host redirect is accepted. Downloads are size-limited, cancellable, and have a deadline. An offline-file option accepts the exact pinned installer and applies the same checks; offline signature validation depends on available certificate/revocation information. A compatible already-installed runtime is reused.
 
-The installer places the app under `C:\Program Files\Degenerates Inc\RMPCS`, adds a Start Menu shortcut, and registers with Windows Installed apps. It does not enable automation or run cleanup during installation. The release includes a portable `App` folder and complete `Source`. Elevated startup and scheduled care require the installed copy so a writable portable folder cannot become a persistent elevated task target.
+Microsoft's setup remains visible for its Windows permissions and license prompts. Cancelled or failed setup stops the chain. Restart-required results are reported; RMPCS's prerequisite launcher does not request an automatic restart. Runtime and MSI files are held against modification during verification/execution. The portable launcher similarly verifies and holds its app payload while the session runs.
 
-This development release is unsigned. The app uses WPF/.NET 10 with no third-party runtime packages, account integrations, or telemetry. Artwork and Avalonia components from LootDrop have not yet been imported.
+## New in v0.3
 
-## Every batch-file feature
+### Health snapshot
 
-| Original WMPCS action | RMPCS 0.2 implementation |
-| --- | --- |
-| User temp deletion | Clean the current user's Local AppData Temp directory; configurable age |
-| Windows temp deletion | Clean Windows Temp; configurable age |
-| Prefetch deletion | Clear `.pf` application-prefetch cache files; preserve layout/other metadata |
-| Windows Logs deletion | Clean eligible files beneath Windows Logs; this does not clear Event Viewer channels |
-| Search-index deletion | Reset the SystemIndex catalog through `ISearchCatalogManager.Reset`; Windows rebuilds its databases in the background |
-| `ipconfig /flushdns` | Flush DNS cache, with output and exit code |
-| `ipconfig /release` and `/renew` | Optional DHCP release followed by renewal, after repair commands |
-| `DISM /Online /Cleanup-Image /RestoreHealth` | Repair Windows image; runs before SFC |
-| `sfc /scannow` | Check system files; skipped if selected DISM repair fails |
-| Reboot | Optional restart after successful completion, with 10-, 60-, or 300-second countdown |
-| Pauses, status text, author/support banner | In-app selections, confirmation, live activity, results, About information, and saved logs |
+The Health tab reads a short CPU sample, RAM usage, local fixed-drive space, uptime, common pending-restart indicators, and up to ten recent matching failure events per System/Application log from the last seven days. It offers conditional advice for high resource use or low free space. It changes no settings and runs no repairs.
 
-**Select full batch** selects every maintenance category, all eligible file ages, and a restart after a 60-second countdown. Choose the 10-second option to match the original countdown. Selecting a preset does not execute it; review the options and click **Run selected tasks**. One confirmation lists the selected actions and their consequences.
+Unavailable checks are identified. A short high-CPU sample is not a sustained-load diagnosis, event records do not prove a cause, and this release does not assess physical drive health. Results stay in the live activity view unless you export them. A live health scan/startup-inventory test stores only a validation summary, not the underlying personal report.
 
-**Recommended care** selects seven-day temp cleanup, DNS flush, DISM, and SFC. **Run recommended care** selects that profile and presents the execution confirmation. Advanced cache/log/index cleanup, DHCP release, and reboot are excluded from recommended care.
+### Expanded cleanup previews
 
-## Cleanup and task behavior
+Select categories and click **Preview selected file cleanup**. The table shows per-category counts, estimated MB and skipped entries; Activity shows notes and the first sixty paths per file category. Running rescans, so preview numbers can change.
 
-- Age choices: all eligible ages, older than one day, seven days, or thirty days. Both creation and last-write times must precede the cutoff.
-- **Preview selected file cleanup** scans without deleting. It reports totals and the first 60 paths per selected area. Running rescans; previews are estimates, not a guarantee every file can be deleted.
-- Deletion bypasses the Recycle Bin. Files outside the fixed selected roots, read-only/protected files, inaccessible/locked files, reparse points/junctions, and hard-linked files are skipped. There is no directory deletion, permission change, force-unlock, or service disabling.
-- The cleanup engine validates the final resolved location, timestamps, attributes, and hard-link count through the same Windows handle used for deletion; concurrent writers and rename/deletion are denied while that handle is held. Age alone does not establish that a temp file is unused. Close other applications before broad cleanup.
-- Prefetch clearing can temporarily slow launches. Windows Logs cleanup removes troubleshooting data. Index reset removes/rebuilds catalog data through the Windows API rather than deleting a live database. Search results may be incomplete and indexing may consume resources until the background rebuild finishes. An accepted reset is not reported as a completed rebuild.
-- Commands run sequentially, using fixed Windows executable paths and fixed argument lists. The app does not build maintenance commands through a shell. DISM may use Windows Update to obtain repair components.
-- DHCP reset runs last among maintenance operations to avoid interrupting DISM downloads. Renewal is always attempted after release, even when release fails or Stop is requested. It interrupts network/VPN/remote connections and reconnection is not guaranteed.
-- **Stop after current task** finishes the active operation before stopping the remaining queue. The app refuses to close while its maintenance or preview is active. A machine-wide mutex prevents overlapping manual/scheduled maintenance sessions; a scheduled run skips if another session owns it.
-- A selected restart is suppressed if a task fails or the queue is stopped. It is separately visible in the confirmation. Windows can force applications to close at the end of a nonzero countdown: save all work first. **Cancel restart** cancels any pending Windows shutdown/restart, including one scheduled outside RMPCS.
-- Exit codes and command output are shown. DISM exit 3010 means Windows requests a restart. Read SFC/DISM findings: a zero exit code is not proof that every issue was repaired. Cleanup skips are counted separately from failed operations. There is no blanket promise of success or higher FPS.
+New, opt-in categories:
 
-## Startup and schedules
+- **Thumbnail caches:** only `thumbcache_*.db` under the current identity's Windows Explorer cache. Open/protected files are skipped; Explorer is not terminated.
+- **Archived error reports:** user and machine Windows Error Reporting `ReportArchive` folders. Active `ReportQueue` folders are preserved.
+- **Application crash dumps:** `.dmp` files in the current identity's CrashDumps folder. They can be valuable troubleshooting evidence.
+- **Recycle Bins:** a Windows Shell query previews item count/size for the current identity across drives. Emptying permanently removes all current items regardless of the age filter. Before/after reclamation is an estimate and may be affected by concurrent changes.
 
-Open the **Automation** tab in the installed, elevated app.
+New categories are excluded from Recommended care, the original full-batch preset, and scheduled profiles. Deletion is separately listed in the execution confirmation; Recycle Bin and diagnostic-data consequences are called out explicitly.
 
-**Enable startup** registers a Task Scheduler logon task for the current Windows user, with a 30-second delay and highest available rights. It opens the GUI only. **Disable startup** removes that task. Startup is not maintenance scheduling.
+### Reversible startup-app management
 
-For automatic maintenance, choose daily/weekly frequency, weekly day, local 24-hour time, profile, and optional conditions, then click **Save schedule** and confirm the authorization. Saving replaces this user's previous RMPCS maintenance schedule; it does not add duplicate schedules.
+The Startup tab inventories common Windows `Run` values: current-user 64-bit view and machine 32-/64-bit views. Commands are displayed as data and never executed by this manager. Administrator rights are required for changes.
 
-| Profile | Authorized unattended work |
-| --- | --- |
-| Light | User + Windows temp files older than seven days, then DNS flush |
-| Repair | Light profile followed by DISM and SFC |
+**Disable selected** stores the exact string, registry type, scope and identity in a protected HKLM backup before removing the Run value. **Restore selected** restores that value and original type; it refuses a conflicting live value. Interrupted operations leave the backup available for recovery. A live value already matching its backup can be reconciled without overwriting it.
 
-Scheduled profiles do not clear Prefetch or Windows logs, reset search, release DHCP, or reboot. These tasks remain available in manual full-batch mode. Scheduling does not depend on the currently selected manual checkboxes.
+Scope is deliberately explicit: this manager does not edit Task Manager's StartupApproved state, startup-folder links, RunOnce, services, scheduled tasks or packaged startup tasks. A Run value's presence does not guarantee Windows will launch it. Use Automation for RMPCS's own sign-in task. Current programs are not stopped when a Run entry is disabled.
 
-Schedules use Windows Task Scheduler with the consenting user's interactive elevated token. No passwords are collected or stored. This user must be signed in and have administrative rights. Logging out, shutting down, sleeping, or forcing processes closed can interrupt a running repair; RMPCS does not keep the PC awake. Missed runs may start later when conditions allow. Local clock/timezone and daylight-saving changes follow Windows Task Scheduler behavior.
+Disabled entries and protected backups are retained when RMPCS is uninstalled; restore entries in the app first if you want to reverse those choices. Current-user operations always apply to the Windows identity running RMPCS, including when different administrator credentials are used.
 
-Optional conditions require ten minutes idle (with up to one hour wait) and/or AC power **before starting**. An active repair is not terminated when you resume work or unplug the PC. Tasks do not wake the PC, impose no forced execution timeout, disallow hard termination through their task setting, and ignore overlapping triggers. A hung Windows tool may therefore require investigation rather than automatic killing.
+## Original maintenance functions
 
-**Refresh status** shows enabled/off status and the next eligible maintenance trigger; it also loads saved schedule options. **Remove schedule** unregisters automatic maintenance. Removing a schedule does not stop an already-running Windows repair; wait for it to finish before uninstalling.
+All WMPCS categories remain available: user/Windows temp files, `.pf` Prefetch cache files, Windows Logs, supported Windows Search catalog reset, DNS flush, DHCP release/renew, DISM image repair, SFC, and optional reboot. Prefetch layout metadata is preserved. Search reset uses the documented Windows Search API; database rebuilding continues in the background after the request succeeds.
 
-Both startup and maintenance are OFF by default. They are only registered when explicitly enabled in the app. This build process did not register either task on the development PC.
+File cleanup offers all eligible ages or older-than-one/seven/thirty-day cutoffs. Creation and modification times must both precede the cutoff. The engine rejects paths outside fixed roots, junctions/reparse points, hard-linked files, protected/read-only entries and files locked against its required access. It preserves directories and does not change ACLs, force unlocks, or disable services. Final resolved location, age and attributes are checked through the same handle used for deletion, while concurrent writing/deletion is denied. Deleted files bypass the Recycle Bin; age alone does not prove they are unused.
 
-## History and uninstall
+**Recommended care** uses seven-day temp cleanup, DNS, DISM and SFC. **Select full batch** selects the original advanced categories, all eligible ages and a restart; it does not run until you confirm the listed tasks. Prefetch clearing can slow launches temporarily, log removal deletes diagnostic history, and search rebuilding can consume resources and leave incomplete results.
 
-Manual and scheduled runs save logs under `%LOCALAPPDATA%\RMPCS\Logs` for the Windows identity running the app. History displays the latest 30 files. On a new run, eligible RMPCS log files older than thirty days are cleaned up using the handle-validated cleanup engine. Each log is bounded to roughly one million characters; the live view is also bounded. Log-write failures are reported and do not deliberately interrupt Windows command output. Logs can include local paths, usernames, and network details. Nothing is uploaded by RMPCS.
+Commands run sequentially using fixed Windows executable paths/arguments, without a maintenance command shell. DISM runs before SFC and may use Windows Update; a failed selected DISM repair skips SFC. Read repair output: an exit code alone does not prove every issue was fixed. DHCP release is optional and runs after repairs; renewal is attempted even if release fails or Stop is requested. It can interrupt internet, VPN and remote sessions, and reconnection is not guaranteed.
 
-Use **Load selected log** to view a previous run inside the app, or **Export log** to save the displayed activity elsewhere. A scheduled run's process result indicates task failure; review its saved log for findings and skipped files.
+**Stop after current task** stops the remaining queue after the current operation finishes; it does not kill a repair. The window cannot close during its active operation. A machine-wide mutex blocks overlapping maintenance sessions. A selected reboot is suppressed on task failure or queue stop. Countdown choices are 10, 60 or 300 seconds. Save work before selecting reboot; Windows may force applications to close at countdown end. **Cancel restart** can also cancel a Windows shutdown scheduled outside RMPCS.
 
-Uninstall from Windows Installed apps or reopen the MSI. Finish all repairs and close RMPCS first. The MSI's uninstall action removes only tasks whose RMPCS name and installed executable path match this application, before removing installed files and shortcuts. It refuses to proceed if it detects active RMPCS maintenance/tasks. Task cleanup uses built-in Windows PowerShell and does not require the .NET runtime. User logs are retained. Upgrade handling preserves task registrations for the same installed executable path.
+## Automation and history
 
-## Validation and remaining limits
+Both features are opt-in and require the protected MSI-installed copy. **Enable startup** opens the GUI thirty seconds after this user signs in, with highest available rights, without running maintenance.
 
-- App build and framework-dependent publish completed with no compiler warnings or errors.
-- 31 isolated checks passed for cleanup boundaries, all-age extension filtering, read-only/locked/changed files, complete batch ordering, failure reporting, restart suppression, reconnection attempts, routine profile boundaries, daily/weekly task XML, principal/argument escaping, startup behavior, idle/AC conditions, and input validation.
-- Junction fixture creation was denied by the managed environment; two junction-specific checks remain skipped.
-- The published GUI loaded and rendered, then exited with code 0 in smoke-test mode without executing maintenance.
-- The MSI is checked offline for installation metadata, component/file relationships, task-cleanup sequencing, runtime prerequisites, UI/shortcut data, embedded-cabinet extraction, and exact SHA-256 matches against the published payload.
-- A live elevated install/uninstall, Task Scheduler registration/execution, real Windows repairs, search-index reset, DHCP release, and reboot have **not** been performed here. These need supervised testing on a suitable PC before wider distribution. Offline verification does not establish that the entire installed workflow succeeds.
+Daily/weekly care supports local 24-hour time, optional ten-minute idle detection, and optional AC power. The user must be signed in. Light care uses seven-day user/Windows temp cleanup plus DNS; Repair adds DISM and SFC. New cleanup categories, Prefetch/log cleanup, search reset, DHCP release and reboot are excluded. No passwords are stored.
+
+Missed runs may start later when conditions allow. Tasks do not wake the PC or force a running repair to end on resumed activity, battery changes or a timeout. Logging out, shutting down or forcibly closing a process can still interrupt it. An overlapping scheduled run skips. Removing a task does not terminate an already-running Windows tool.
+
+History displays the newest thirty local run logs under `%LOCALAPPDATA%\RMPCS\Logs`. Eligible RMPCS log files older than thirty days are cleaned on a new run with the same validated engine. Each log and the live view are bounded. Logs may contain local paths and network details; nothing is uploaded by the app. Export is user-directed.
+
+## Uninstall and release status
+
+Close RMPCS and finish active maintenance, then uninstall through Windows Installed apps or the MSI. The uninstall action removes only matching RMPCS automatic tasks before files/shortcuts are removed. It rejects detected active RMPCS maintenance/tasks. User logs and startup-manager backups/choices are retained. Upgrades preserve task registrations targeting the installed executable.
+
+This is an unsigned development prerelease. Build/GUI smoke tests, isolated workflow checks, launcher self-checks and offline MSI verification are performed. Live elevated install/uninstall, missing-runtime installation, real startup-entry mutation, task execution, repairs, index reset, Recycle Bin emptying and reboot require supervised validation on a suitable test PC. No live cleanup or configuration changes are made as build tests. Junction fixture creation remains blocked by this execution environment.
 
 ## Build from source
 
-From the `Source` directory, on Windows with the .NET 10 SDK:
+On Windows 11 with the .NET 10 SDK, from the source root:
 
 ```powershell
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.2.0-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.2.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.3.0-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.3.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.3.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
-No external MSI compiler is required. The packaging utility uses Windows Installer's native database API and the built-in MakeCab compressor; verification reads the database and extracts its cabinet without installing anything. Building the MSI does not alter installed applications, startup settings, or Task Scheduler. `NuGet.Config` clears package feeds because these projects only need installed SDK/framework reference packs.
+The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.
 
-## Suggested next features
-
-1. **Before/after dashboard:** disk space reclaimed, repair findings, last-run status, and upcoming maintenance in one view.
-2. **Restore-point integration:** check System Protection availability, offer a restore point before repair, and report actual creation results. A restore point would not back up deleted temp/log files.
-3. **Read-only health report:** disk health where Windows exposes it, storage space, recent crashes, and pending-reboot checks, with an exportable report.
-4. **Completion notifications:** Windows notifications for scheduled run completion or failure, with a direct link to its saved result.
-5. **Troubleshooting log archive:** export selected diagnostics before a Windows Logs cleanup, with retention and clear space-use reporting.
-6. **Degenerates Inc. interface pass:** crown/DI branding, Kei/Rusty artwork, and LootDrop-inspired cards after the maintenance/install/scheduling flow has been tested.
-
-Technical references: Microsoft Windows Search catalog management (https://learn.microsoft.com/windows/win32/search/-search-3x-wds-mngidx-catalog-manager), Task Scheduler XML schema (https://learn.microsoft.com/windows/win32/taskschd/task-scheduler-schema), and Windows Installer database documentation (https://learn.microsoft.com/windows/win32/msi/about-the-installer-database).
+Author: Wade. Support: discord.beer/thelocker. RMPCS does not guarantee higher FPS or repair hardware/driver faults.

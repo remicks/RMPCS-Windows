@@ -1,6 +1,6 @@
 namespace RMPCS.Core;
 
-public enum CleanupArea { UserTemp, WindowsTemp, Prefetch, WindowsLogs }
+public enum CleanupArea { UserTemp, WindowsTemp, Prefetch, WindowsLogs, Thumbnails, ErrorArchives, CrashDumps, RecycleBin }
 public enum SystemCommand { FlushDns, RepairImage, ScanSystemFiles, ReleaseDhcp, RenewDhcp, Restart10, Restart60, Restart300, AbortRestart }
 
 public sealed record MaintenancePlan
@@ -9,6 +9,10 @@ public sealed record MaintenancePlan
     public bool WindowsTemp { get; init; }
     public bool Prefetch { get; init; }
     public bool WindowsLogs { get; init; }
+    public bool Thumbnails { get; init; }
+    public bool ErrorArchives { get; init; }
+    public bool CrashDumps { get; init; }
+    public bool RecycleBin { get; init; }
     public bool ResetSearch { get; init; }
     public bool FlushDns { get; init; }
     public bool RepairImage { get; init; }
@@ -17,7 +21,7 @@ public sealed record MaintenancePlan
     public bool Restart { get; init; }
     public int RestartSeconds { get; init; } = 60;
     public int MinimumAgeDays { get; init; } = 7;
-    public bool IsEmpty => !UserTemp && !WindowsTemp && !Prefetch && !WindowsLogs && !ResetSearch && !FlushDns && !RepairImage && !ScanFiles && !RenewDhcp && !Restart;
+    public bool IsEmpty => !CleanupAreas().Any() && !ResetSearch && !FlushDns && !RepairImage && !ScanFiles && !RenewDhcp && !Restart;
     public static MaintenancePlan Light => new() { UserTemp = true, WindowsTemp = true, FlushDns = true };
     public static MaintenancePlan Care => Light with { RepairImage = true, ScanFiles = true };
     public static MaintenancePlan FullBatch => Care with { Prefetch = true, WindowsLogs = true, ResetSearch = true, RenewDhcp = true, Restart = true, MinimumAgeDays = 0 };
@@ -27,6 +31,10 @@ public sealed record MaintenancePlan
         if (WindowsTemp) yield return CleanupArea.WindowsTemp;
         if (Prefetch) yield return CleanupArea.Prefetch;
         if (WindowsLogs) yield return CleanupArea.WindowsLogs;
+        if (Thumbnails) yield return CleanupArea.Thumbnails;
+        if (ErrorArchives) yield return CleanupArea.ErrorArchives;
+        if (CrashDumps) yield return CleanupArea.CrashDumps;
+        if (RecycleBin) yield return CleanupArea.RecycleBin;
     }
     public void Validate()
     {
@@ -34,7 +42,7 @@ public sealed record MaintenancePlan
         if (RestartSeconds is not (10 or 60 or 300)) throw new ArgumentException("Unsupported restart countdown.");
     }
     public string Describe() => string.Join(Environment.NewLine,
-        CleanupAreas().Select(x => $"• {x}: files older than {MinimumAgeDays} day(s)")
+        CleanupAreas().Select(x => x == CleanupArea.RecycleBin ? "• Permanently empty this user's Recycle Bins (all ages)" : $"• {x}: files older than {MinimumAgeDays} day(s)")
         .Concat(new[] { ResetSearch ? "• Reset and rebuild Windows Search index" : null, FlushDns ? "• Flush DNS cache" : null,
             RepairImage ? "• DISM image repair" : null, ScanFiles ? "• SFC system-file check" : null,
             RenewDhcp ? "• Disconnect DHCP adapters, then renew leases" : null, Restart ? $"• Restart after successful completion ({RestartSeconds}-second countdown)" : null }.OfType<string>()));
@@ -69,7 +77,7 @@ public static class MaintenanceRunner
             {
                 var result = await operations.CleanAsync(area, plan.MinimumAgeDays);
                 skipped += result.Skipped;
-                log($"{area}: deleted {result.Deleted:N0} files, reclaimed {result.Bytes:N0} bytes, skipped {result.Skipped:N0} entries.");
+                log($"{area}: deleted {result.Deleted:N0} entries, reclaimed {result.Bytes:N0} bytes, skipped {result.Skipped:N0} entries.");
             }
             catch (Exception ex) { failed++; log($"{area} failed: {ex.Message}"); }
         }
