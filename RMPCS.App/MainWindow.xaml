@@ -1,0 +1,68 @@
+<Window x:Class="RMPCS.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="RMPCS • Wade's PC Toolkit" Width="1100" Height="820" MinWidth="900" MinHeight="700" Background="#10131C" Foreground="#E9ECF5" FontFamily="Segoe UI" WindowStartupLocation="CenterScreen" Closing="Window_Closing">
+  <Grid Margin="30">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Grid>
+      <StackPanel>
+        <TextBlock Text="DEGENERATES INC.  /  UTILITIES" Foreground="#F15B78" FontSize="12" FontWeight="Bold"/>
+        <TextBlock Text="RMPCS" FontSize="38" FontWeight="Bold" Margin="0,5,0,0"/>
+        <TextBlock Text="Wade's PC maintenance toolkit · First edition 0.1" Foreground="#A5AEC6" Margin="0,4,0,0"/>
+      </StackPanel>
+      <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+        <TextBlock x:Name="AdminStatus" HorizontalAlignment="Right" Margin="0,0,10,8" Foreground="#A5AEC6"/>
+        <Button x:Name="ElevateButton" Content="Run as administrator" Click="Elevate_Click"/>
+      </StackPanel>
+    </Grid>
+    <Border Grid.Row="1" Background="#1A2030" CornerRadius="8" Padding="16" Margin="0,22,0,18">
+      <TextBlock Text="Run recommended care for temp cleanup, DNS flushing and Windows repairs, or choose individual tasks. Everything runs here. Repairs can take a while." TextWrapping="Wrap" Foreground="#BAC4DB"/>
+    </Border>
+    <Grid Grid.Row="2">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="380"/><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <Border Background="#191D2A" CornerRadius="10" Padding="20">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel>
+            <TextBlock Text="MAINTENANCE" FontWeight="Bold" Foreground="#A5AEC6" Margin="0,0,0,8"/>
+            <StackPanel x:Name="TaskPanel">
+              <CheckBox x:Name="UserTemp" Content="Clean my temporary files" IsChecked="True"/>
+              <TextBlock Text="Only files created and modified over 7 days ago. Locked files and folder links are skipped." TextWrapping="Wrap" Foreground="#929EB9" Margin="22,0,0,8"/>
+              <CheckBox x:Name="SystemTemp" Content="Clean Windows temporary files"/>
+              <CheckBox x:Name="Dns" Content="Flush DNS cache"/>
+              <CheckBox x:Name="Dism" Content="Repair Windows image · DISM"/>
+              <CheckBox x:Name="Sfc" Content="Check system files · SFC"/>
+              <CheckBox x:Name="Dhcp" Content="Release and renew DHCP lease"/>
+              <TextBlock Text="Network renewal interrupts your connection and may affect VPN or remote sessions. Admin rights are needed for system tasks." TextWrapping="Wrap" Foreground="#929EB9" Margin="22,0,0,14"/>
+            </StackPanel>
+            <Button x:Name="PreviewButton" Content="Preview temporary files" Click="Preview_Click" Margin="0,5,0,12"/>
+            <TextBlock Text="RECOMMENDED CARE" FontWeight="Bold" Foreground="#A5AEC6" Margin="0,14,0,10"/>
+            <TextBlock Text="Cleans eligible temp files, flushes DNS, then runs DISM and SFC. Network renewal and restart stay optional." TextWrapping="Wrap" Foreground="#929EB9" Margin="0,5,0,10"/>
+            <Button x:Name="CareButton" Content="Run recommended care" Background="#C73556" Click="Care_Click" Margin="0,0,0,10"/>
+            <TextBlock Text="This first release preserves Prefetch, system logs and the search index. Routine maintenance is not a guarantee of higher FPS or a fix for every stability issue." TextWrapping="Wrap" Foreground="#929EB9" Margin="0,5,0,0"/>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+      <Border Grid.Column="2" Background="#191D2A" CornerRadius="10" Padding="20">
+        <Grid>
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <TextBlock Text="ACTIVITY" FontWeight="Bold" Foreground="#A5AEC6"/>
+          <TextBlock x:Name="Status" Grid.Row="1" Text="Ready when you are." FontSize="20" Margin="0,12,0,15" TextWrapping="Wrap"/>
+          <TextBox x:Name="Activity" Grid.Row="2" Background="#10131C" Foreground="#B9C9DB" BorderThickness="0" Padding="12" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+          <StackPanel Grid.Row="3" Margin="0,14,0,0">
+            <ProgressBar x:Name="Progress" Height="4" Foreground="#F15B78" Background="#272D40" Visibility="Collapsed"/>
+            <TextBlock Text="Nothing runs automatically. Activity stays in this session unless you export it." TextWrapping="Wrap" Foreground="#929EB9" Margin="0,10,0,0"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Grid>
+    <Grid Grid.Row="3" Margin="0,20,0,0">
+      <StackPanel Orientation="Horizontal">
+        <Button x:Name="RunButton" Content="Run selected tasks" Background="#C73556" Click="Run_Click"/>
+        <Button x:Name="StopButton" Content="Stop after current task" IsEnabled="False" Click="Stop_Click"/>
+        <Button Content="Export log" Click="Export_Click"/>
+      </StackPanel>
+      <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+        <Button x:Name="RestartButton" Content="Restart…" Click="Restart_Click"/>
+        <Button x:Name="AbortRestartButton" Content="Cancel restart" Click="AbortRestart_Click" Margin="0"/>
+      </StackPanel>
+    </Grid>
+  </Grid>
+</Window>
