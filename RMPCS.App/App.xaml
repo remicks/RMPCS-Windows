@@ -1,7 +1,6 @@
 <Application x:Class="RMPCS.App.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Application.Resources>
     <SolidColorBrush x:Key="Accent" Color="#F15B78"/>
-    <Style TargetType="TextBlock"><Setter Property="Foreground" Value="#E9ECF5"/></Style>
     <Style TargetType="Button">
       <Setter Property="Background" Value="#272D40"/><Setter Property="Foreground" Value="#FFFFFF"/>
       <Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="18,11"/>

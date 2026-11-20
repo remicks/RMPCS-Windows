@@ -1,0 +1,107 @@
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
+using RMPCS.Core;
+
+namespace RMPCS.App;
+
+internal sealed class WindowsOperations(Action<string> log) : IMaintenanceOperations
+{
+    public static TempCleaner Cleaner(CleanupArea area, int days)
+    {
+        var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        string root = area switch {
+            CleanupArea.UserTemp => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp"),
+            CleanupArea.WindowsTemp => Path.Combine(windows, "Temp"),
+            CleanupArea.Prefetch => Path.Combine(windows, "Prefetch"),
+            CleanupArea.WindowsLogs => Path.Combine(windows, "Logs"),
+            _ => throw new ArgumentOutOfRangeException(nameof(area)) };
+        return new TempCleaner(new[] { root }, days, area == CleanupArea.Prefetch ? p => Path.GetExtension(p).Equals(".pf", StringComparison.OrdinalIgnoreCase) : null);
+    }
+
+    public Task<CleanupResult> CleanAsync(CleanupArea area, int minimumAgeDays) => Task.Run(() =>
+    {
+        log("Scanning " + area);
+        var cleaner = Cleaner(area, minimumAgeDays);
+        return cleaner.Clean(cleaner.Scan(DateTime.UtcNow));
+    });
+
+    public static (string Executable, string[] Arguments) CommandLine(SystemCommand command) => command switch
+    {
+        SystemCommand.FlushDns => ("ipconfig.exe", ["/flushdns"]),
+        SystemCommand.RepairImage => ("DISM.exe", ["/Online", "/Cleanup-Image", "/RestoreHealth"]),
+        SystemCommand.ScanSystemFiles => ("sfc.exe", ["/scannow"]),
+        SystemCommand.ReleaseDhcp => ("ipconfig.exe", ["/release"]),
+        SystemCommand.RenewDhcp => ("ipconfig.exe", ["/renew"]),
+        SystemCommand.Restart10 => ("shutdown.exe", ["/r", "/t", "10"]),
+        SystemCommand.Restart60 => ("shutdown.exe", ["/r", "/t", "60"]),
+        SystemCommand.Restart300 => ("shutdown.exe", ["/r", "/t", "300"]),
+        SystemCommand.AbortRestart => ("shutdown.exe", ["/a"]),
+        _ => throw new ArgumentOutOfRangeException(nameof(command))
+    };
+
+    public async Task<int> RunAsync(SystemCommand command)
+    {
+        var (executable, args) = CommandLine(command);
+        log(command + ": " + executable + " " + string.Join(' ', args));
+        var system = Environment.GetFolderPath(Environment.SpecialFolder.System);
+        var start = new ProcessStartInfo(Path.Combine(system, executable))
+        { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = system };
+        foreach (var arg in args) start.ArgumentList.Add(arg);
+        using var process = new Process { StartInfo = start };
+        process.Start();
+        async Task Pump(StreamReader reader)
+        {
+            char[] buffer = new char[1024];
+            int count;
+            while ((count = await reader.ReadAsync(buffer)) > 0)
+                foreach (var line in new string(buffer, 0, count).Replace("\0", "").Replace('\r', '\n').Split('\n', StringSplitOptions.RemoveEmptyEntries)) log(line);
+        }
+        await Task.WhenAll(Pump(process.StandardOutput), Pump(process.StandardError), process.WaitForExitAsync());
+        log($"{command}: exit code {process.ExitCode}." + (process.ExitCode == 3010 ? " Restart requested by Windows." : ""));
+        return process.ExitCode;
+    }
+
+    public Task ResetSearchAsync()
+    {
+        // This call resets the database using the documented Windows Search API.
+        // No service is disabled and no live database file is manually removed.
+        object? managerObject = null;
+        ISearchCatalogManager? catalog = null;
+        try
+        {
+            managerObject = Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("7D096C5F-AC08-4F1F-BEB7-5C22C517CE39"), true)!)!;
+            ((ISearchManager)managerObject).GetCatalog("SystemIndex", out catalog);
+            catalog.Reset();
+        }
+        finally
+        {
+            if (catalog is not null) Marshal.FinalReleaseComObject(catalog);
+            if (managerObject is not null) Marshal.FinalReleaseComObject(managerObject);
+        }
+        return Task.CompletedTask;
+    }
+
+    // ABI prefix in SearchAPI.h; later interface members are not used here.
+    [ComImport, Guid("AB310581-AC80-11D1-8DF3-00C04FB6EF69"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface ISearchManager
+    {
+        void GetIndexerVersionStr([MarshalAs(UnmanagedType.LPWStr)] out string version);
+        void GetIndexerVersion(out uint major, out uint minor);
+        void GetParameter([MarshalAs(UnmanagedType.LPWStr)] string name, [MarshalAs(UnmanagedType.Struct)] out object value);
+        void SetParameter([MarshalAs(UnmanagedType.LPWStr)] string name, [MarshalAs(UnmanagedType.Struct)] ref object value);
+        void GetProxyName([MarshalAs(UnmanagedType.LPWStr)] out string value);
+        void GetBypassList([MarshalAs(UnmanagedType.LPWStr)] out string value);
+        void SetProxy(uint access, [MarshalAs(UnmanagedType.Bool)] bool local, uint port, [MarshalAs(UnmanagedType.LPWStr)] string proxy, [MarshalAs(UnmanagedType.LPWStr)] string bypass);
+        void GetCatalog([MarshalAs(UnmanagedType.LPWStr)] string name, out ISearchCatalogManager catalog);
+    }
+    [ComImport, Guid("AB310581-AC80-11D1-8DF3-00C04FB6EF50"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface ISearchCatalogManager
+    {
+        void GetName([MarshalAs(UnmanagedType.LPWStr)] out string name);
+        void GetParameter([MarshalAs(UnmanagedType.LPWStr)] string name, [MarshalAs(UnmanagedType.Struct)] out object value);
+        void SetParameter([MarshalAs(UnmanagedType.LPWStr)] string name, [MarshalAs(UnmanagedType.Struct)] ref object value);
+        void GetCatalogStatus(out uint status, out uint pausedReason);
+        void Reset();
+    }
+}

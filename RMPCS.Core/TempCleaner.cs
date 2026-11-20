@@ -8,8 +8,13 @@ public sealed record CleanupResult(int Deleted, long Bytes, int Skipped);
 public sealed class TempCleaner
 {
     private readonly string[] roots;
-    public TempCleaner(IEnumerable<string> allowedRoots)
+    private readonly int minimumAgeDays;
+    private readonly Func<string, bool> include;
+    public TempCleaner(IEnumerable<string> allowedRoots, int minimumAgeDays = 7, Func<string, bool>? include = null)
     {
+        if (minimumAgeDays is < 0 or > 365) throw new ArgumentOutOfRangeException(nameof(minimumAgeDays));
+        this.minimumAgeDays = minimumAgeDays;
+        this.include = include ?? (_ => true);
         roots = allowedRoots.Select(Path.GetFullPath).Select(Path.TrimEndingDirectorySeparator).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         if (roots.Length == 0 || roots.Any(p => string.Equals(p, Path.GetPathRoot(p), StringComparison.OrdinalIgnoreCase)))
             throw new ArgumentException("A filesystem root cannot be a cleanup target.");
@@ -20,7 +25,7 @@ public sealed class TempCleaner
         var files = new List<string>();
         long bytes = 0;
         int skipped = 0;
-        var cutoff = nowUtc.AddDays(-7);
+        var cutoff = nowUtc.AddDays(-minimumAgeDays);
         foreach (var root in roots)
         {
             if (!Directory.Exists(root)) continue;
@@ -39,6 +44,7 @@ public sealed class TempCleaner
                             var attributes = File.GetAttributes(path);
                             if ((attributes & FileAttributes.Directory) != 0) { pending.Push(path); continue; }
                             var info = new FileInfo(path);
+                            if (!include(path)) continue;
                             if (info.LastWriteTimeUtc >= cutoff || info.CreationTimeUtc >= cutoff) continue;
                             files.Add(path);
                             bytes += info.Length;
@@ -61,7 +67,7 @@ public sealed class TempCleaner
             try
             {
                 var root = roots.FirstOrDefault(r => IsInside(path, r));
-                if (root is null || !IsSafe(path, root)) { skipped++; continue; }
+                if (root is null || !IsSafe(path, root) || !include(path)) { skipped++; continue; }
                 var length = WindowsFile.DeleteEligible(path, root, preview.CutoffUtc);
                 if (length is null) { skipped++; continue; }
                 deleted++;

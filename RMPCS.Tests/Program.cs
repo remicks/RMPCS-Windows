@@ -58,6 +58,18 @@ try
         Check(new TempCleaner(new[] { junction }).Scan(DateTime.UtcNow).Files.Count == 0, "junction cleanup root rejected");
         Directory.Delete(junction); // Remove the junction itself, never recurse into its target.
     }
+    // Advanced all-age cleanup still enforces scope, extension and file protection.
+    var pf = Make(root, "cache.pf", 0);
+    var metadata = Make(root, "layout.ini", 10);
+    var advanced = new TempCleaner(new[] { root }, 0, p => Path.GetExtension(p) == ".pf");
+    var advancedScan = advanced.Scan(DateTime.UtcNow.AddSeconds(1));
+    Check(advancedScan.Files.SequenceEqual(new[] { pf }), "all-age Prefetch policy only selects .pf files");
+    var filteredForgery = new CleanupPreview(new[] { metadata }, 12, 0, DateTime.UtcNow.AddSeconds(1));
+    Check(advanced.Clean(filteredForgery).Deleted == 0 && File.Exists(metadata), "cleanup revalidates extension policy against forged preview");
+    File.SetAttributes(pf, File.GetAttributes(pf) | FileAttributes.ReadOnly);
+    Check(advanced.Clean(advancedScan).Deleted == 0 && File.Exists(pf), "read-only files are preserved");
+    File.SetAttributes(pf, FileAttributes.Normal);
+    await WorkflowChecks.RunAsync(Check);
     Console.WriteLine($"{checks} checks passed.");
 }
 finally

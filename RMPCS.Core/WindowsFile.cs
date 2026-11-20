@@ -12,7 +12,8 @@ internal static class WindowsFile
     public static long? DeleteEligible(string path, string root, DateTime cutoff)
     {
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException();
-        using var handle = CreateFileW(path, 0x00010080, 7, IntPtr.Zero, 3, 0x00200000, IntPtr.Zero);
+        // Deny concurrent writers and deletion/rename while validating the file.
+        using var handle = CreateFileW(path, 0x00010080, 1, IntPtr.Zero, 3, 0x00200000, IntPtr.Zero);
         if (handle.IsInvalid) throw new IOException(new Win32Exception(Marshal.GetLastWin32Error()).Message);
         var final = new StringBuilder(32768);
         uint length = GetFinalPathNameByHandleW(handle, final, (uint)final.Capacity, 0);
