@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><AssemblyName>RMPCS</AssemblyName>
-    <Version>0.5.0</Version><Product>RMPCS</Product><Description>Wade's PC maintenance toolkit</Description>
+    <Version>0.6.0</Version><Product>RMPCS</Product><Description>Rusty's PC maintenance toolkit</Description>
     <ApplicationIcon>../Assets/RMPCS.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup><ProjectReference Include="../RMPCS.Core/RMPCS.Core.csproj" /></ItemGroup>

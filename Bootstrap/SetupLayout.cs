@@ -51,11 +51,11 @@ namespace RMPCS.Bootstrap
             var artwork=new PictureBox {Left=26,Top=30,Width=58,Height=58,SizeMode=PictureBoxSizeMode.Zoom,Image=brandImage,AccessibleName="RMPCS icon"};
             rail.Controls.Add(artwork);
             rail.Controls.Add(TextLabel("RMPCS",94,35,130,32,20,Ink));
-            rail.Controls.Add(TextLabel("PC TOOLKIT",96,70,128,24,9,Muted));
+            rail.Controls.Add(TextLabel("Rusty\u0027s PC Toolkit",96,70,128,24,9,Muted));
             rail.Controls.Add(TextLabel("Windows\nmaintenance",26,125,186,80,16,Ink));
             string[] labels={"01   Requirements","02   Your preferences","03   Ready to go"};
             for(int i=0;i<3;i++) {steps[i]=TextLabel(labels[i],26,250+i*52,190,30,11,Muted);rail.Controls.Add(steps[i]);}
-            rail.Controls.Add(TextLabel("DEGENERATES INC.\nVersion 0.5",26,539,190,44,9,Muted));
+            rail.Controls.Add(TextLabel("DEGENERATES INC.\nVersion 0.6",26,539,190,44,9,Muted));
             Controls.Add(rail);
             heading.SetBounds(270,34,590,44); heading.Font=new Font("Segoe UI",25,FontStyle.Bold);
             caption.SetBounds(272,92,588,50); caption.ForeColor=Muted;

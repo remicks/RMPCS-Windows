@@ -76,7 +76,7 @@ public partial class App : Application
             }
             catch (Exception ex) { MessageBox.Show("RMPCS could not establish its desktop session: " + ex.Message, "RMPCS"); Shutdown(1); return; }
         }
-        var window = new MainWindow { TestMode = test }; MainWindow = window;
+        var window = new MainWindow(test); MainWindow = window;
         if (preview && e.Args.Length == 3 && int.TryParse(e.Args[2], out int tab) && tab >= 0 && tab < window.MainTabs.Items.Count) window.MainTabs.SelectedIndex = tab;
         if (!smoke && !preview)
         {
@@ -89,6 +89,7 @@ public partial class App : Application
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
             window.CheckAdministrator(false);
+            window.BeginAutomaticUpdateCheck();
             return;
         }
         bool contentHandled = false;
@@ -124,7 +125,7 @@ public partial class App : Application
                 Report(passed ? "Native tray registration, close-to-tray, minimize-to-tray, restore and status checks passed. No maintenance performed." : "Window restore failed");
                 Shutdown(passed ? 0 : 1);
             }
-            else window.CheckAdministrator();
+            else { window.CheckAdministrator(); window.BeginAutomaticUpdateCheck(); }
         };
         window.Show();
     }

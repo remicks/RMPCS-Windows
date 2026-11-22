@@ -1,6 +1,6 @@
 # RMPCS roadmap
 
-The current build is v0.5.0, with a Windows-style light interface, graphical setup pages, optional shortcuts, administrator launch preference and a completion-page launch checkbox. Tray residency and startup to tray remain included. The v0.3.1 Administrators/SYSTEM-only startup-backup protection is retained. v0.3.0 is superseded.
+The current build is v0.6.0: Rusty's PC Toolkit, with GitHub update checking, dedicated Settings, searchable offline Help, a LootDrop link, support summaries and interface preferences. Tray, graphical setup and all maintenance functions remain available.
 
 ## v0.3 - implemented, supervised validation pending
 

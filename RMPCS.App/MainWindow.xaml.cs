@@ -26,7 +26,7 @@ public partial class MainWindow : Window
     {
         if (tray?.Available != true) return;
         Hide();
-        if (!trayNoticeShown) { tray.Notify("Still running in the system tray. Click the icon to reopen, or right-click it to Exit."); trayNoticeShown = true; }
+        if (!trayNoticeShown && preferences.TrayNotifications) { tray.Notify("Still running in the system tray. Click the icon to reopen, or right-click it to Exit."); trayNoticeShown = true; }
     }
     internal void RequestExit()
     {
@@ -35,15 +35,17 @@ public partial class MainWindow : Window
     }
     private void Tray_Click(object sender, RoutedEventArgs e) => HideToTray();
     private void Exit_Click(object sender, RoutedEventArgs e) => RequestExit();
-    private void Window_StateChanged(object? sender, EventArgs e) { if (WindowState == WindowState.Minimized && !TestMode) HideToTray(); }
+    private void Window_StateChanged(object? sender, EventArgs e) { if (WindowState == WindowState.Minimized && !TestMode && preferences.MinimizeToTray) HideToTray(); }
     private readonly bool admin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
-    public MainWindow()
+    public MainWindow(bool testMode = false)
     {
+        TestMode = testMode;
         InitializeComponent();
         AdminStatus.Text = admin ? "Administrator session" : "Standard session";
         ElevateButton.Visibility = admin ? Visibility.Collapsed : Visibility.Visible;
         SetBusy(false);
-        Log("RMPCS 0.5.0 - Written by Wade. Health scan, cleanup previews and startup management are ready.");
+        InitializePreferences();
+        Log("RMPCS 0.6.0 - Written by Rusty. Health scan, cleanup previews and startup management are ready.");
         Log("Select full batch to include advanced tasks and reboot, or use recommended care.");
     }
     public void CheckAdministrator(bool showWarning = true)
@@ -70,6 +72,8 @@ public partial class MainWindow : Window
         tray?.Status(value);
         TaskPanel.IsEnabled = PreviewButton.IsEnabled = HistoryPanel.IsEnabled = !value;
         HealthPanel.IsEnabled = StartupAppsPanel.IsEnabled = !value;
+        SettingsPanel.IsEnabled = !value;
+        ApplyAdminPreference.IsEnabled = InstalledAdminChoice.IsEnabled = !value && admin && TaskSchedulerService.IsInstalled;
         DisableStartupApp.IsEnabled = RestoreStartupApp.IsEnabled = !value && admin;
         RunButton.IsEnabled = CareButton.IsEnabled = AutomationPanel.IsEnabled = !value && admin;
         ElevateButton.IsEnabled = !value && !admin;
@@ -263,7 +267,7 @@ public partial class MainWindow : Window
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
         if (SessionEnding) return;
-        if (DesktopPolicy.HideOnClose(tray?.Available == true, exitRequested, TestMode)) { e.Cancel = true; HideToTray(); return; }
+        if (DesktopPolicy.HideOnClose(tray?.Available == true && preferences.CloseToTray, exitRequested, TestMode)) { e.Cancel = true; HideToTray(); return; }
         if (busy) { e.Cancel = true; MessageBox.Show(this, "Wait for the active task to finish. Stop after current task prevents later tasks from starting.", "Task running"); }
     }
 }

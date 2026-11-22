@@ -1,5 +1,5 @@
 <Window x:Class="RMPCS.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Title="RMPCS - PC Toolkit" Icon="Assets/RMPCS.ico" Width="1320" Height="820" MinWidth="1180" MinHeight="720" Background="#F5F7FA" Foreground="#202938" FontFamily="Segoe UI Variable Text, Segoe UI" WindowStartupLocation="CenterScreen" Closing="Window_Closing" StateChanged="Window_StateChanged">
+ Title="RMPCS - Rusty's PC Toolkit" Icon="Assets/RMPCS.ico" Width="1320" Height="820" MinWidth="1180" MinHeight="720" Background="#F5F7FA" Foreground="#202938" FontFamily="Segoe UI Variable Text, Segoe UI" WindowStartupLocation="CenterScreen" Closing="Window_Closing" StateChanged="Window_StateChanged">
  <Window.Resources>
   <Style TargetType="TabItem"><Setter Property="Foreground" Value="#202938"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TabItem">
    <Border x:Name="Header" Background="#FFFFFF" CornerRadius="6" Padding="14,13" Margin="0,0,8,6" Width="122"><ContentPresenter ContentSource="Header"/></Border>
@@ -11,8 +11,8 @@
  <Grid Margin="26">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <Grid>
-   <StackPanel Orientation="Horizontal"><Image Source="Assets/RMPCS.png" Width="46" Height="46" Margin="0,0,14,0"/><StackPanel><TextBlock Text="RMPCS" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="PC maintenance, on your terms." FontSize="12" Foreground="#596678" Margin="0,4,0,0"/></StackPanel></StackPanel>
-   <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock x:Name="AdminStatus" HorizontalAlignment="Right" Margin="0,0,10,8" Foreground="#596678"/><StackPanel Orientation="Horizontal"><Button Content="Hide to tray" Click="Tray_Click" Padding="12,8"/><Button x:Name="ElevateButton" Content="Run as administrator" Click="Elevate_Click" Padding="12,8"/></StackPanel></StackPanel>
+   <StackPanel Orientation="Horizontal"><Image Source="Assets/RMPCS.png" Width="46" Height="46" Margin="0,0,14,0"/><StackPanel><TextBlock Text="RMPCS" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="Rusty's PC Toolkit" FontSize="12" Foreground="#596678" Margin="0,4,0,0"/></StackPanel></StackPanel>
+   <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock x:Name="AdminStatus" HorizontalAlignment="Right" Margin="0,0,10,8" Foreground="#596678"/><StackPanel Orientation="Horizontal"><Button Content="Updates" Click="ShowUpdates_Click" Padding="12,8"/><Button Content="Hide to tray" Click="Tray_Click" Padding="12,8"/><Button x:Name="ElevateButton" Content="Run as administrator" Click="Elevate_Click" Padding="12,8"/></StackPanel></StackPanel>
   </Grid>
   <Border Grid.Row="1" Background="#EAF0F6" CornerRadius="8" Padding="12" Margin="0,16,0,14"><TextBlock x:Name="TrayStatus" Text="Check health, review cleanup, and run only the tasks you choose." TextWrapping="Wrap" Foreground="#4F5D70"/></Border>
   <Grid Grid.Row="2">
@@ -92,8 +92,56 @@
     <TabItem Header="History"><StackPanel x:Name="HistoryPanel">
      <TextBlock Text="SAVED RUNS" FontWeight="Bold" Foreground="#596678"/><TextBlock Text="Manual and scheduled runs save local activity logs. The list shows the latest 30; files older than 30 days are eligible for log retention cleanup." TextWrapping="Wrap" Foreground="#596678" Margin="0,10,0,10"/>
      <ComboBox x:Name="HistoryFiles" DisplayMemberPath="Name"/><Button Content="Load selected log" Click="LoadHistory_Click" Margin="0,0,0,10"/><Button Content="Refresh history" Click="HistoryRefresh_Click" Margin="0,0,0,10"/>
-     <TextBlock Text="ABOUT RMPCS" FontWeight="Bold" Foreground="#596678" Margin="0,24,0,10"/><TextBlock Text="Written by Wade. Based on Wade's Multi-Purpose Cleanup Script (WMPCS) 0.3b.&#10;&#10;Discord / Support: discord.beer/thelocker&#10;&#10;Maintenance does not guarantee higher FPS or resolve hardware/driver faults. Review command output for repair findings." TextWrapping="Wrap" Foreground="#596678"/>
+     <Button Content="Clear activity view" Click="ClearActivity_Click" Margin="0,8,0,10"/>
+     <TextBlock Text="Saved logs can contain local paths and command output. Review them before sharing. Search Help for support and troubleshooting." TextWrapping="Wrap" Foreground="#596678"/>
     </StackPanel></TabItem>
+    <TabItem Header="Settings"><ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0"><StackPanel x:Name="SettingsPanel">
+     <TextBlock Text="SETTINGS" FontWeight="Bold" Foreground="#BE2B4E"/>
+     <TextBlock x:Name="VersionLabel" FontSize="16" FontWeight="SemiBold" Margin="0,10,0,16" TextWrapping="Wrap"/>
+     <TextBlock Text="WINDOW &amp; TRAY" FontWeight="SemiBold" Foreground="#596678"/>
+     <CheckBox x:Name="CloseToTrayChoice" Content="Close the window to the system tray"/>
+     <CheckBox x:Name="MinimizeToTrayChoice" Content="Minimize to the system tray"/>
+     <CheckBox x:Name="TrayNotificationsChoice" Content="Show the first-hide tray reminder"/>
+     <TextBlock Text="Exit always closes the app when no task is active. If the tray is unavailable, closing exits normally." TextWrapping="Wrap" Foreground="#596678" Margin="0,4,0,14"/>
+     <TextBlock Text="Open the app on"/><ComboBox x:Name="StartPageChoice"/>
+     <TextBlock Text="Activity text size"/><ComboBox x:Name="ActivitySizeChoice"/>
+     <TextBlock Text="Default age for manual file cleanup"/><ComboBox x:Name="DefaultAgeChoice"><ComboBoxItem Content="Older than 1 day"/><ComboBoxItem Content="Older than 7 days"/><ComboBoxItem Content="Older than 30 days"/></ComboBox>
+     <TextBlock Text="Scheduled profiles keep their fixed seven-day cutoff. Saved preferences never start maintenance." TextWrapping="Wrap" Foreground="#596678" Margin="0,0,0,18"/>
+     <TextBlock x:Name="UpdatesHeading" Text="GITHUB UPDATES" FontWeight="SemiBold" Foreground="#596678"/>
+     <CheckBox x:Name="AutoUpdatesChoice" Content="Check for updates when RMPCS starts"/>
+     <CheckBox x:Name="PreviewUpdatesChoice" Content="Include preview / prerelease builds"/>
+     <TextBlock Text="Automatic checks are off by default and run at most once every 24 hours. Current RMPCS releases are previews. Checks contact api.github.com without credentials; no PC reports or logs are sent. Updates are never downloaded or installed automatically." TextWrapping="Wrap" Foreground="#596678" Margin="0,4,0,12"/>
+     <WrapPanel><Button x:Name="CheckUpdatesButton" Content="Check for updates" Click="CheckUpdates_Click"/><Button Content="All releases" Click="Releases_Click"/></WrapPanel>
+     <TextBlock x:Name="UpdateStatus" Text="Not checked this session." TextWrapping="Wrap" Margin="0,12,0,10"/>
+     <Button x:Name="OpenUpdateButton" Content="Open matching release" IsEnabled="False" Click="OpenUpdate_Click" Margin="0,0,0,10"/>
+     <Expander Header="Release notes (plain text)" Foreground="#596678"><TextBox x:Name="UpdateNotes" IsReadOnly="True" TextWrapping="Wrap" Height="200" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0"/></Expander>
+     <TextBlock Text="INSTALLATION &amp; AUTOMATION" FontWeight="SemiBold" Foreground="#596678" Margin="0,22,0,10"/>
+     <TextBlock x:Name="InstallModeLabel" TextWrapping="Wrap" Foreground="#596678"/>
+     <CheckBox x:Name="InstalledAdminChoice" Content="Always request administrator access"/>
+     <Button x:Name="ApplyAdminPreference" Content="Apply administrator preference" Click="ApplyAdminPreference_Click" Margin="0,0,0,10"/>
+     <TextBlock Text="Requires an administrator session in the installed edition. This is separate from general preferences and applies across Windows users. Windows UAC remains active." TextWrapping="Wrap" Foreground="#596678" Margin="0,0,0,12"/>
+     <Button Content="Manage startup &amp; maintenance schedules" Click="AutomationSettings_Click" Margin="0,0,0,18"/>
+     <WrapPanel><Button Content="Save preferences" Click="SavePreferences_Click" Background="#BE2B4E" Foreground="White"/><Button Content="Reset interface defaults" Click="ResetPreferences_Click"/></WrapPanel>
+     <TextBlock x:Name="PreferencesStatus" Text="Preferences are saved for this Windows identity. Use Save to apply changes." TextWrapping="Wrap" Foreground="#596678" Margin="0,12,0,6"/>
+    </StackPanel></ScrollViewer></TabItem>
+    <TabItem Header="Help"><ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0"><StackPanel>
+     <TextBlock Text="HELP &amp; ABOUT" FontWeight="Bold" Foreground="#BE2B4E"/>
+     <TextBlock Text="Rusty's PC Toolkit" FontSize="19" FontWeight="SemiBold" Margin="0,10,0,6"/>
+     <TextBlock Text="Search practical guidance, task explanations and troubleshooting. Help works offline. F1 opens Help; Ctrl+, opens Settings." TextWrapping="Wrap" Foreground="#596678" Margin="0,0,0,12"/>
+     <TextBlock Text="Search help" Foreground="#596678" Margin="0,0,0,5"/>
+     <TextBox x:Name="HelpSearch" MaxLength="200" AutomationProperties.Name="Search help" ToolTip="Search topics, such as updates, DNS or tray" TextChanged="HelpSearch_Changed" Margin="0,0,0,10"/>
+     <ListBox x:Name="HelpResults" DisplayMemberPath="Title" SelectionChanged="HelpSelection_Changed" Height="135" BorderBrush="#DFE4EC" Background="White" Foreground="#202938" Padding="6"/>
+     <TextBox x:Name="HelpBody" IsReadOnly="True" TextWrapping="Wrap" Height="220" VerticalScrollBarVisibility="Auto" Margin="0,10,0,16"/>
+     <WrapPanel><Button Content="RMPCS on GitHub" Click="Project_Click"/><Button Content="Report an issue" Click="Issues_Click"/><Button Content="Discord support" Click="Discord_Click"/></WrapPanel>
+     <TextBlock Text="LOOTDROP FOR WINDOWS" FontWeight="SemiBold" Foreground="#596678" Margin="0,22,0,8"/>
+     <TextBlock Text="Discover free-game offers and track a local wishlist and claimed collection. LootDrop opens official store links in your browser and does not collect store passwords or claim games automatically." TextWrapping="Wrap" Foreground="#596678" Margin="0,0,0,10"/>
+     <Button Content="LootDrop on GitHub" Click="LootDrop_Click"/>
+     <TextBlock Text="SUPPORT SUMMARY" FontWeight="SemiBold" Foreground="#596678" Margin="0,22,0,8"/>
+     <TextBlock Text="Review before copying. This summary excludes usernames, paths, startup commands, health reports and logs." TextWrapping="Wrap" Foreground="#596678" Margin="0,0,0,10"/>
+     <TextBox x:Name="SupportSummary" IsReadOnly="True" TextWrapping="Wrap" Height="130" VerticalScrollBarVisibility="Auto"/>
+     <Button Content="Copy support summary" Click="CopySupport_Click" Margin="0,10,0,10"/>
+     <TextBlock Text="An unsigned Degenerates Inc. development app, based on the original WMPCS script. Review command output; maintenance cannot guarantee higher FPS or resolve hardware faults." TextWrapping="Wrap" Foreground="#596678"/>
+    </StackPanel></ScrollViewer></TabItem>
    </TabControl>
    <Border Grid.Column="2" Background="#FFFFFF" CornerRadius="10" Padding="18"><Grid>
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>

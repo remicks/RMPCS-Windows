@@ -1,14 +1,14 @@
-# RMPCS 0.5.0 - Wade's PC Toolkit
+# RMPCS 0.6.0 - Rusty's PC Toolkit
 
 A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prerequisite setup, read-only health checks, cleanup previews, reversible Run-entry management, and scheduled care.
 
-**v0.5 retains the v0.3.1 permissions fix.** The initial v0.3.0 prerelease is superseded. RMPCS protects the startup-backup registry store with an explicit non-inheriting DACL granting access only to Administrators and SYSTEM. Protection is established before backup writes/restores; failure stops the change. Opening the corrected app elevated also protects an existing store. Administrator rights are needed to view disabled-entry backups as well as change them.
+**v0.6 retains the v0.3.1 permissions fix.** The initial v0.3.0 prerelease is superseded. RMPCS protects the startup-backup registry store with an explicit non-inheriting DACL granting access only to Administrators and SYSTEM. Protection is established before backup writes/restores; failure stops the change. Opening the corrected app elevated also protects an existing store. Administrator rights are needed to view disabled-entry backups as well as change them.
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.5.0/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.5.0/RMPCS-Setup-0.5.0-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.5.0/RMPCS-v0.5.0-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.0/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.0/RMPCS-Setup-0.6.0-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.0/RMPCS-v0.6.0-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -20,6 +20,18 @@ The bootstrap launchers use the .NET Framework supplied with Windows 11 and do n
 Microsoft runtime downloads use HTTPS, an exact pinned SHA-512 from official release metadata, and Windows Authenticode trust verification with a Microsoft Corporation publisher check. A failed integrity/trust check stops execution. No certificate-validation bypass or unknown-host redirect is accepted. Downloads are size-limited, cancellable, and have a deadline. An offline-file option accepts the exact pinned installer and applies the same checks; offline signature validation depends on available certificate/revocation information. A compatible already-installed runtime is reused.
 
 Microsoft's setup remains visible for its Windows permissions and license prompts. Cancelled or failed setup stops the chain. Restart-required results are reported; RMPCS's prerequisite launcher does not request an automatic restart. Runtime and MSI files are held against modification during verification/execution. The portable launcher similarly verifies and holds its app payload while the session runs.
+
+## New in v0.6 — Rusty's PC Toolkit
+
+**Settings** now manages window/tray behavior, first-hide reminders, startup page, activity text size, default manual cleanup age, GitHub update preferences and the installed administrator-launch option. Save general preferences explicitly. The administrator option has its own Apply button, requires an elevated installed session and applies across Windows users. Defaults never save task selections or run maintenance. Interface reset leaves installation choices, administrator prompting, startup/schedules, disabled-entry backups and history intact.
+
+**Updates:** Check manually in Settings, or opt into a launch check at most once per 24 hours. Automatic checks are off by default and do not run in scheduled maintenance processes. Preview releases are included by default because current RMPCS builds are previews. The checker contacts the official public GitHub API without credentials, sends no diagnostic/user data, compares semantic versions from the newest 100 releases, shows plain-text notes and opens a validated official release page on request. It never downloads or runs an installer. Responses are bounded to 2 MiB with a 20-second deadline and no redirects. Rate limits, offline conditions and missing channels are explained separately from a successful up-to-date check. Release browsing/installation remains manual.
+
+**Help** is searchable offline and covers task risks, previews, repairs, networking, tray, automation, startup restore, updates, installation and privacy. It includes GitHub/Discord support links and a reviewable support summary containing only app/runtime/Windows version, architecture, elevation state and edition. This summary excludes usernames, paths, health data, startup commands and logs. Saved activity logs can contain private details and must be reviewed before sharing. Clear activity view preserves saved run logs.
+
+**LootDrop:** [LootDrop for Windows](https://github.com/remicks/LootDrop-Windows) is a separate Degenerates Inc. app for discovering free-game offers and tracking a local wishlist and claimed collection. Official store links open in the browser; it does not collect store passwords or claim games automatically. Its GitHub link and description are available in Help.
+
+Preferences are local to the running Windows identity and shared between portable/installed sessions; general preferences are stored under the current user's RMPCS registry key. Automatic-check attempt timestamps are separate from explicit preference saves. Elevating with different credentials uses that administrator's preferences/history. No GitHub authentication information is collected or saved.
 
 ## New in v0.5
 
@@ -114,11 +126,11 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.5.0-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.5.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.5.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.6.0-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.6.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.6.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.
 
-Author: Wade. Support: discord.beer/thelocker. RMPCS does not guarantee higher FPS or repair hardware/driver faults.
+Author: Rusty. Support: discord.beer/thelocker. RMPCS does not guarantee higher FPS or repair hardware/driver faults.

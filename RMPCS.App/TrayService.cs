@@ -27,18 +27,18 @@ internal sealed class TrayService : IDisposable
         if (icon != IntPtr.Zero) Add();
     }
     private NotifyData Data() => new() { Size = (uint)Marshal.SizeOf<NotifyData>(), Window = source.Handle, Id = 1,
-        Flags = 1 | 2 | 4, CallbackMessage = Callback, Icon = icon, Tip = "RMPCS • Ready", Info = "", InfoTitle = "" };
+        Flags = 1 | 2 | 4, CallbackMessage = Callback, Icon = icon, Tip = "Rusty's PC Toolkit • Ready", Info = "", InfoTitle = "" };
     private void Add() { var data = Data(); added = ShellNotifyIcon(0, ref data); Diagnostic = "Tray registered: " + added + "; Win32 error: " + Marshal.GetLastWin32Error(); }
     public void Status(bool busy)
     {
         if (!Available) return;
-        var data = Data(); data.Tip = busy ? "RMPCS • Task running" : "RMPCS • Ready";
+        var data = Data(); data.Tip = busy ? "Rusty's PC Toolkit • Task running" : "Rusty's PC Toolkit • Ready";
         ShellNotifyIcon(1, ref data);
     }
     public void Notify(string text)
     {
         if (!Available) return;
-        var data = Data(); data.Flags = 0x10; data.InfoTitle = "RMPCS"; data.Info = text; data.InfoFlags = 1;
+        var data = Data(); data.Flags = 0x10; data.InfoTitle = "Rusty's PC Toolkit"; data.Info = text; data.InfoFlags = 1;
         ShellNotifyIcon(1, ref data);
     }
     private IntPtr Message(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
