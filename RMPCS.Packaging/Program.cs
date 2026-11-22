@@ -14,7 +14,8 @@ Directory.CreateDirectory(media);
 var files = Directory.GetFiles(payload).Where(p => !p.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)).OrderBy(p => p, StringComparer.OrdinalIgnoreCase).Append(cleanup).ToArray();
 if (!files.Any(p => Path.GetFileName(p) == "RMPCS.exe") || files.Select(Path.GetFileName).Distinct(StringComparer.OrdinalIgnoreCase).Count() != files.Length) throw new InvalidOperationException("Invalid or duplicate payload names.");
 if (files.Any(p => p.Contains('"') || p.Contains('\n') || p.Contains('\r'))) throw new InvalidOperationException("Unsupported cabinet source path.");
-var ddf = new StringBuilder(".OPTION EXPLICIT\r\n.Set Cabinet=on\r\n.Set Compress=on\r\n.Set CompressionType=MSZIP\r\n.Set CabinetNameTemplate=RMPCS.cab\r\n");
+// One embedded cabinet: the legacy default disk limit can split larger payloads.
+var ddf = new StringBuilder(".OPTION EXPLICIT\r\n.Set Cabinet=on\r\n.Set Compress=on\r\n.Set CompressionType=MSZIP\r\n.Set MaxDiskSize=0\r\n.Set MaxCabinetSize=0\r\n.Set CabinetNameTemplate=RMPCS.cab\r\n");
 ddf.AppendLine($".Set DiskDirectoryTemplate=\"{media}\"");
 ddf.AppendLine($".Set InfFileName=\"{Path.Combine(media, "RMPCS.inf")}\"");
 ddf.AppendLine($".Set RptFileName=\"{Path.Combine(media, "RMPCS.rpt")}\"");
