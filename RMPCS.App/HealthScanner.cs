@@ -11,7 +11,7 @@ internal static class HealthScanner
 {
     public static async Task<string> ScanAsync()
     {
-        var text = new StringBuilder($"RMPCS 0.3 health snapshot - {DateTimeOffset.Now:O}\n\n");
+        var text = new StringBuilder($"Rusty's PC Toolkit health snapshot - {DateTimeOffset.Now:O}\n\n");
         try
         {
             if (!GetSystemTimes(out var idle0, out var kernel0, out var user0)) throw new IOException("CPU counters unavailable.");

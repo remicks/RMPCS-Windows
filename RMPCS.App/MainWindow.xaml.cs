@@ -52,7 +52,7 @@ public partial class MainWindow : Window
         ElevateButton.Visibility = admin ? Visibility.Collapsed : Visibility.Visible;
         SetBusy(false);
         InitializePreferences();
-        Log("RMPCS 0.6.1 - Written by Rusty. Health scan, cleanup previews and startup management are ready.");
+        Log("RMPCS 0.7.0 - Written by Rusty. Health scan, cleanup previews and startup management are ready.");
         Log("Select full batch to include advanced tasks and reboot, or use recommended care.");
     }
     public void CheckAdministrator(bool showWarning = true)
@@ -130,6 +130,7 @@ public partial class MainWindow : Window
         if (plan.RenewDhcp) notice += "\nDHCP release disconnects network/VPN/remote sessions; reconnection is not guaranteed.";
         if (plan.Restart) notice += "\nSAVE ALL WORK. Windows may force applications to close at the end of the restart countdown.";
         if (!Confirm(notice)) return;
+        RunSummaryText.Clear(); SummaryExpander.Visibility = Visibility.Collapsed;
         SetBusy(true); stopRequested = false;
         try
         {
@@ -139,14 +140,21 @@ public partial class MainWindow : Window
             void Output(string text) { session.Write(text); Log(text); }
             Output(plan.Describe());
             Status.Text = "Maintenance running - follow activity below.";
+            var before = DriveSpaceSnapshot.Capture();
+            var clock = Stopwatch.StartNew();
             var result = await MaintenanceRunner.RunAsync(plan, new WindowsOperations(Output), Output, () => stopRequested);
+            clock.Stop();
+            RunSummaryText.Text = RunSummary.Format(result, clock.Elapsed, before, DriveSpaceSnapshot.Capture());
+            SummaryExpander.Visibility = Visibility.Visible; SummaryExpander.IsExpanded = true;
+            Output(RunSummaryText.Text);
             Status.Text = result.Stopped ? "Queue stopped after current task." : result.Failed > 0 ? $"Finished with {result.Failed} failed/skipped tasks. Review activity." : "Tasks finished. Review repair output for findings.";
             if (result.RestartScheduled) Status.Text = "Restart countdown running. Save work or click Cancel restart.";
             Output($"{Status.Text} File entries skipped: {result.SkippedEntries}. No claim of repair success is made beyond the command output.");
             Log("Saved run: " + session.FilePath);
             if (session.Error is not null) Log("Log write warning: " + session.Error);
+            NotifyCompletion(session.Error is null ? CompletionNotices.From(result) : CompletionNotice.NeedsReview);
         }
-        catch (Exception ex) { Status.Text = "Unable to complete maintenance."; Log(ex.Message); }
+        catch (Exception ex) { Status.Text = "Unable to complete maintenance."; Log(ex.Message); NotifyCompletion(CompletionNotice.NeedsReview); }
         finally { SetBusy(false); RefreshHistory(); }
     }
     private async void Preview_Click(object sender, RoutedEventArgs e)

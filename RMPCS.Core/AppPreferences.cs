@@ -7,6 +7,7 @@ public sealed record AppPreferences
     public bool CloseToTray { get; init; } = true;
     public bool MinimizeToTray { get; init; } = true;
     public bool TrayNotifications { get; init; } = true;
+    public bool CompletionNotifications { get; init; }
     public bool CheckUpdatesOnLaunch { get; init; }
     public bool IncludePrereleases { get; init; } = true;
     public int ActivityFontSize { get; init; } = 12;

@@ -1,4 +1,4 @@
-# RMPCS 0.6.1 - Rusty's PC Toolkit
+# RMPCS 0.7.0 - Rusty's PC Toolkit
 
 A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prerequisite setup, read-only health checks, cleanup previews, reversible Run-entry management, and scheduled care.
 
@@ -6,9 +6,9 @@ A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prer
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.1/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.1/RMPCS-Setup-0.6.1-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.1/RMPCS-v0.6.1-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.7.0/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.7.0/RMPCS-Setup-0.7.0-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.7.0/RMPCS-v0.7.0-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -20,6 +20,14 @@ The bootstrap launchers use the .NET Framework supplied with Windows 11 and do n
 Microsoft runtime downloads use HTTPS, an exact pinned SHA-512 from official release metadata, and Windows Authenticode trust verification with a Microsoft Corporation publisher check. A failed integrity/trust check stops execution. No certificate-validation bypass or unknown-host redirect is accepted. Downloads are size-limited, cancellable, and have a deadline. An offline-file option accepts the exact pinned installer and applies the same checks; offline signature validation depends on available certificate/revocation information. A compatible already-installed runtime is reused.
 
 Microsoft's setup remains visible for its Windows permissions and license prompts. Cancelled or failed setup stops the chain. Restart-required results are reported; RMPCS's prerequisite launcher does not request an automatic restart. Runtime and MSI files are held against modification during verification/execution. The portable launcher similarly verifies and holds its app payload while the session runs.
+
+## New in v0.7
+
+1. **Run summaries:** every completed manual/scheduled queue writes duration and failure/skip state, confirmed logical deletion totals, separately labelled Recycle Bin estimates, and a before/after available-space observation for the Windows OS drive. The last manual summary appears below Activity. These measurements do not prove repair success or attribute all space changes to RMPCS. Other work, compression, allocation, quotas and open handles can affect observations; failed cleanup may leave partial counters.
+2. **Diagnostic archives:** History can export a selected saved run or the latest 30 RMPCS logs to a new local ZIP. The archive keeps original logs, writes a review manifest, and caps source data at 8 MiB per log / 32 MiB total. Active, linked, inaccessible and oversized logs are skipped. File handles verify final paths and single-link identity before reading; names cannot traverse ZIP paths. The chosen destination is created without overwriting and verified before log content is written. An unsuccessful export may leave an incomplete ZIP. Logs may contain private paths and command output. Review before sharing; archives are unencrypted and never uploaded by the app. No event-channel, browser, crash-dump or account data is automatically gathered.
+3. **Completion notifications:** opt in under Settings and Save. A tray instance must be running in the same Windows sign-in session. Scheduled processes post only one bounded informational status code to that user's resident app; default Windows integrity isolation is preserved, and no incoming message can run maintenance or change settings. No paths, arbitrary text or credentials are sent. Notices are not authenticated evidence: check History/Activity. Delivery is best effort, rate-limited, not queued, and can be suppressed by Windows or an unavailable/closed tray. Manual runs use the same notification preference. No notification polling, service or extra task is installed.
+
+The maintenance command set and existing deletion/repair safety rules remain unchanged. Restore points, broader cleanup targets and workload-based unattended deferral remain future work requiring more Windows validation.
 
 ## New in v0.6 — Rusty's PC Toolkit
 
@@ -126,9 +134,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.6.1-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.6.1-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.6.1-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.7.0-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.7.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.7.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.

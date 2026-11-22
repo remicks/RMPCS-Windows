@@ -7,6 +7,35 @@ namespace RMPCS.Core;
 
 internal static class WindowsFile
 {
+    internal static void ValidateArchiveDestination(FileStream file, string path)
+    {
+        var final = new StringBuilder(32768);
+        uint length = GetFinalPathNameByHandleW(file.SafeFileHandle, final, (uint)final.Capacity, 0);
+        string resolved = final.ToString();
+        if (resolved.StartsWith(@"\\?\", StringComparison.Ordinal)) resolved = resolved[4..];
+        if (length == 0 || length >= final.Capacity || !resolved.Equals(Path.GetFullPath(path), StringComparison.OrdinalIgnoreCase) ||
+            !GetFileInformationByHandle(file.SafeFileHandle, out var info) || info.Links != 1 || (info.Attributes & (uint)FileAttributes.ReparsePoint) != 0)
+            throw new IOException("Archive destination is linked or could not be verified. Choose a local folder.");
+    }
+    internal static FileStream OpenLogRead(string path, string root, long maximumBytes)
+    {
+        var handle = CreateFileW(path, 0x80000000, 1, IntPtr.Zero, 3, 0x00200000, IntPtr.Zero);
+        try
+        {
+            if (handle.IsInvalid) throw new IOException("Log unavailable or still being written.");
+            var final = new StringBuilder(32768);
+            uint length = GetFinalPathNameByHandleW(handle, final, (uint)final.Capacity, 0);
+            if (length == 0 || length >= final.Capacity) throw new IOException("Cannot verify log path.");
+            string resolved = final.ToString();
+            if (resolved.StartsWith(@"\\?\", StringComparison.Ordinal)) resolved = resolved[4..];
+            if (!resolved.Equals(Path.GetFullPath(path), StringComparison.OrdinalIgnoreCase) || !resolved.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) throw new IOException("Log path changed or contains a folder link.");
+            if (!GetFileInformationByHandle(handle, out var info) || (info.Attributes & (uint)(FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0 || info.Links != 1) throw new IOException("Linked or unsupported log refused.");
+            long bytes = ((long)info.SizeHigh << 32) | info.SizeLow;
+            if (bytes < 0 || bytes > maximumBytes) throw new IOException("Log exceeds the archive budget.");
+            return new FileStream(handle, FileAccess.Read);
+        }
+        catch { handle.Dispose(); throw; }
+    }
     // Validate and delete through the same handle so a renamed/replaced path cannot
     // redirect an elevated cleanup to a different file after validation.
     public static long? DeleteEligible(string path, string root, DateTime cutoff)

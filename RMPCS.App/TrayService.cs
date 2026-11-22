@@ -10,16 +10,18 @@ internal sealed class TrayService : IDisposable
 {
     private readonly HwndSource source;
     private readonly Action show, exit;
+    private readonly Action<RMPCS.Core.CompletionNotice>? completion;
     private readonly uint taskbarCreated;
     private IntPtr icon;
     private bool added, disposed;
     private const int Callback = 0x8001;
     public bool Available => added && !disposed;
     public string Diagnostic { get; private set; } = "Not initialized";
-    public TrayService(Action show, Action exit)
+    public TrayService(Action show, Action exit, Action<RMPCS.Core.CompletionNotice>? completion = null)
     {
         this.show = show; this.exit = exit;
-        source = new HwndSource(new HwndSourceParameters("RMPCS tray") { Width = 0, Height = 0, WindowStyle = 0 });
+        this.completion = completion;
+        source = new HwndSource(new HwndSourceParameters(CompletionRelay.CurrentCaption) { Width = 0, Height = 0, WindowStyle = 0 });
         source.AddHook(Message);
         taskbarCreated = RegisterWindowMessage("TaskbarCreated");
         icon = LoadImage(IntPtr.Zero, System.IO.Path.Combine(AppContext.BaseDirectory, "RMPCS.ico"), 1, 32, 32, 0x10);
@@ -43,6 +45,12 @@ internal sealed class TrayService : IDisposable
     }
     private IntPtr Message(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        if (message == CompletionRelay.Message)
+        {
+            long value = wParam.ToInt64();
+            if (lParam.ToInt64() == CompletionRelay.Marker && value is >= 1 and <= 5 && Enum.IsDefined((RMPCS.Core.CompletionNotice)(int)value)) completion?.Invoke((RMPCS.Core.CompletionNotice)(int)value);
+            handled = true; return IntPtr.Zero;
+        }
         if ((uint)message == taskbarCreated) { if (!disposed && icon != IntPtr.Zero) { Add(); if (!Available) show(); } }
         if (message == Callback)
         {

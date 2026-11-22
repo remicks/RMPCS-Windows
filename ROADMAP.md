@@ -1,6 +1,6 @@
 # RMPCS roadmap
 
-The current build is v0.6.1: Rusty's PC Toolkit, with GitHub update checking, dedicated Settings, searchable offline Help, a LootDrop link, support summaries and interface preferences. Tray, graphical setup and all maintenance functions remain available.
+The current build is v0.7.0: Rusty's PC Toolkit, adding before/after run summaries, explicit local diagnostic log archives and opt-in completion/failure notifications. Existing Settings, Help, updates, graphical setup and maintenance safeguards remain available.
 
 ## v0.3 - implemented, supervised validation pending
 
@@ -16,9 +16,9 @@ Build and isolated/offline checks do not replace live install, task, registry-mu
 ## Next priorities
 
 1. Supervised clean-machine, missing-runtime, upgrade and uninstall testing; broaden automated Windows integration coverage.
-2. Before/after run summary with clearly measured versus estimated reclamation.
-3. Optional restore-point integration and diagnostic-log archives.
-4. Scheduled-run completion/failure notifications and workload-aware start deferral.
+2. Workload-aware scheduled start deferral with bounded retries and transparent reporting.
+3. Optional restore-point integration after supervised availability/failure testing.
+4. Broader native Windows integration coverage for summaries, archive destinations and scheduled-to-tray delivery.
 5. Drive-health/filesystem checks and supported Windows component cleanup.
 6. Broader startup coverage with explicit handling of Windows approvals and startup folders.
 7. Degenerates Inc. artwork and LootDrop-inspired visual styling.

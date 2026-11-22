@@ -44,19 +44,25 @@ public partial class App : Application
                 if (!TaskSchedulerService.IsInstalled) throw new InvalidOperationException("Scheduled care only runs from the protected installed copy.");
                 using var log = new SessionLog(e.Args[0]);
                 using var lease = RunLease.Acquire();
-                if (lease is null) { log.Write("Skipped: another maintenance session is active."); exit = 0; }
+                if (lease is null) { log.Write("Skipped: another maintenance session is active."); CompletionRelay.Send(CompletionNotice.Skipped); exit = 0; }
                 else
                 {
                     var plan = e.Args[0] == "--scheduled-repair" ? MaintenancePlan.Care : MaintenancePlan.Light;
                     log.Write(plan.Describe());
+                    var before = DriveSpaceSnapshot.Capture();
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
                     var result = await MaintenanceRunner.RunAsync(plan, new WindowsOperations(log.Write), log.Write);
+                    clock.Stop();
+                    log.Write(RunSummary.Format(result, clock.Elapsed, before, DriveSpaceSnapshot.Capture()));
                     log.Write($"Completed: {result.Failed} failed tasks; {result.SkippedEntries} file entries skipped. Review repair command output.");
                     exit = result.Failed == 0 && log.Error is null ? 0 : 1;
+                    CompletionRelay.Send(log.Error is null ? CompletionNotices.From(result) : CompletionNotice.NeedsReview);
                 }
             }
             catch (Exception ex)
             {
                 try { using var failure = new SessionLog("Scheduled startup failure"); failure.Write(ex.ToString()); } catch { }
+                CompletionRelay.Send(CompletionNotice.NeedsReview);
             }
             Shutdown(exit); return;
         }
@@ -80,7 +86,7 @@ public partial class App : Application
         if (preview && e.Args.Length == 3 && int.TryParse(e.Args[2], out int tab) && tab >= 0 && tab < window.MainTabs.Items.Count) window.MainTabs.SelectedIndex = tab;
         if (!smoke && !preview)
         {
-            try { tray = new TrayService(window.ShowFromTray, window.RequestExit); window.AttachTray(tray); }
+            try { tray = new TrayService(window.ShowFromTray, window.RequestExit, window.NotifyCompletion); window.AttachTray(tray); }
             catch (Exception ex) { window.TrayUnavailable(); if (traySmoke && e.Args.Length == 2) System.IO.File.WriteAllText(e.Args[1], "Tray creation failed: " + ex); }
         }
         desktop?.Listen(() => Dispatcher.BeginInvoke(window.ShowFromTray));

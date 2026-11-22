@@ -55,7 +55,11 @@ public interface IMaintenanceOperations
     Task ResetSearchAsync();
 }
 
-public sealed record MaintenanceResult(int Failed, int SkippedEntries, bool Stopped, bool RestartScheduled);
+public sealed record CleanupOutcome(CleanupArea Area, int Deleted, long Bytes, int Skipped, bool Complete);
+public sealed record MaintenanceResult(int Failed, int SkippedEntries, bool Stopped, bool RestartScheduled)
+{
+    public IReadOnlyList<CleanupOutcome> Cleanup { get; init; } = Array.Empty<CleanupOutcome>();
+}
 
 public static class MaintenanceRunner
 {
@@ -64,6 +68,7 @@ public static class MaintenanceRunner
         plan.Validate();
         int failed = 0, skipped = 0;
         bool restart = false;
+        var cleanup = new List<CleanupOutcome>();
         bool Stop() => shouldStop?.Invoke() == true;
         async Task<int> Command(SystemCommand command)
         {
@@ -76,10 +81,11 @@ public static class MaintenanceRunner
             try
             {
                 var result = await operations.CleanAsync(area, plan.MinimumAgeDays);
+                cleanup.Add(new(area, result.Deleted, result.Bytes, result.Skipped, true));
                 skipped += result.Skipped;
-                log($"{area}: deleted {result.Deleted:N0} entries, reclaimed {result.Bytes:N0} bytes, skipped {result.Skipped:N0} entries.");
+                log($"{area}: {(area == CleanupArea.RecycleBin ? "estimated bin decrease" : "deleted entries / logical file size")} {result.Deleted:N0} entries, {result.Bytes:N0} bytes, skipped {result.Skipped:N0} entries.");
             }
-            catch (Exception ex) { failed++; log($"{area} failed: {ex.Message}"); }
+            catch (Exception ex) { cleanup.Add(new(area, 0, 0, 0, false)); failed++; log($"{area} failed: {ex.Message}"); }
         }
         if (plan.FlushDns && !Stop()) if (await Command(SystemCommand.FlushDns) != 0) failed++;
         bool imageReady = true;
@@ -115,6 +121,6 @@ public static class MaintenanceRunner
                 if (!restart) failed++;
             }
         }
-        return new(failed, skipped, Stop(), restart);
+        return new(failed, skipped, Stop(), restart) { Cleanup = cleanup.ToArray() };
     }
 }

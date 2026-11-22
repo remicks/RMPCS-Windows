@@ -39,6 +39,7 @@ public partial class MainWindow
         CloseToTrayChoice.IsChecked = preferences.CloseToTray;
         MinimizeToTrayChoice.IsChecked = preferences.MinimizeToTray;
         TrayNotificationsChoice.IsChecked = preferences.TrayNotifications;
+        CompletionNotificationsChoice.IsChecked = preferences.CompletionNotifications;
         AutoUpdatesChoice.IsChecked = preferences.CheckUpdatesOnLaunch;
         PreviewUpdatesChoice.IsChecked = preferences.IncludePrereleases;
         StartPageChoice.SelectedItem = preferences.StartPage;
@@ -58,6 +59,7 @@ public partial class MainWindow
         {
             CloseToTray = CloseToTrayChoice.IsChecked == true, MinimizeToTray = MinimizeToTrayChoice.IsChecked == true,
             TrayNotifications = TrayNotificationsChoice.IsChecked == true, CheckUpdatesOnLaunch = AutoUpdatesChoice.IsChecked == true,
+            CompletionNotifications = CompletionNotificationsChoice.IsChecked == true,
             IncludePrereleases = PreviewUpdatesChoice.IsChecked == true, StartPage = StartPageChoice.SelectedItem as string ?? "Health",
             ActivityFontSize = ActivitySizeChoice.SelectedItem is int size ? size : 12,
             CleanupAgeDays = DefaultAgeChoice.SelectedIndex switch { 0 => 1, 2 => 30, _ => 7 }
@@ -152,5 +154,5 @@ public partial class MainWindow
     private void CopySupport_Click(object sender, RoutedEventArgs e)
     { try { Clipboard.SetText(SupportSummary.Text); Log("Support summary copied. Review it before sharing; health reports, startup commands and logs are excluded."); } catch { Log("Clipboard is unavailable. Select and copy the support summary text manually."); } }
     private void ClearActivity_Click(object sender, RoutedEventArgs e)
-    { if (busy) return; Activity.Clear(); Status.Text = "Activity view cleared. Saved run logs remain in History."; }
+    { if (busy) return; Activity.Clear(); RunSummaryText.Clear(); SummaryExpander.Visibility = Visibility.Collapsed; Status.Text = "Activity view cleared. Saved run logs remain in History."; }
 }

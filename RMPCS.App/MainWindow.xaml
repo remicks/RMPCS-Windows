@@ -89,12 +89,14 @@
      <WrapPanel><Button x:Name="DisableStartupApp" Content="Disable selected" Click="DisableStartupApp_Click" Padding="12,10"/><Button x:Name="RestoreStartupApp" Content="Restore selected" Click="RestoreStartupApp_Click" Padding="12,10"/></WrapPanel>
      <TextBlock Text="Administrator rights are required for changes. Existing live values are never overwritten on restore. Task Manager approvals, startup folders, services, scheduled tasks and packaged startup tasks are outside this manager's scope. A present Run entry may still be blocked by Windows or the app. Use Automation for RMPCS's own sign-in startup." TextWrapping="Wrap" Foreground="#596678" Margin="0,14,0,0"/>
     </StackPanel></ScrollViewer></TabItem>
-    <TabItem Header="History"><StackPanel x:Name="HistoryPanel">
+    <TabItem Header="History"><ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0"><StackPanel x:Name="HistoryPanel">
      <TextBlock Text="SAVED RUNS" FontWeight="Bold" Foreground="#596678"/><TextBlock Text="Manual and scheduled runs save local activity logs. The list shows the latest 30; files older than 30 days are eligible for log retention cleanup." TextWrapping="Wrap" Foreground="#596678" Margin="0,10,0,10"/>
      <ComboBox x:Name="HistoryFiles" DisplayMemberPath="Name"/><Button Content="Load selected log" Click="LoadHistory_Click" Margin="0,0,0,10"/><Button Content="Refresh history" Click="HistoryRefresh_Click" Margin="0,0,0,10"/>
+     <WrapPanel Margin="0,4,0,10"><Button Content="Archive selected log" Click="ArchiveSelected_Click"/><Button Content="Archive recent logs" Click="ArchiveRecent_Click"/></WrapPanel>
+     <TextBlock Text="Archives keep originals and include only saved RMPCS run logs. Private paths/output may be present. Review before sharing; ZIP files are not encrypted or uploaded." TextWrapping="Wrap" Foreground="#596678" Margin="0,0,0,10"/>
      <Button Content="Clear activity view" Click="ClearActivity_Click" Margin="0,8,0,10"/>
      <TextBlock Text="Saved logs can contain local paths and command output. Review them before sharing. Search Help for support and troubleshooting." TextWrapping="Wrap" Foreground="#596678"/>
-    </StackPanel></TabItem>
+    </StackPanel></ScrollViewer></TabItem>
     <TabItem Header="Settings"><ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0"><StackPanel x:Name="SettingsPanel">
      <TextBlock Text="SETTINGS" FontWeight="Bold" Foreground="#BE2B4E"/>
      <TextBlock x:Name="VersionLabel" FontSize="16" FontWeight="SemiBold" Margin="0,10,0,16" TextWrapping="Wrap"/>
@@ -102,6 +104,8 @@
      <CheckBox x:Name="CloseToTrayChoice" Content="Close the window to the system tray"/>
      <CheckBox x:Name="MinimizeToTrayChoice" Content="Minimize to the system tray"/>
      <CheckBox x:Name="TrayNotificationsChoice" Content="Show the first-hide tray reminder"/>
+     <CheckBox x:Name="CompletionNotificationsChoice" Content="Notify when maintenance finishes or needs review"/>
+     <TextBlock Text="Opt-in notices require this app's tray icon in the same Windows sign-in session. Scheduled notices are informational; verify results in History. Windows notification settings may suppress them." TextWrapping="Wrap" Foreground="#596678" Margin="0,2,0,10"/>
      <TextBlock Text="Exit always closes the app when no task is active. If the tray is unavailable, closing exits normally." TextWrapping="Wrap" Foreground="#596678" Margin="0,4,0,14"/>
      <TextBlock Text="Open the app on"/><ComboBox x:Name="StartPageChoice"/>
      <TextBlock Text="Activity text size"/><ComboBox x:Name="ActivitySizeChoice"/>
@@ -147,7 +151,7 @@
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <TextBlock Text="ACTIVITY" FontWeight="Bold" Foreground="#596678"/><TextBlock x:Name="Status" Grid.Row="1" Text="Ready when you are." FontSize="19" Margin="0,12,0,15" TextWrapping="Wrap"/>
     <TextBox x:Name="Activity" Grid.Row="2" BorderThickness="0" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
-    <StackPanel Grid.Row="3" Margin="0,12,0,0"><ProgressBar x:Name="Progress" Height="4" Foreground="#BE2B4E" Background="#E3E8EF" Visibility="Collapsed"/><TextBlock Text="Repairs finish before the queue stops. Overlapping maintenance sessions are blocked." TextWrapping="Wrap" Foreground="#596678" Margin="0,10,0,0"/></StackPanel>
+    <StackPanel Grid.Row="3" Margin="0,12,0,0"><Expander x:Name="SummaryExpander" Header="Last manual run summary" Visibility="Collapsed" Foreground="#596678"><TextBox x:Name="RunSummaryText" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="210" Margin="0,8,0,10"/></Expander><ProgressBar x:Name="Progress" Height="4" Foreground="#BE2B4E" Background="#E3E8EF" Visibility="Collapsed"/><TextBlock Text="Repairs finish before the queue stops. Overlapping maintenance sessions are blocked." TextWrapping="Wrap" Foreground="#596678" Margin="0,10,0,0"/></StackPanel>
    </Grid></Border>
   </Grid>
   <WrapPanel Grid.Row="3" Margin="0,16,0,0"><Button x:Name="RunButton" Content="Run selected tasks" Background="#BE2B4E" Foreground="White" Click="Run_Click"/><Button x:Name="CareButton" Content="Run recommended care" Click="Care_Click"/><Button x:Name="StopButton" Content="Stop after current task" IsEnabled="False" Click="Stop_Click"/><Button Content="Export log" Click="Export_Click"/><Button x:Name="AbortRestartButton" Content="Cancel restart" Click="AbortRestart_Click"/><Button Content="Exit" Click="Exit_Click"/></WrapPanel>
