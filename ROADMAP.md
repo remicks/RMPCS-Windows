@@ -1,6 +1,6 @@
 # RMPCS roadmap
 
-The current build is v0.4.0, with tray residency, startup to tray, consistent Windows icons, and cleaner app/setup layouts. The v0.3.1 Administrators/SYSTEM-only startup-backup protection is retained. v0.3.0 is superseded.
+The current build is v0.5.0, with a Windows-style light interface, graphical setup pages, optional shortcuts, administrator launch preference and a completion-page launch checkbox. Tray residency and startup to tray remain included. The v0.3.1 Administrators/SYSTEM-only startup-backup protection is retained. v0.3.0 is superseded.
 
 ## v0.3 - implemented, supervised validation pending
 

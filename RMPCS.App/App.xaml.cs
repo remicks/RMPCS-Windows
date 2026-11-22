@@ -61,11 +61,14 @@ public partial class App : Application
             Shutdown(exit); return;
         }
         bool smoke = e.Args.Contains("--smoke-test");
-        bool preview = e.Args.Length == 2 && e.Args[0] == "--ui-preview";
+        bool preview = e.Args.Length is 2 or 3 && e.Args[0] == "--ui-preview";
         bool traySmoke = e.Args.Length is 1 or 2 && e.Args[0] == "--tray-smoke-test";
         bool test = smoke || preview || traySmoke;
         if (!test)
         {
+            try { if (LaunchPreference.RelaunchIfRequested(e.Args)) { Shutdown(); return; } }
+            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { /* UAC cancellation leaves a usable standard session. */ }
+            catch (Exception ex) { MessageBox.Show("Administrator launch could not complete. RMPCS will open in a standard session.\n\n" + ex.Message, "RMPCS"); }
             try
             {
                 desktop = new DesktopSession();
@@ -74,6 +77,7 @@ public partial class App : Application
             catch (Exception ex) { MessageBox.Show("RMPCS could not establish its desktop session: " + ex.Message, "RMPCS"); Shutdown(1); return; }
         }
         var window = new MainWindow { TestMode = test }; MainWindow = window;
+        if (preview && e.Args.Length == 3 && int.TryParse(e.Args[2], out int tab) && tab >= 0 && tab < window.MainTabs.Items.Count) window.MainTabs.SelectedIndex = tab;
         if (!smoke && !preview)
         {
             try { tray = new TrayService(window.ShowFromTray, window.RequestExit); window.AttachTray(tray); }

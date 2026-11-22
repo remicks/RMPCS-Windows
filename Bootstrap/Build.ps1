@@ -12,7 +12,7 @@ $portableRoot=Join-Path $outputRoot 'Portable'
 New-Item -ItemType Directory -Path $portableRoot -Force | Out-Null
 $compiler=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path -LiteralPath $compiler)) { throw 'The Windows .NET Framework x64 C# compiler is required to build the bootstrap launchers.' }
-$sources=@((Join-Path $PSScriptRoot 'Program.cs'),(Join-Path $PSScriptRoot 'BootstrapPolicy.cs'))
+$sources=@((Join-Path $PSScriptRoot 'Program.cs'),(Join-Path $PSScriptRoot 'BootstrapPolicy.cs'),(Join-Path $PSScriptRoot 'SetupChoices.cs'),(Join-Path $PSScriptRoot 'SetupLayout.cs'))
 $common=@('/nologo','/target:winexe','/platform:x64','/optimize+','/warn:4',('/win32icon:'+(Join-Path $PSScriptRoot '..\Assets\RMPCS.ico')),('/win32manifest:'+(Join-Path $PSScriptRoot 'app.manifest')),'/reference:System.Windows.Forms.dll','/reference:System.Drawing.dll','/reference:System.Net.Http.dll')
 $common+=('/resource:'+(Join-Path $PSScriptRoot '..\Assets\RMPCS.png')+',BrandArtwork')
 $payloadFiles=@(Get-ChildItem -LiteralPath $appRoot -File | Where-Object Extension -ne '.pdb')

@@ -41,8 +41,9 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         AdminStatus.Text = admin ? "Administrator session" : "Standard session";
+        ElevateButton.Visibility = admin ? Visibility.Collapsed : Visibility.Visible;
         SetBusy(false);
-        Log("RMPCS 0.4.0 - Written by Wade. Health scan, cleanup previews and startup management are ready.");
+        Log("RMPCS 0.5.0 - Written by Wade. Health scan, cleanup previews and startup management are ready.");
         Log("Select full batch to include advanced tasks and reboot, or use recommended care.");
     }
     public void CheckAdministrator(bool showWarning = true)
@@ -73,6 +74,7 @@ public partial class MainWindow : Window
         RunButton.IsEnabled = CareButton.IsEnabled = AutomationPanel.IsEnabled = !value && admin;
         ElevateButton.IsEnabled = !value && !admin;
         StopButton.IsEnabled = value;
+        StopButton.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
         Progress.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
         Progress.IsIndeterminate = value;
     }

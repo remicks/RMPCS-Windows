@@ -76,6 +76,9 @@ try
     Check(DesktopPolicy.HideOnClose(true, false, false) && !DesktopPolicy.HideOnClose(false, false, false), "close hides only when a tray icon is available");
     Check(!DesktopPolicy.HideOnClose(true, true, false) && !DesktopPolicy.HideOnClose(true, false, true), "explicit exit and smoke checks close without hiding");
     Check(!DesktopPolicy.CanExit(true) && DesktopPolicy.CanExit(false), "explicit exit cannot interrupt an active operation");
+    Check(InstallLaunchPolicy.RequestElevation(true, false, "1"), "installed administrator preference requests elevation for standard sessions");
+    Check(!InstallLaunchPolicy.RequestElevation(false, false, "1") && !InstallLaunchPolicy.RequestElevation(true, true, "1"), "portable and already-elevated sessions never auto-elevate");
+    Check(!InstallLaunchPolicy.RequestElevation(true, false, "0") && !InstallLaunchPolicy.RequestElevation(true, false, null) && !InstallLaunchPolicy.RequestElevation(true, false, "yes"), "missing, disabled or malformed administrator preferences do not auto-elevate");
     Console.WriteLine($"{checks} checks passed.");
 }
 finally

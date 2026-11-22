@@ -1,4 +1,4 @@
-# RMPCS v0.4 runtime setup
+# RMPCS v0.5 runtime setup
 
 ## Easiest path
 
