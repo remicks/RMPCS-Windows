@@ -16,8 +16,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-[assembly: AssemblyVersion("0.3.1.0")]
-[assembly: AssemblyFileVersion("0.3.1.0")]
+[assembly: AssemblyVersion("0.4.0.0")]
+[assembly: AssemblyFileVersion("0.4.0.0")]
 [assembly: AssemblyProduct("RMPCS")]
 [assembly: AssemblyCompany("Degenerates Inc.")]
 
@@ -86,15 +86,23 @@ namespace RMPCS.Bootstrap
             }
             Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
             bool smoke = Array.IndexOf(args, "--smoke-test") >= 0;
+            bool preview = args.Length == 2 && args[0] == "--ui-preview";
             try
             {
-                if (!Installer && !smoke && Array.IndexOf(args, "--setup") < 0 && RuntimePresent())
+                if (!Installer && !smoke && !preview && Array.IndexOf(args, "--setup") < 0 && RuntimePresent())
                 {
                     using (var ownership = new HeldPayload(OpenVerifiedPayload()))
                     { using (var app = Process.Start(new ProcessStartInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RMPCS.exe")) { UseShellExecute = false, WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory })) app.WaitForExit(); }
                     return 0;
                 }
-                using (var form = new SetupForm()) { if (smoke) form.Shown += delegate { form.BeginInvoke((Action)delegate { form.Close(); }); }; Application.Run(form); }
+                using (var form = new SetupForm())
+                {
+                    if (smoke || preview) form.Shown += delegate { form.BeginInvoke((Action)delegate {
+                        if (!smoke) using (var bitmap = new Bitmap(form.Width, form.Height)) { form.DrawToBitmap(bitmap, new Rectangle(0,0,form.Width,form.Height)); bitmap.Save(args[1], System.Drawing.Imaging.ImageFormat.Png); }
+                        form.Close();
+                    }); };
+                    Application.Run(form);
+                }
                 return 0;
             }
             catch (Exception ex) { MessageBox.Show(ex.Message, "RMPCS setup could not continue", MessageBoxButtons.OK, MessageBoxIcon.Error); return 1; }
@@ -137,20 +145,32 @@ namespace RMPCS.Bootstrap
         private string offlinePath;
         public SetupForm()
         {
-            Text = Program.Installer ? "RMPCS 0.3.1 Setup" : "RMPCS portable - first-run setup";
-            ClientSize = new Size(650, 370); StartPosition = FormStartPosition.CenterScreen; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
+            Text = Program.Installer ? "RMPCS 0.4.0 Setup" : "RMPCS portable - first-run setup";
+            AutoScaleDimensions = new SizeF(96,96); AutoScaleMode = AutoScaleMode.Dpi;
+            ClientSize = new Size(720, 485); StartPosition = FormStartPosition.CenterScreen; FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
+            Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
             BackColor = Color.FromArgb(16,19,28); ForeColor = Color.White; Font = new Font("Segoe UI", 10);
-            var title = new Label { Text = "DEGENERATES INC. / RMPCS 0.3", Left = 24, Top = 20, Width = 600, Height = 35, ForeColor = Color.FromArgb(241,91,120), Font = new Font("Segoe UI", 16, FontStyle.Bold) };
-            status.SetBounds(24,70,600,85); status.Text = Program.RuntimePresent() ? "Compatible .NET 10 Desktop Runtime detected.\n" + (Program.Installer ? "Continue to install RMPCS. Startup and schedules remain off." : "Continue to open portable RMPCS.") : "The .NET 10 Desktop Runtime (Windows x64) is missing.\nYou may install it now, use the exact verified offline installer, or cancel and install it manually.";
-            prerequisite.SetBounds(24,165,600,48); prerequisite.Text = "Download and install the missing Microsoft Desktop Runtime (10.0.15)"; prerequisite.Checked = true; prerequisite.Visible = !Program.RuntimePresent();
-            var notice = new Label { Left=24, Top=220, Width=600, Height=45, Text="The shared runtime is installed system-wide, including for portable use. Microsoft/Windows setup may ask for administrator access and license acceptance." };
-            progress.SetBounds(24,275,600,10);
-            proceed.SetBounds(24,305,180,35); proceed.Text = Program.Installer ? "Continue installation" : "Launch RMPCS"; proceed.Click += async delegate { await ContinueAsync(); };
-            offline.SetBounds(216,305,205,35); offline.Text = "Use offline runtime installer"; offline.Enabled = !Program.RuntimePresent(); offline.Click += delegate { using (var dialog = new OpenFileDialog { Filter="Microsoft runtime installer (*.exe)|*.exe" }) if (dialog.ShowDialog(this) == DialogResult.OK) { offlinePath = dialog.FileName; prerequisite.Checked = true; status.Text = "Offline installer selected. Its pinned checksum and Microsoft signature will be verified before it runs."; } };
-            cancel.SetBounds(435,305,100,35); cancel.Text="Cancel"; cancel.Click += delegate { if (busy && !installing) cancellation.Cancel(); else if (!busy) Close(); };
-            var help = new LinkLabel { Left=24, Top=345, Width=600, Height=22, Text="Official Microsoft .NET 10 Desktop Runtime downloads", LinkColor=Color.LightBlue };
+            Bitmap brandImage;
+            using (var stream=Assembly.GetExecutingAssembly().GetManifestResourceStream("BrandArtwork")) using (var image=Image.FromStream(stream)) brandImage=new Bitmap(image);
+            var artwork = new PictureBox { Left=28, Top=25, Width=64, Height=64, SizeMode=PictureBoxSizeMode.Zoom, Image=brandImage, AccessibleName="RMPCS shield and pulse icon" };
+            var title = new Label { Text = Program.Installer ? "Install RMPCS" : "Welcome to RMPCS", Left = 110, Top = 24, Width = 570, Height = 38, Font = new Font("Segoe UI", 23, FontStyle.Bold) };
+            var brand = new Label { Text="DEGENERATES INC.   /   PC TOOLKIT   /   0.4", Left=113, Top=68, Width=550, Height=22, ForeColor=Color.FromArgb(165,174,198), Font=new Font("Segoe UI",9) };
+            var card = new Panel { Left=28,Top=116,Width=664,Height=138,BackColor=Color.FromArgb(27,33,49) };
+            var step = new Label { Text="01  CHECK REQUIREMENTS    /    02  "+(Program.Installer ? "INSTALL" : "OPEN TOOLKIT"),Left=16,Top=14,Width=628,Height=22,ForeColor=Color.FromArgb(241,91,120),Font=new Font("Segoe UI",9,FontStyle.Bold) };
+            status.SetBounds(16,46,628,82); status.Text = Program.RuntimePresent() ? "Microsoft .NET 10 Desktop Runtime is ready.\n" + (Program.Installer ? "Continue to install RMPCS. Startup to tray and maintenance schedules are opt-in." : "Your portable toolkit is ready to open.") : "Microsoft .NET 10 Desktop Runtime (Windows x64) is required.\nInstall it now or choose the exact verified offline installer. You can also cancel and install it manually.";
+            card.Controls.AddRange(new Control[] {step,status});
+            prerequisite.SetBounds(28,266,664,42); prerequisite.Text = "Install the missing Microsoft Desktop Runtime (10.0.15)"; prerequisite.Checked = true; prerequisite.Visible = !Program.RuntimePresent();
+            var notice = new Label { Left=28, Top=316, Width=664, Height=46, ForeColor=Color.FromArgb(165,174,198), Text="Runtime downloads are verified before setup. The shared runtime is installed system-wide. Windows or Microsoft setup may request administrator access and license acceptance." };
+            progress.SetBounds(28,378,664,5);
+            proceed.SetBounds(28,402,190,40); proceed.Text = Program.Installer ? "Continue installation" : "Launch RMPCS"; proceed.Click += async delegate { await ContinueAsync(); };
+            offline.SetBounds(230,402,286,40); offline.Text = "Use offline runtime installer"; offline.Enabled = !Program.RuntimePresent(); offline.Click += delegate { using (var dialog = new OpenFileDialog { Filter="Microsoft runtime installer (*.exe)|*.exe" }) if (dialog.ShowDialog(this) == DialogResult.OK) { offlinePath = dialog.FileName; prerequisite.Checked = true; status.Text = "Offline installer selected. Its pinned checksum and Microsoft signature will be verified before it runs."; } };
+            cancel.SetBounds(528,402,164,40); cancel.Text="Cancel"; cancel.Click += delegate { if (busy && !installing) cancellation.Cancel(); else if (!busy) Close(); };
+            foreach (Button button in new Button[] {proceed,offline,cancel}) { button.FlatStyle=FlatStyle.Flat; button.FlatAppearance.BorderSize=0; button.BackColor=Color.FromArgb(39,45,64); button.ForeColor=Color.White; button.Cursor=Cursors.Hand; button.UseVisualStyleBackColor=false; }
+            proceed.BackColor=Color.FromArgb(199,53,86);
+            var help = new LinkLabel { Left=28, Top=455, Width=664, Height=22, Text="Official Microsoft runtime downloads", LinkColor=Color.LightBlue };
             help.LinkClicked += delegate { Process.Start(new ProcessStartInfo("https://dotnet.microsoft.com/en-us/download/dotnet/10.0") { UseShellExecute = true }); };
-            Controls.AddRange(new Control[] { title,status,prerequisite,notice,progress,proceed,offline,cancel,help });
+            Controls.AddRange(new Control[] { artwork,title,brand,card,prerequisite,notice,progress,proceed,offline,cancel,help });
+            FormClosed += delegate { brandImage.Dispose(); cancellation.Dispose(); };
             FormClosing += delegate(object sender, FormClosingEventArgs e) { if (busy) { e.Cancel=true; if (!installing) cancellation.Cancel(); status.Text = installing ? "Finish or cancel the Windows/Microsoft installer first. Its process will not be terminated by this launcher." : "Cancelling download..."; } };
         }
         private async Task ContinueAsync()

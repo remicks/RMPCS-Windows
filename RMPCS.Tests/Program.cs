@@ -71,6 +71,11 @@ try
     File.SetAttributes(pf, FileAttributes.Normal);
     await WorkflowChecks.RunAsync(Check);
     await Version03Checks.RunAsync(Check);
+    Check(DesktopPolicy.StartHidden(new[] { "--startup" }) && !DesktopPolicy.StartHidden(Array.Empty<string>()), "sign-in startup hides to tray; normal launches stay visible");
+    Check(!DesktopPolicy.StartHidden(new[] { "--scheduled-light" }) && !DesktopPolicy.StartHidden(new[] { "--scheduled-repair" }), "maintenance profiles remain separate from desktop tray startup");
+    Check(DesktopPolicy.HideOnClose(true, false, false) && !DesktopPolicy.HideOnClose(false, false, false), "close hides only when a tray icon is available");
+    Check(!DesktopPolicy.HideOnClose(true, true, false) && !DesktopPolicy.HideOnClose(true, false, true), "explicit exit and smoke checks close without hiding");
+    Check(!DesktopPolicy.CanExit(true) && DesktopPolicy.CanExit(false), "explicit exit cannot interrupt an active operation");
     Console.WriteLine($"{checks} checks passed.");
 }
 finally

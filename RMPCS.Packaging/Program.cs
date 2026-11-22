@@ -34,6 +34,10 @@ db.Sql("CREATE TABLE `File` (`File` CHAR(72) NOT NULL, `Component_` CHAR(72) NOT
 db.Sql("CREATE TABLE `Media` (`DiskId` SHORT NOT NULL, `LastSequence` LONG NOT NULL, `DiskPrompt` CHAR(64) LOCALIZABLE, `Cabinet` CHAR(255), `VolumeLabel` CHAR(32), `Source` CHAR(72) PRIMARY KEY `DiskId`)");
 db.Sql("CREATE TABLE `MsiFileHash` (`File_` CHAR(72) NOT NULL, `Options` SHORT NOT NULL, `HashPart1` LONG NOT NULL, `HashPart2` LONG NOT NULL, `HashPart3` LONG NOT NULL, `HashPart4` LONG NOT NULL PRIMARY KEY `File_`)");
 db.Sql("CREATE TABLE `Shortcut` (`Shortcut` CHAR(72) NOT NULL, `Directory_` CHAR(72) NOT NULL, `Name` CHAR(128) NOT NULL LOCALIZABLE, `Component_` CHAR(72) NOT NULL, `Target` CHAR(255), `Arguments` CHAR(255), `Description` CHAR(255) LOCALIZABLE, `Hotkey` SHORT, `Icon_` CHAR(72), `IconIndex` SHORT, `ShowCmd` SHORT, `WkDir` CHAR(72) PRIMARY KEY `Shortcut`)");
+db.Sql("CREATE TABLE `Icon` (`Name` CHAR(72) NOT NULL, `Data` OBJECT NOT NULL PRIMARY KEY `Name`)");
+db.Sql("CREATE TABLE `Binary` (`Name` CHAR(72) NOT NULL, `Data` OBJECT NOT NULL PRIMARY KEY `Name`)");
+db.Binary("Icon", "RMPCS.ico", Path.Combine(payload, "RMPCS.ico"));
+db.Binary("Binary", "BrandIcon", Path.Combine(payload, "RMPCS.ico"));
 db.Sql("CREATE TABLE `RemoveFile` (`FileKey` CHAR(72) NOT NULL, `Component_` CHAR(72) NOT NULL, `FileName` CHAR(255) LOCALIZABLE, `DirProperty` CHAR(72) NOT NULL, `InstallMode` SHORT NOT NULL PRIMARY KEY `FileKey`)");
 db.Sql("CREATE TABLE `CustomAction` (`Action` CHAR(72) NOT NULL, `Type` SHORT NOT NULL, `Source` CHAR(72), `Target` CHAR(0) PRIMARY KEY `Action`)");
 db.Sql("CREATE TABLE `LaunchCondition` (`Condition` CHAR(255) NOT NULL, `Description` CHAR(255) NOT NULL LOCALIZABLE PRIMARY KEY `Condition`)");
@@ -47,14 +51,15 @@ foreach (var sequence in new[] { "InstallExecuteSequence", "InstallUISequence" }
 const string upgrade = "{C19B49F3-55BC-4427-AE35-3E1E27B732A5}";
 string product = Guid.NewGuid().ToString("B").ToUpperInvariant();
 foreach (var property in new Dictionary<string,string> {
-    ["ProductCode"] = product, ["UpgradeCode"] = upgrade, ["ProductName"] = "RMPCS", ["ProductVersion"] = "0.3.1", ["ProductLanguage"] = "1033",
-    ["Manufacturer"] = "Degenerates Inc.", ["ALLUSERS"] = "1", ["ARPNOMODIFY"] = "1", ["ARPCOMMENTS"] = "Wade's PC maintenance toolkit. Automation is opt-in.",
+    ["ProductCode"] = product, ["UpgradeCode"] = upgrade, ["ProductName"] = "RMPCS", ["ProductVersion"] = "0.4.0", ["ProductLanguage"] = "1033",
+    ["Manufacturer"] = "Degenerates Inc.", ["ALLUSERS"] = "1", ["ARPNOMODIFY"] = "1", ["ARPPRODUCTICON"] = "RMPCS.ico", ["ARPCOMMENTS"] = "Wade's PC maintenance toolkit. Automation is opt-in.",
     ["SecureCustomProperties"] = "OLDPRODUCTS;NEWERFOUND;DOTNETDESKTOP10", ["MSIRESTARTMANAGERCONTROL"] = "Disable", ["MSIDISABLERMRESTART"] = "1", ["INSTALLLEVEL"] = "1" }) db.Row("Property", property.Key, property.Value);
 db.Row("Directory", "TARGETDIR", null, "SourceDir");
 db.Row("Directory", "ProgramFiles64Folder", "TARGETDIR", ".");
 db.Row("Directory", "VENDORFOLDER", "ProgramFiles64Folder", "DEGENE~1|Degenerates Inc");
 db.Row("Directory", "INSTALLFOLDER", "VENDORFOLDER", "RMPCS");
 db.Row("Directory", "ProgramMenuFolder", "TARGETDIR", ".");
+db.Row("Directory", "DesktopFolder", "TARGETDIR", ".");
 db.Row("Directory", "MENUFOLDER", "ProgramMenuFolder", "RMPCS");
 db.Row("Directory", "SystemFolder", "TARGETDIR", ".");
 db.Row("Directory", "System64Folder", "TARGETDIR", ".");
@@ -77,7 +82,8 @@ for (int i = 0; i < files.Length; i++)
     }
 }
 string exeComponent = $"C{exeIndex:0000}";
-db.Row("Shortcut", "StartMenu", "MENUFOLDER", "RMPCS", exeComponent, $"[#F{exeIndex:0000}]", null, "Wade's PC maintenance toolkit", null, null, null, 1, "INSTALLFOLDER");
+db.Row("Shortcut", "StartMenu", "MENUFOLDER", "RMPCS", exeComponent, $"[#F{exeIndex:0000}]", null, "Wade's PC maintenance toolkit", null, "RMPCS.ico", 0, 1, "INSTALLFOLDER");
+db.Row("Shortcut", "Desktop", "DesktopFolder", "RMPCS", exeComponent, $"[#F{exeIndex:0000}]", null, "Wade's PC maintenance toolkit", null, "RMPCS.ico", 0, 1, "INSTALLFOLDER");
 db.Row("RemoveFile", "MenuDirectory", exeComponent, null, "MENUFOLDER", 2);
 db.Row("RemoveFile", "InstallDirectory", exeComponent, null, "INSTALLFOLDER", 2);
 db.Row("RemoveFile", "VendorDirectory", exeComponent, null, "VENDORFOLDER", 2);
@@ -88,8 +94,8 @@ db.Row("DrLocator", "Desktop10File", "DotnetRoot", @"shared\Microsoft.WindowsDes
 db.Row("Signature", "Desktop10File", "PresentationFramework.dll", "10.0.0.0", "10.65535.65535.65535", null, null, null, null, null);
 db.Row("LaunchCondition", "Installed OR DOTNETDESKTOP10", "Install the Microsoft .NET 10 Desktop Runtime (Windows x64), then run this installer again. Download: https://dotnet.microsoft.com/download/dotnet/10.0");
 db.Row("LaunchCondition", "VersionNT64", "RMPCS requires 64-bit Windows.");
-db.Row("Upgrade", upgrade, "0.0.0", "0.3.1", "1033", 257, null, "OLDPRODUCTS");
-db.Row("Upgrade", upgrade, "0.3.1", null, "1033", 258, null, "NEWERFOUND");
+db.Row("Upgrade", upgrade, "0.0.0", "0.4.0", "1033", 257, null, "OLDPRODUCTS");
+db.Row("Upgrade", upgrade, "0.4.0", null, "1033", 258, null, "NEWERFOUND");
 db.Row("LaunchCondition", "Installed OR NOT NEWERFOUND", "The same or a newer RMPCS version is installed. Uninstall it first or use its Repair option.");
 string cleanupId = $"F{files.Length - 1:0000}";
 db.Row("CustomAction", "CleanupTasks", 3106, "System64Folder", $"\"[System64Folder]WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"[#{cleanupId}]\" -InstallRoot \"[INSTALLFOLDER].\"");
@@ -101,18 +107,24 @@ db.Sql("CREATE TABLE `Control` (`Dialog_` CHAR(72) NOT NULL, `Control` CHAR(50) 
 db.Sql("CREATE TABLE `ControlEvent` (`Dialog_` CHAR(72) NOT NULL, `Control_` CHAR(50) NOT NULL, `Event` CHAR(50) NOT NULL, `Argument` CHAR(255), `Condition` CHAR(255), `Ordering` SHORT PRIMARY KEY `Dialog_`, `Control_`, `Event`, `Argument`, `Condition`)");
 db.Sql("CREATE TABLE `TextStyle` (`TextStyle` CHAR(72) NOT NULL, `FaceName` CHAR(32) NOT NULL, `Size` SHORT NOT NULL, `Color` LONG, `StyleBits` SHORT PRIMARY KEY `TextStyle`)");
 db.Row("TextStyle", "Normal", "Segoe UI", 9, 0, 0); db.Row("Property", "DefaultUIFont", "Normal");
+db.Row("TextStyle", "Heading", "Segoe UI", 18, 5649863, 1);
+db.Row("TextStyle", "Muted", "Segoe UI", 9, 7366232, 0);
 void Dialog(string name, string title, string body, string button, string action, string? property = null)
 {
-    db.Row("Dialog", name, 50, 50, 370, 230, 3, title, "Continue", "Continue", "Cancel");
-    db.Row("Control", name, "Title", "Text", 20, 18, 330, 25, 3, null, title, null, null);
-    db.Row("Control", name, "Body", "Text", 20, 55, 330, 120, 3, null, body, null, null);
-    db.Row("Control", name, "Continue", "PushButton", 190, 195, 75, 22, 3, null, button, "Cancel", null);
-    db.Row("Control", name, "Cancel", "PushButton", 275, 195, 75, 22, 3, null, "Cancel", "Continue", null);
+    db.Row("Dialog", name, 50, 50, 420, 285, 3, title, "Continue", "Continue", "Cancel");
+    db.Row("Control", name, "Brand", "Icon", 20, 18, 36, 36, 3, null, "BrandIcon", null, null);
+    db.Row("Control", name, "Title", "Text", 70, 20, 330, 30, 3, null, "{\\Heading}" + title, null, null);
+    db.Row("Control", name, "Subtitle", "Text", 70, 52, 330, 20, 3, null, "{\\Muted}DEGENERATES INC.  /  PC TOOLKIT", null, null);
+    db.Row("Control", name, "Divider", "Line", 20, 80, 380, 1, 3, null, null, null, null);
+    db.Row("Control", name, "Body", "Text", 24, 94, 372, 130, 3, null, body, null, null);
+    db.Row("Control", name, "Footer", "Text", 24, 248, 190, 22, 3, null, "{\\Muted}Startup and schedules are opt-in.", null, null);
+    db.Row("Control", name, "Continue", "PushButton", 236, 244, 76, 24, 3, null, button, "Cancel", null);
+    db.Row("Control", name, "Cancel", "PushButton", 322, 244, 76, 24, 3, null, "Cancel", "Continue", null);
     if (property is not null) db.Row("ControlEvent", name, "Continue", property, "ALL", "1", 1);
     db.Row("ControlEvent", name, "Continue", "EndDialog", action, "1", 2);
     db.Row("ControlEvent", name, "Cancel", "EndDialog", "Exit", "1", 1);
 }
-Dialog("WelcomeDlg", "RMPCS 0.3.1 Setup", "Install Wade's PC maintenance toolkit to:\n[ProgramFiles64Folder]Degenerates Inc\\RMPCS\n\nRequires the .NET 10 Desktop Runtime.\n\nCreates a Start Menu shortcut and an uninstall entry. Startup and schedules remain OFF until you enable them in the app.\n\nClose RMPCS before installing or updating.", "Install", "Return");
+Dialog("WelcomeDlg", "RMPCS 0.4.0 Setup", "Install Wade's PC maintenance toolkit to:\n[ProgramFiles64Folder]Degenerates Inc\\RMPCS\n\nRequires the .NET 10 Desktop Runtime.\n\nCreates a Start Menu shortcut and an uninstall entry. Startup and schedules remain OFF until you enable them in the app.\n\nClose RMPCS before installing or updating.", "Install", "Return");
 Dialog("RemoveDlg", "Remove RMPCS", "Remove the installed application and its startup/maintenance tasks.\n\nClose RMPCS first and allow active repairs to finish.\n\nSaved logs in your user profile are preserved.\n\nUse Windows Installed apps to repair the installation if needed.", "Remove", "Return", "[REMOVE]");
 foreach (var (action, number) in new (string,int)[] { ("FindRelatedProducts",25), ("AppSearch",50), ("LaunchConditions",100), ("CostInitialize",800), ("FileCost",900), ("CostFinalize",1000), ("ExecuteAction",1300) }) db.Row("InstallUISequence", action, null, number);
 db.Row("InstallUISequence", "WelcomeDlg", "NOT Installed", 1100);
@@ -208,6 +220,18 @@ sealed class MsiDatabase : IDisposable
         }
         finally { MsiNative.MsiCloseHandle(record); }
     }
+    public void Binary(string table, string name, string path)
+    {
+        uint record = MsiNative.MsiCreateRecord(2);
+        try
+        {
+            MsiNative.Check(MsiNative.MsiRecordSetStringW(record, 1, name), "Binary name");
+            MsiNative.Check(MsiNative.MsiRecordSetStreamW(record, 2, path), "Binary data");
+            MsiNative.Check(MsiNative.MsiDatabaseOpenViewW(handle, $"INSERT INTO `{table}` (`Name`, `Data`) VALUES (?, ?)", out uint view), "Binary view");
+            try { MsiNative.Check(MsiNative.MsiViewExecute(view, record), "Insert binary"); } finally { MsiNative.MsiCloseHandle(view); }
+        }
+        finally { MsiNative.MsiCloseHandle(record); }
+    }
     public void Summary(uint property, object value)
     {
         MsiNative.Check(MsiNative.MsiGetSummaryInformationW(handle, null, 20, out uint info), "Summary open");
@@ -256,7 +280,7 @@ static class MsiVerification
         using var db = new MsiDatabase(Path.GetFullPath(package), true);
         void Check(bool valid, string description) { if (!valid) throw new InvalidDataException(description); Console.WriteLine("PASS: " + description); }
         var properties = db.Query("SELECT `Property`,`Value` FROM `Property`").ToDictionary(r => r[0], r => r[1]);
-        Check(properties["ProductVersion"] == "0.3.1" && properties["ALLUSERS"] == "1", "MSI version and per-machine installation metadata");
+        Check(properties["ProductVersion"] == "0.4.0" && properties["ALLUSERS"] == "1", "MSI version and per-machine installation metadata");
         var components = db.Query("SELECT `Component`,`ComponentId`,`Attributes`,`KeyPath` FROM `Component`");
         Check(components.All(c => c[2] == "256" && Guid.TryParse(c[1], out _)), "all installed components are x64 and have valid identities");
         var fileRows = db.Query("SELECT `File`,`Component_`,`FileName`,`FileSize` FROM `File`");
@@ -267,7 +291,9 @@ static class MsiVerification
         var locator = db.Query("SELECT `Type` FROM `RegLocator`");
         Check(locator.Single()[0] == "0", "runtime detection uses .NET's registered 32-bit registry view");
         Check(db.Query("SELECT `MinVersion` FROM `Signature`").Single()[0] == "10.0.0.0", "installer checks the .NET 10 Desktop Runtime version");
-        Check(db.Query("SELECT `Action` FROM `InstallUISequence`").Any(r => r[0] == "WelcomeDlg") && db.Query("SELECT `Shortcut` FROM `Shortcut`").Count == 1, "installer has an install dialog and Start Menu shortcut");
+        var shortcuts = db.Query("SELECT `Shortcut`,`Icon_`,`IconIndex` FROM `Shortcut`");
+        Check(db.Query("SELECT `Action` FROM `InstallUISequence`").Any(r => r[0] == "WelcomeDlg") && shortcuts.Count == 2 && shortcuts.All(r => r[1] == "RMPCS.ico" && r[2] == "0"), "installer has branded Start Menu and desktop shortcuts");
+        Check(properties["ARPPRODUCTICON"] == "RMPCS.ico" && db.Query("SELECT `Name` FROM `Icon`").Single()[0] == "RMPCS.ico" && db.Query("SELECT `Name` FROM `Binary`").Single()[0] == "BrandIcon", "installer embeds branding for dialogs and Installed apps");
         var verifyFolder = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(package))!, "verify-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(verifyFolder);
         string cabinet = Path.Combine(verifyFolder, "payload.cab"); db.ExtractCabinet(cabinet);

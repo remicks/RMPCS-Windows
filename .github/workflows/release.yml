@@ -1,0 +1,43 @@
+name: Build Windows prerelease
+on:
+  push:
+    branches: [main]
+    paths: [release-version.txt]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rmpcs-release
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 10.0.x
+      - name: Validate version and build distributions
+        shell: pwsh
+        run: |
+          $version=(Get-Content release-version.txt -Raw).Trim()
+          $appVersion=([xml](Get-Content RMPCS.App/RMPCS.App.csproj -Raw)).Project.PropertyGroup.Version
+          if($version -notmatch '^\d+\.\d+\.\d+$' -or $version -ne $appVersion){throw 'Release/app version mismatch'}
+          ./Build-Release.ps1
+      - name: Publish immutable set of prerelease files
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version=(Get-Content release-version.txt -Raw).Trim()
+          $tag='v'+$version
+          gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+          if($LASTEXITCODE -eq 0){throw 'Release already exists; bump release-version.txt instead of replacing published files'}
+          $files=@("artifacts/v$version/Bootstrap/RMPCS.Setup.exe","artifacts/v$version/RMPCS-Setup-$version-x64.msi","artifacts/RMPCS-v$version-win-x64-portable.zip","artifacts/RMPCS-v$version-icons.zip","artifacts/RMPCS-v$version.zip",'RUNTIMES.md',"artifacts/v$version/SHA256SUMS.txt")
+          gh release create $tag @files --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --prerelease --title "RMPCS v$version - Tray and desktop refresh" --notes-file RELEASE-NOTES.md
+          if($LASTEXITCODE -ne 0){throw 'Release publication failed'}

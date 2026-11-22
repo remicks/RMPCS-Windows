@@ -1,6 +1,6 @@
 # RMPCS roadmap
 
-The current v0.3 build is v0.3.1, including explicit Administrators/SYSTEM-only protection for startup backups. v0.3.0 is superseded.
+The current build is v0.4.0, with tray residency, startup to tray, consistent Windows icons, and cleaner app/setup layouts. The v0.3.1 Administrators/SYSTEM-only startup-backup protection is retained. v0.3.0 is superseded.
 
 ## v0.3 - implemented, supervised validation pending
 

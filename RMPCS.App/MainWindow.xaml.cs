@@ -12,22 +12,46 @@ namespace RMPCS.App;
 public partial class MainWindow : Window
 {
     private bool busy, stopRequested;
+    private TrayService? tray;
+    private bool exitRequested, trayNoticeShown;
+    internal bool TestMode { get; set; }
+    internal bool SessionEnding { get; set; }
+    internal void AttachTray(TrayService service) { tray = service; TrayStatus.Text = service.Available ? "Close or minimize to keep RMPCS in the tray." : "Tray unavailable. Closing will exit RMPCS."; }
+    internal void TrayUnavailable() => TrayStatus.Text = "Tray unavailable. Closing will exit RMPCS.";
+    internal void ShowFromTray()
+    {
+        Show(); WindowState = WindowState.Normal; Activate();
+    }
+    internal void HideToTray()
+    {
+        if (tray?.Available != true) return;
+        Hide();
+        if (!trayNoticeShown) { tray.Notify("Still running in the system tray. Click the icon to reopen, or right-click it to Exit."); trayNoticeShown = true; }
+    }
+    internal void RequestExit()
+    {
+        if (!DesktopPolicy.CanExit(busy)) { ShowFromTray(); MessageBox.Show(this, "Wait for the active task to finish. Stop after current task prevents later tasks from starting.", "Task running"); return; }
+        exitRequested = true; Close();
+    }
+    private void Tray_Click(object sender, RoutedEventArgs e) => HideToTray();
+    private void Exit_Click(object sender, RoutedEventArgs e) => RequestExit();
+    private void Window_StateChanged(object? sender, EventArgs e) { if (WindowState == WindowState.Minimized && !TestMode) HideToTray(); }
     private readonly bool admin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
     public MainWindow()
     {
         InitializeComponent();
         AdminStatus.Text = admin ? "Administrator session" : "Standard session";
         SetBusy(false);
-        Log("RMPCS 0.3.1 - Written by Wade. Health scan, cleanup previews and startup management are ready.");
+        Log("RMPCS 0.4.0 - Written by Wade. Health scan, cleanup previews and startup management are ready.");
         Log("Select full batch to include advanced tasks and reboot, or use recommended care.");
     }
-    public void CheckAdministrator()
+    public void CheckAdministrator(bool showWarning = true)
     {
         if (admin) try { StartupBackupSecurity.Protect(false); } catch (Exception ex) { Log("Startup backup protection requires attention: " + ex.Message); }
         if (!admin)
         {
             Status.Text = "Administrator access required.";
-            MessageBox.Show(this, "Right-click RMPCS.exe and select Run as administrator, or use the Run as administrator button here. Maintenance and automation changes stay disabled until you relaunch with admin rights.", "Run RMPCS as administrator", MessageBoxButton.OK, MessageBoxImage.Warning);
+            if (showWarning) MessageBox.Show(this, "Right-click RMPCS.exe and select Run as administrator, or use the Run as administrator button here. Maintenance and automation changes stay disabled until you relaunch with admin rights.", "Run RMPCS as administrator", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         RefreshAutomation();
         RefreshHistory();
@@ -42,6 +66,7 @@ public partial class MainWindow : Window
     private void SetBusy(bool value)
     {
         busy = value;
+        tray?.Status(value);
         TaskPanel.IsEnabled = PreviewButton.IsEnabled = HistoryPanel.IsEnabled = !value;
         HealthPanel.IsEnabled = StartupAppsPanel.IsEnabled = !value;
         DisableStartupApp.IsEnabled = RestoreStartupApp.IsEnabled = !value && admin;
@@ -76,7 +101,7 @@ public partial class MainWindow : Window
         RebootDelay.SelectedIndex = plan.RestartSeconds switch { 10 => 0, 300 => 2, _ => 1 };
     }
     private void SelectCare_Click(object sender, RoutedEventArgs e) => ApplyPlan(MaintenancePlan.Care);
-    private void SelectBatch_Click(object sender, RoutedEventArgs e) { ApplyPlan(MaintenancePlan.FullBatch); Status.Text = "Full batch selected. Review advanced tasks and reboot before running."; }
+    private void SelectBatch_Click(object sender, RoutedEventArgs e) { ApplyPlan(MaintenancePlan.FullBatch); AdvancedOptions.IsExpanded = true; Status.Text = "Full batch selected. Review advanced tasks and reboot before running."; }
     private async void Care_Click(object sender, RoutedEventArgs e) { ApplyPlan(MaintenancePlan.Care); await StartPlanAsync(SelectedPlan()); }
     private async void Run_Click(object sender, RoutedEventArgs e) => await StartPlanAsync(SelectedPlan());
     private async Task StartPlanAsync(MaintenancePlan plan)
@@ -116,6 +141,7 @@ public partial class MainWindow : Window
         var plan = SelectedPlan();
         if (!plan.CleanupAreas().Any()) { Status.Text = "Select a file cleanup task first."; return; }
         stopRequested = false; SetBusy(true);
+        PreviewRows.Visibility = Visibility.Visible;
         try
         {
             long bytes = 0; int count = 0;
@@ -171,7 +197,7 @@ public partial class MainWindow : Window
         {
             var executable = Environment.ProcessPath ?? throw new InvalidOperationException("Cannot locate the executable.");
             if (Path.GetFileNameWithoutExtension(executable).Equals("dotnet", StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Start RMPCS.exe directly to request admin rights.");
-            Process.Start(new ProcessStartInfo(executable) { UseShellExecute = true, Verb = "runas", WorkingDirectory = AppContext.BaseDirectory }); Close();
+            Process.Start(new ProcessStartInfo(executable) { UseShellExecute = true, Verb = "runas", WorkingDirectory = AppContext.BaseDirectory }); RequestExit();
         }
         catch (Exception ex) { Log("Administrator relaunch did not complete: " + ex.Message); }
     }
@@ -197,7 +223,7 @@ public partial class MainWindow : Window
         try { action(); Log("Automation settings updated."); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "Automation not changed", MessageBoxButton.OK, MessageBoxImage.Information); }
         RefreshAutomation();
     }
-    private void StartupOn_Click(object sender, RoutedEventArgs e) { if (Confirm("Open RMPCS with administrator rights at sign-in for this Windows user? No maintenance runs just because the app opens.")) ChangeAutomation(() => TaskSchedulerService.Save(true)); }
+    private void StartupOn_Click(object sender, RoutedEventArgs e) { if (Confirm("Start RMPCS in the system tray with administrator rights at sign-in for this Windows user? No maintenance runs just because the app opens.\n\nOnly the protected installed copy supports automatic startup. This updates any existing RMPCS sign-in task.")) ChangeAutomation(() => TaskSchedulerService.Save(true)); }
     private void StartupOff_Click(object sender, RoutedEventArgs e) => ChangeAutomation(() => TaskSchedulerService.Remove(true));
     private void SaveSchedule_Click(object sender, RoutedEventArgs e)
     {
@@ -234,6 +260,8 @@ public partial class MainWindow : Window
     }
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
+        if (SessionEnding) return;
+        if (DesktopPolicy.HideOnClose(tray?.Available == true, exitRequested, TestMode)) { e.Cancel = true; HideToTray(); return; }
         if (busy) { e.Cancel = true; MessageBox.Show(this, "Wait for the active task to finish. Stop after current task prevents later tasks from starting.", "Task running"); }
     }
 }

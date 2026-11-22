@@ -1,17 +1,17 @@
-# RMPCS 0.3.1 - Wade's PC Toolkit
+# RMPCS 0.4.0 - Wade's PC Toolkit
 
 A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prerequisite setup, read-only health checks, cleanup previews, reversible Run-entry management, and scheduled care.
 
-**Use v0.3.1.** The initial v0.3.0 prerelease is superseded. This patch protects the startup-backup registry store with an explicit non-inheriting DACL granting access only to Administrators and SYSTEM. Protection is established before backup writes/restores; failure stops the change. Opening the corrected app elevated also protects an existing store. Administrator rights are needed to view disabled-entry backups as well as change them.
+**v0.4 retains the v0.3.1 permissions fix.** The initial v0.3.0 prerelease is superseded. RMPCS protects the startup-backup registry store with an explicit non-inheriting DACL granting access only to Administrators and SYSTEM. Protection is established before backup writes/restores; failure stops the change. Opening the corrected app elevated also protects an existing store. Administrator rights are needed to view disabled-entry backups as well as change them.
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.3.1/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.3.1/RMPCS-Setup-0.3.1-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.3.1/RMPCS-v0.3.1-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.4.0/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.4.0/RMPCS-Setup-0.4.0-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.4.0/RMPCS-v0.4.0-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
-**Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, adds a Start Menu shortcut and uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
+**Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, adds branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
 
 **Portable edition:** extract every file and open `Launch-RMPCS.exe`. When a compatible runtime is present, it verifies its companion app files and launches RMPCS. Otherwise it offers the prerequisite setup screen. Use `Launch-RMPCS.exe --setup` to open that screen explicitly. Keep the EXE, DLL and JSON files together. A portable app can still require installing a shared system runtime.
 
@@ -20,6 +20,22 @@ The bootstrap launchers use the .NET Framework supplied with Windows 11 and do n
 Microsoft runtime downloads use HTTPS, an exact pinned SHA-512 from official release metadata, and Windows Authenticode trust verification with a Microsoft Corporation publisher check. A failed integrity/trust check stops execution. No certificate-validation bypass or unknown-host redirect is accepted. Downloads are size-limited, cancellable, and have a deadline. An offline-file option accepts the exact pinned installer and applies the same checks; offline signature validation depends on available certificate/revocation information. A compatible already-installed runtime is reused.
 
 Microsoft's setup remains visible for its Windows permissions and license prompts. Cancelled or failed setup stops the chain. Restart-required results are reported; RMPCS's prerequisite launcher does not request an automatic restart. Runtime and MSI files are held against modification during verification/execution. The portable launcher similarly verifies and holds its app payload while the session runs.
+
+## New in v0.4
+
+The app, taskbar, notification area, installer, shortcuts and Installed apps entry share a new shield/crown/pulse identity. A standalone icon pack includes a transparent PNG and an ICO with nine sizes from 16 to 256 pixels. The app has a compact header and expandable optional/advanced cleanup groups; confirmation prompts and original maintenance functions remain available.
+
+### Tray and startup
+
+Close or minimize the window to keep it in the system tray. Click the icon to reopen; right-click for **Open RMPCS** and **Exit RMPCS**. The app also has explicit **Hide to tray** and **Exit** buttons. Hiding does not stop an active task. Exit is blocked until that operation finishes; use **Stop after current task** to stop the remaining queue safely. A first-hide notification explains how to reopen/exit. If initial tray registration fails, the app stays visible and closing exits normally. It attempts to recreate its icon after Explorer restarts and restores the window if re-registration fails.
+
+In **Automation**, choose **Enable startup to tray** to register the protected installed app for this Windows user's sign-in. This is opt-in and starts only the desktop app, with no maintenance. Existing RMPCS startup tasks already use `--startup` and adopt tray startup after upgrading. Portable sessions support the tray but cannot register privileged startup from a writable folder. Maintenance schedules remain independently opt-in.
+
+Reopening RMPCS signals the existing desktop session for the same Windows user, logon session and elevation level. Standard and administrator sessions are separate so an administrator relaunch can replace a standard window. No arbitrary commands or maintenance requests are accepted through the activation signal. Scheduled maintenance still uses the machine-wide operation lock.
+
+Use **Exit** before upgrading or uninstalling: the title-bar close button now hides to tray. Tray residency runs no periodic cleanup, health scan or polling. Windows may put the icon in the notification overflow menu.
+
+Build packages with `powershell -NoProfile -File Build-Release.ps1`. Use `-DesktopChecks` only in an interactive Windows session with Explorer. The build never installs a runtime or registers tasks. See RELEASE-NOTES.md for validation limits.
 
 ## New in v0.3
 
@@ -88,9 +104,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.3.1-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.3.1-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.3.1-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.4.0-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.4.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.4.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.

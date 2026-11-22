@@ -5,6 +5,12 @@ using RMPCS.Core;
 namespace RMPCS.App;
 public partial class App : Application
 {
+    private TrayService? tray;
+    private DesktopSession? desktop;
+    protected override void OnExit(ExitEventArgs e)
+    { tray?.Dispose(); desktop?.Dispose(); base.OnExit(e); }
+    protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
+    { if (MainWindow is MainWindow window) window.SessionEnding = true; base.OnSessionEnding(e); }
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -54,11 +60,38 @@ public partial class App : Application
             }
             Shutdown(exit); return;
         }
-        var window = new MainWindow(); MainWindow = window;
         bool smoke = e.Args.Contains("--smoke-test");
         bool preview = e.Args.Length == 2 && e.Args[0] == "--ui-preview";
+        bool traySmoke = e.Args.Length is 1 or 2 && e.Args[0] == "--tray-smoke-test";
+        bool test = smoke || preview || traySmoke;
+        if (!test)
+        {
+            try
+            {
+                desktop = new DesktopSession();
+                if (!desktop.IsOwner) { Shutdown(); return; }
+            }
+            catch (Exception ex) { MessageBox.Show("RMPCS could not establish its desktop session: " + ex.Message, "RMPCS"); Shutdown(1); return; }
+        }
+        var window = new MainWindow { TestMode = test }; MainWindow = window;
+        if (!smoke && !preview)
+        {
+            try { tray = new TrayService(window.ShowFromTray, window.RequestExit); window.AttachTray(tray); }
+            catch (Exception ex) { window.TrayUnavailable(); if (traySmoke && e.Args.Length == 2) System.IO.File.WriteAllText(e.Args[1], "Tray creation failed: " + ex); }
+        }
+        desktop?.Listen(() => Dispatcher.BeginInvoke(window.ShowFromTray));
+        window.Closed += (_, _) => Shutdown();
+        if (DesktopPolicy.StartHidden(e.Args) && tray?.Available == true && !test)
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            window.CheckAdministrator(false);
+            return;
+        }
+        bool contentHandled = false;
         window.ContentRendered += (_, _) =>
         {
+            if (contentHandled) return;
+            contentHandled = true;
             if (preview)
             {
                 try
@@ -71,7 +104,23 @@ public partial class App : Application
                 catch { Shutdown(1); return; }
                 window.Close();
             }
-            else if (smoke) window.Close(); else window.CheckAdministrator();
+            else if (smoke) window.Close();
+            else if (traySmoke)
+            {
+                void Report(string text) { if (e.Args.Length == 2) System.IO.File.WriteAllText(e.Args[1], text); }
+                if (tray?.Available != true) { Report(tray?.Diagnostic ?? "Tray constructor unavailable"); Shutdown(1); return; }
+                window.TestMode = false;
+                window.Close(); // Exercise the real close-to-tray handler.
+                if (window.IsVisible) { Report("Close did not hide window"); Shutdown(1); return; }
+                window.ShowFromTray();
+                window.WindowState = WindowState.Minimized;
+                if (window.IsVisible) { Report("Minimize did not hide window"); Shutdown(1); return; }
+                window.ShowFromTray(); tray.Status(true); tray.Status(false);
+                bool passed = window.IsVisible && window.WindowState == WindowState.Normal;
+                Report(passed ? "Native tray registration, close-to-tray, minimize-to-tray, restore and status checks passed. No maintenance performed." : "Window restore failed");
+                Shutdown(passed ? 0 : 1);
+            }
+            else window.CheckAdministrator();
         };
         window.Show();
     }
