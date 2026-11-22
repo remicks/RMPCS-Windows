@@ -1,6 +1,6 @@
 # RMPCS roadmap
 
-The current build is v0.6.0: Rusty's PC Toolkit, with GitHub update checking, dedicated Settings, searchable offline Help, a LootDrop link, support summaries and interface preferences. Tray, graphical setup and all maintenance functions remain available.
+The current build is v0.6.1: Rusty's PC Toolkit, with GitHub update checking, dedicated Settings, searchable offline Help, a LootDrop link, support summaries and interface preferences. Tray, graphical setup and all maintenance functions remain available.
 
 ## v0.3 - implemented, supervised validation pending
 

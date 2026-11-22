@@ -16,7 +16,14 @@ public partial class MainWindow : Window
     private bool exitRequested, trayNoticeShown;
     internal bool TestMode { get; set; }
     internal bool SessionEnding { get; set; }
-    internal void AttachTray(TrayService service) { tray = service; TrayStatus.Text = service.Available ? "Close or minimize to keep RMPCS in the tray." : "Tray unavailable. Closing will exit RMPCS."; }
+    internal void AttachTray(TrayService service) { tray = service; RefreshTrayHint(); }
+    private void RefreshTrayHint()
+    {
+        if (tray is null) return;
+        if (!tray.Available) { TrayStatus.Text = "Tray unavailable. Closing exits RMPCS when no task is active."; return; }
+        TrayStatus.Text = (preferences.CloseToTray ? "Close hides to tray. " : "Close exits when idle. ") +
+            (preferences.MinimizeToTray ? "Minimize hides to tray. " : "Minimize keeps the taskbar window. ") + "Use Settings to change window behavior.";
+    }
     internal void TrayUnavailable() => TrayStatus.Text = "Tray unavailable. Closing will exit RMPCS.";
     internal void ShowFromTray()
     {
@@ -45,7 +52,7 @@ public partial class MainWindow : Window
         ElevateButton.Visibility = admin ? Visibility.Collapsed : Visibility.Visible;
         SetBusy(false);
         InitializePreferences();
-        Log("RMPCS 0.6.0 - Written by Rusty. Health scan, cleanup previews and startup management are ready.");
+        Log("RMPCS 0.6.1 - Written by Rusty. Health scan, cleanup previews and startup management are ready.");
         Log("Select full batch to include advanced tasks and reboot, or use recommended care.");
     }
     public void CheckAdministrator(bool showWarning = true)

@@ -52,7 +52,7 @@ foreach (var sequence in new[] { "InstallExecuteSequence", "InstallUISequence" }
 const string upgrade = "{C19B49F3-55BC-4427-AE35-3E1E27B732A5}";
 string product = Guid.NewGuid().ToString("B").ToUpperInvariant();
 foreach (var property in new Dictionary<string,string> {
-    ["ProductCode"] = product, ["UpgradeCode"] = upgrade, ["ProductName"] = "RMPCS - Rusty\u0027s PC Toolkit", ["ProductVersion"] = "0.6.0", ["ProductLanguage"] = "1033",
+    ["ProductCode"] = product, ["UpgradeCode"] = upgrade, ["ProductName"] = "RMPCS - Rusty\u0027s PC Toolkit", ["ProductVersion"] = "0.6.1", ["ProductLanguage"] = "1033",
     ["Manufacturer"] = "Degenerates Inc.", ["ALLUSERS"] = "1", ["ARPNOMODIFY"] = "1", ["ARPPRODUCTICON"] = "RMPCS.ico", ["ARPCOMMENTS"] = "Rusty's PC maintenance toolkit. Automation is opt-in.",
     ["SecureCustomProperties"] = "OLDPRODUCTS;NEWERFOUND;DOTNETDESKTOP10;CREATE_DESKTOP;CREATE_STARTMENU;ALWAYS_ADMIN", ["MSIRESTARTMANAGERCONTROL"] = "Disable", ["MSIDISABLERMRESTART"] = "1", ["INSTALLLEVEL"] = "1", ["RUN_AFTER"] = "1" }) db.Row("Property", property.Key, property.Value);
 db.Row("Directory", "TARGETDIR", null, "SourceDir");
@@ -123,8 +123,8 @@ db.Row("DrLocator", "Desktop10File", "DotnetRoot", @"shared\Microsoft.WindowsDes
 db.Row("Signature", "Desktop10File", "PresentationFramework.dll", "10.0.0.0", "10.65535.65535.65535", null, null, null, null, null);
 db.Row("LaunchCondition", "Installed OR DOTNETDESKTOP10", "Install the Microsoft .NET 10 Desktop Runtime (Windows x64), then run this installer again. Download: https://dotnet.microsoft.com/download/dotnet/10.0");
 db.Row("LaunchCondition", "VersionNT64", "RMPCS requires 64-bit Windows.");
-db.Row("Upgrade", upgrade, "0.0.0", "0.6.0", "1033", 257, null, "OLDPRODUCTS");
-db.Row("Upgrade", upgrade, "0.6.0", null, "1033", 258, null, "NEWERFOUND");
+db.Row("Upgrade", upgrade, "0.0.0", "0.6.1", "1033", 257, null, "OLDPRODUCTS");
+db.Row("Upgrade", upgrade, "0.6.1", null, "1033", 258, null, "NEWERFOUND");
 db.Row("LaunchCondition", "Installed OR NOT NEWERFOUND", "The same or a newer RMPCS version is installed. Uninstall it first or use its Repair option.");
 string cleanupId = $"F{files.Length - 1:0000}";
 db.Row("CustomAction", "CleanupTasks", 3106, "System64Folder", $"\"[System64Folder]WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"[#{cleanupId}]\" -InstallRoot \"[INSTALLFOLDER].\"");
@@ -155,7 +155,7 @@ void Dialog(string name, string title, string body, string button, string action
     db.Row("ControlEvent", name, "Continue", "EndDialog", action, "1", 2);
     db.Row("ControlEvent", name, "Cancel", "EndDialog", "Exit", "1", 1);
 }
-Dialog("WelcomeDlg", "RMPCS 0.6.0 Setup", "Install Rusty's PC maintenance toolkit to:\n[ProgramFiles64Folder]Degenerates Inc\\RMPCS\n\nRequires the .NET 10 Desktop Runtime.\n\nCreates a Start Menu shortcut and an uninstall entry. Startup and schedules remain OFF until you enable them in the app.\n\nClose RMPCS before installing or updating.", "Install", "Return");
+Dialog("WelcomeDlg", "RMPCS 0.6.1 Setup", "Install Rusty's PC maintenance toolkit to:\n[ProgramFiles64Folder]Degenerates Inc\\RMPCS\n\nRequires the .NET 10 Desktop Runtime.\n\nCreates a Start Menu shortcut and an uninstall entry. Startup and schedules remain OFF until you enable them in the app.\n\nClose RMPCS before installing or updating.", "Install", "Return");
 db.Sql("UPDATE `Control` SET `Text`='Choose how RMPCS fits into your desktop.\nWindows will still ask for permission when administrator access is requested.\n\nClose RMPCS using Exit before continuing.' WHERE `Dialog_`='WelcomeDlg' AND `Control`='Body'");
 db.Sql("UPDATE `Control` SET `Height`=62 WHERE `Dialog_`='WelcomeDlg' AND `Control`='Body'");
 db.Sql("UPDATE `Control` SET `Control_Next`='DesktopChoice' WHERE `Dialog_`='WelcomeDlg' AND `Control`='Cancel'");
@@ -330,7 +330,7 @@ static class MsiVerification
         using var db = new MsiDatabase(Path.GetFullPath(package), true);
         void Check(bool valid, string description) { if (!valid) throw new InvalidDataException(description); Console.WriteLine("PASS: " + description); }
         var properties = db.Query("SELECT `Property`,`Value` FROM `Property`").ToDictionary(r => r[0], r => r[1]);
-        Check(properties["ProductVersion"] == "0.6.0" && properties["ALLUSERS"] == "1", "MSI version and per-machine installation metadata");
+        Check(properties["ProductVersion"] == "0.6.1" && properties["ALLUSERS"] == "1", "MSI version and per-machine installation metadata");
         var components = db.Query("SELECT `Component`,`ComponentId`,`Attributes`,`KeyPath` FROM `Component`");
         Check(components.All(c => (int.Parse(c[2]) & 256) != 0 && Guid.TryParse(c[1], out _)), "all installed components are x64 and have valid identities");
         var fileRows = db.Query("SELECT `File`,`Component_`,`FileName`,`FileSize` FROM `File`");

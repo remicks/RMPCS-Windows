@@ -1,10 +1,11 @@
-RMPCS v0.6.0 — Rusty's PC Toolkit
+RMPCS v0.6.1 — Rusty's PC Toolkit
 
 - Corrected the product name across the app, installer, Windows shortcuts, Installed apps entry, tray, logs and documentation.
 - GitHub update checks with semantic version comparison, stable/preview filtering and plain-text release notes. Optional launch checks are off by default and limited to once per 24 hours per Windows identity. No credentials, PC reports or logs are sent; the app never downloads or executes updates.
 - A dedicated Settings section for close/minimize-to-tray behavior, tray reminders, startup page, activity text size, default manual cleanup age, update preferences and the installed administrator-launch preference. General preferences are saved explicitly. Installation/UAC changes use their own administrator-only Apply button.
 - Searchable offline Help with maintenance, repair, network, automation, privacy, installation, update and troubleshooting guidance.
 - A verified LootDrop for Windows GitHub link and brief description. Existing Discord support and GitHub issue links are available in Help.
+- Tray status guidance follows the saved close/minimize preferences, including exit-on-close mode.
 - Small usability additions: a reviewable support summary without logs/usernames/paths, clearer interface reset scope, F1/Ctrl+, navigation, a toolbar shortcut to Updates, and Clear activity view without deleting saved history.
 
 Download RMPCS.Setup.exe for guided installation, or extract the portable ZIP and open Launch-RMPCS.exe. The installer retains optional shortcuts, administrator prompting and launch-after-install. Runtime requirements, official links and SHA256 checksums are included. Close using Exit before upgrading if close-to-tray is enabled.

@@ -49,6 +49,7 @@ public partial class MainWindow
     {
         Activity.FontSize = preferences.ActivityFontSize;
         Age.SelectedIndex = preferences.CleanupAgeDays switch { 1 => 1, 30 => 3, _ => 2 };
+        RefreshTrayHint();
     }
     private void SavePreferences_Click(object sender, RoutedEventArgs e)
     {

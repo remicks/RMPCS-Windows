@@ -1,4 +1,4 @@
-# RMPCS 0.6.0 - Rusty's PC Toolkit
+# RMPCS 0.6.1 - Rusty's PC Toolkit
 
 A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prerequisite setup, read-only health checks, cleanup previews, reversible Run-entry management, and scheduled care.
 
@@ -6,9 +6,9 @@ A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prer
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.0/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.0/RMPCS-Setup-0.6.0-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.0/RMPCS-v0.6.0-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.1/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.1/RMPCS-Setup-0.6.1-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.6.1/RMPCS-v0.6.1-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -126,9 +126,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.6.0-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.6.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.6.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.6.1-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.6.1-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.6.1-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.
