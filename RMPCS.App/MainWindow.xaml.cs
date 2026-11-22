@@ -52,7 +52,7 @@ public partial class MainWindow : Window
         ElevateButton.Visibility = admin ? Visibility.Collapsed : Visibility.Visible;
         SetBusy(false);
         InitializePreferences();
-        Log("RMPCS 0.7.0 - Written by Rusty. Health scan, cleanup previews and startup management are ready.");
+        Log("RMPCS 0.8.0 - Written by Rusty. Health scan, cleanup previews and startup management are ready.");
         Log("Select full batch to include advanced tasks and reboot, or use recommended care.");
     }
     public void CheckAdministrator(bool showWarning = true)
@@ -80,6 +80,9 @@ public partial class MainWindow : Window
         TaskPanel.IsEnabled = PreviewButton.IsEnabled = HistoryPanel.IsEnabled = !value;
         HealthPanel.IsEnabled = StartupAppsPanel.IsEnabled = !value;
         SettingsPanel.IsEnabled = !value;
+        DiagnosticsPanel.IsEnabled = ProtectionPanel.IsEnabled = !value;
+        CreateRestoreButton.IsEnabled = !value && admin;
+        UndoAdminButton.IsEnabled = !value && admin && TaskSchedulerService.IsInstalled;
         ApplyAdminPreference.IsEnabled = InstalledAdminChoice.IsEnabled = !value && admin && TaskSchedulerService.IsInstalled;
         DisableStartupApp.IsEnabled = RestoreStartupApp.IsEnabled = !value && admin;
         RunButton.IsEnabled = CareButton.IsEnabled = AutomationPanel.IsEnabled = !value && admin;
@@ -139,6 +142,13 @@ public partial class MainWindow : Window
             using var session = new SessionLog("Manual run");
             void Output(string text) { session.Write(text); Log(text); }
             Output(plan.Describe());
+            if (preferences.RestoreBeforeRepair && (plan.RepairImage || plan.ScanFiles || plan.ResetSearch))
+            {
+                Status.Text = "Requesting and verifying a restore point...";
+                var point = await RestorePoints.CreateAsync(); Output(point.Message);
+                if (stopRequested || (!point.Verified && !Confirm(point.Message + "\n\nContinue these tasks WITHOUT a verified new restore point?\nSystem Restore does not recover deleted personal files.")))
+                { Status.Text = "Maintenance cancelled before any task started."; Output(Status.Text); return; }
+            }
             Status.Text = "Maintenance running - follow activity below.";
             var before = DriveSpaceSnapshot.Capture();
             var clock = Stopwatch.StartNew();
@@ -234,6 +244,8 @@ public partial class MainWindow : Window
                 Frequency.SelectedIndex = options.Frequency == ScheduleFrequency.Daily ? 0 : 1;
                 WeekDay.SelectedIndex = (int)options.Day; ScheduleTime.Text = $"{options.Hour:00}:{options.Minute:00}";
                 ScheduleProfile.SelectedIndex = options.Repair ? 1 : 0; IdleOnly.IsChecked = options.RequireIdle; AcOnly.IsChecked = options.RequireAc;
+                StartWindowChoice.SelectedIndex = Array.IndexOf(new[] { 0, 60, 120, 240 }, options.StartWindowMinutes);
+                WorkloadDeferChoice.SelectedIndex = Array.IndexOf(new[] { 0, 15, 30, 60 }, options.WorkloadDeferMinutes);
             }
         }
         catch (Exception ex) { StartupStatus.Text = ScheduleStatus.Text = "Status unavailable: " + ex.Message; }
@@ -249,8 +261,10 @@ public partial class MainWindow : Window
     private void SaveSchedule_Click(object sender, RoutedEventArgs e)
     {
         if (!TimeOnly.TryParseExact(ScheduleTime.Text.Trim(), "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var time)) { MessageBox.Show(this, "Enter a 24-hour local time such as 19:00."); return; }
-        var options = new ScheduleOptions(Frequency.SelectedIndex == 0 ? ScheduleFrequency.Daily : ScheduleFrequency.Weekly, (DayOfWeek)WeekDay.SelectedIndex, time.Hour, time.Minute, ScheduleProfile.SelectedIndex == 1, IdleOnly.IsChecked == true, AcOnly.IsChecked == true);
+        var options = new ScheduleOptions(Frequency.SelectedIndex == 0 ? ScheduleFrequency.Daily : ScheduleFrequency.Weekly, (DayOfWeek)WeekDay.SelectedIndex, time.Hour, time.Minute, ScheduleProfile.SelectedIndex == 1, IdleOnly.IsChecked == true, AcOnly.IsChecked == true)
+        { StartWindowMinutes = new[] { 0, 60, 120, 240 }[Math.Clamp(StartWindowChoice.SelectedIndex, 0, 3)], WorkloadDeferMinutes = new[] { 0, 15, 30, 60 }[Math.Clamp(WorkloadDeferChoice.SelectedIndex, 0, 3)] };
         if (!Confirm($"Enable {options.Frequency.ToString().ToLowerInvariant()} automatic {(options.Repair ? "cleanup and Windows repair" : "light cleanup")} at {time:HH:mm} local PC time" + (options.Frequency == ScheduleFrequency.Weekly ? $" on {options.Day}" : "") + "?\n\nThis authorizes unattended permanent deletion of eligible temp files older than 7 days and DNS flushing" + (options.Repair ? ", followed by DISM and SFC" : "") + ". You must be signed in. Advanced cleanup, network lease resets and restarts are excluded. Logs are saved locally.")) return;
+        if ((options.StartWindowMinutes != 0 || options.WorkloadDeferMinutes != 0) && !Confirm($"Start window: {(options.StartWindowMinutes == 0 ? "unrestricted" : options.StartWindowMinutes + " minutes after scheduled time")}. Workload wait: {options.WorkloadDeferMinutes} minutes maximum.\n\nWhen enabled, workload checks defer for CPU >=70%, RAM >=85%, network >=5 MiB/s, Windows full-screen/presentation/quiet signals, active microphone sessions or unavailable signals. Detection is best effort. Runs are skipped when the window/wait expires. These guards never terminate a task already running.")) return;
         ChangeAutomation(() => TaskSchedulerService.Save(false, options));
     }
     private void RemoveSchedule_Click(object sender, RoutedEventArgs e) => ChangeAutomation(() => TaskSchedulerService.Remove(false));

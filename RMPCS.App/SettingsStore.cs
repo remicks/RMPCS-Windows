@@ -18,7 +18,22 @@ internal static class SettingsStore
         catch { warning = "Saved preferences could not be read; interface defaults are in use. Save in Settings to replace them."; return new(); }
     }
     public static void Save(AppPreferences preferences)
-    { using var key = Registry.CurrentUser.CreateSubKey(UserKey, true); key.SetValue("PreferencesJson", preferences.ToJson(), RegistryValueKind.String); }
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(UserKey, true);
+        AppPreferences before; try { before = key.GetValue("PreferencesJson") is string json ? AppPreferences.Parse(json) : new(); } catch { before = new(); }
+        var after = preferences.Normalize();
+        if (before == after) return;
+        key.SetValue("InterfaceUndo", new PreferenceUndo(before, after).ToJson(), RegistryValueKind.String);
+        key.SetValue("PreferencesJson", after.ToJson(), RegistryValueKind.String);
+    }
+    public static AppPreferences UndoInterface()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(UserKey, true) ?? throw new InvalidOperationException("No interface undo record.");
+        var undo = PreferenceUndo.Parse(key.GetValue("InterfaceUndo") as string ?? throw new InvalidOperationException("No interface undo record."));
+        var current = AppPreferences.Parse(key.GetValue("PreferencesJson") as string ?? "{}");
+        var restored = undo.Restore(current); key.SetValue("PreferencesJson", restored.ToJson(), RegistryValueKind.String);
+        try { key.DeleteValue("InterfaceUndo", false); } catch { } return restored;
+    }
     public static bool TryClaimAutomaticCheck()
     {
         try
@@ -51,6 +66,23 @@ internal static class SettingsStore
         if (!TaskSchedulerService.IsInstalled) throw new InvalidOperationException("This preference applies only to the protected installed copy.");
         using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
         using var key = machine.OpenSubKey(InstallKey, true) ?? throw new InvalidOperationException("Installation settings are missing. Repair the installation.");
+        string current = key.GetValue("AlwaysAdmin") as string ?? throw new InvalidOperationException("Installation preference is missing.");
+        if (current is not ("0" or "1")) throw new InvalidOperationException("Installation preference is invalid.");
+        if (current == (enabled ? "1" : "0")) return;
+        key.SetValue("AdminPreferenceUndo", System.Text.Json.JsonSerializer.Serialize(new AdminUndo(current == "1", enabled, System.Security.Principal.WindowsIdentity.GetCurrent().User!.Value)), RegistryValueKind.String);
         key.SetValue("AlwaysAdmin", enabled ? "1" : "0", RegistryValueKind.String);
+    }
+    private sealed record AdminUndo(bool Before, bool After, string Owner);
+    public static bool UndoAdministrator()
+    {
+        if (!TaskSchedulerService.IsInstalled) throw new InvalidOperationException("Use the protected installed copy.");
+        using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+        using var key = machine.OpenSubKey(InstallKey, true) ?? throw new InvalidOperationException("Installation settings unavailable.");
+        string json = key.GetValue("AdminPreferenceUndo") as string ?? throw new InvalidOperationException("No administrator preference undo record.");
+        if (json.Length > 1024) throw new InvalidOperationException("Invalid undo record.");
+        var undo = System.Text.Json.JsonSerializer.Deserialize<AdminUndo>(json) ?? throw new InvalidOperationException("Invalid undo record.");
+        if (undo.Owner != System.Security.Principal.WindowsIdentity.GetCurrent().User!.Value || key.GetValue("AlwaysAdmin") as string != (undo.After ? "1" : "0")) throw new InvalidOperationException("Undo owner/state conflict. The current preference was preserved.");
+        key.SetValue("AlwaysAdmin", undo.Before ? "1" : "0", RegistryValueKind.String);
+        try { key.DeleteValue("AdminPreferenceUndo", false); } catch { } return undo.Before;
     }
 }

@@ -1,14 +1,14 @@
-# RMPCS 0.7.0 - Rusty's PC Toolkit
+# RMPCS 0.8.0 - Rusty's PC Toolkit
 
 A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prerequisite setup, read-only health checks, cleanup previews, reversible Run-entry management, and scheduled care.
 
-**v0.6 retains the v0.3.1 permissions fix.** The initial v0.3.0 prerelease is superseded. RMPCS protects the startup-backup registry store with an explicit non-inheriting DACL granting access only to Administrators and SYSTEM. Protection is established before backup writes/restores; failure stops the change. Opening the corrected app elevated also protects an existing store. Administrator rights are needed to view disabled-entry backups as well as change them.
+**This build retains the v0.3.1 permissions fix.** The initial v0.3.0 prerelease is superseded. RMPCS protects the startup-backup registry store with an explicit non-inheriting DACL granting access only to Administrators and SYSTEM. Protection is established before backup writes/restores; failure stops the change. Opening the corrected app elevated also protects an existing store. Administrator rights are needed to view disabled-entry backups as well as change them.
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.7.0/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.7.0/RMPCS-Setup-0.7.0-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.7.0/RMPCS-v0.7.0-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.8.0/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.8.0/RMPCS-Setup-0.8.0-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.8.0/RMPCS-v0.8.0-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -21,13 +21,24 @@ Microsoft runtime downloads use HTTPS, an exact pinned SHA-512 from official rel
 
 Microsoft's setup remains visible for its Windows permissions and license prompts. Cancelled or failed setup stops the chain. Restart-required results are reported; RMPCS's prerequisite launcher does not request an automatic restart. Runtime and MSI files are held against modification during verification/execution. The portable launcher similarly verifies and holds its app payload while the session runs.
 
+## New in v0.8
+
+The original recommendations **6, 7, 10 and 12** are implemented:
+
+- **Crash/stability reports (Diagnostics):** request 1/7/30 days of bounded System/Application event metadata, recurring source/ID counts and recent entries. No raw event messages, usernames or machine identifiers are collected. The report describes a sample, not a proven cause. Explicitly export the displayed report to a new local file; nothing is uploaded.
+- **Restore points and undo (Protection):** request a restore point, then verify a new matching sequence/description before reporting success. Accepted-but-skipped requests are reported as unverified. Optional pre-repair creation in Settings applies only to manual DISM/SFC/Search resets; a failure requires a separate default-No confirmation to continue. No System Protection/service/frequency changes or automatic OS rollback. Restore points cannot recover permanently deleted personal files. One-step undo covers RMPCS interface/tray/update/repair preferences and the installed administrator-prompt preference, with expected-state checks; administrator undo also checks the Windows identity. Startup-entry restore remains separate. Undo does not reverse cleanup, repairs or schedules.
+- **Network diagnostics (Diagnostics):** fixed Microsoft/GitHub DNS and HTTPS HEAD tests with normal TLS validation, no credentials/cookies/redirects and a 20-second overall deadline, plus five bounded pings to one OS-configured gateway. Multiple gateways are disclosed; ICMP filtering is not treated as proof of disconnection. No network resets are performed. Keep an in-memory baseline and compare the same target/gateway after a separately chosen manual repair; export explicitly to retain it. Gateway addresses may be private. Natural variation cannot establish that a repair helped.
+- **Smarter scheduling (Automation):** opt-in 1/2/4-hour maintenance start windows and 15/30/60-minute maximum workload waits. Busy or unknown signals defer: CPU >=70%, RAM >=85%, aggregate network >=5 MiB/s, Windows full-screen/presentation/quiet state or active microphone sessions. No audio is recorded. Game/call/download detection is best effort, not guaranteed identification. Selected idle/AC conditions are rechecked after waiting. Skips and deferrals are logged, with existing opt-in tray notices. Guards never terminate an active repair. Existing schedules retain their behavior until explicitly changed.
+
+Weekly windows crossing midnight belong to the scheduled start day. Windows use local wall-clock time, including timezone/DST changes; deferral budgets use elapsed time. Workload checks occur at most once per minute while waiting; an unavailable check defers and a preflight timeout skips. These are start safeguards, not continuous enforcement after maintenance begins. Only the protected installed edition can register privileged automatic tasks; portable users can run reports, restore-point requests and manual maintenance with the appropriate rights.
+
 ## New in v0.7
 
 1. **Run summaries:** every completed manual/scheduled queue writes duration and failure/skip state, confirmed logical deletion totals, separately labelled Recycle Bin estimates, and a before/after available-space observation for the Windows OS drive. The last manual summary appears below Activity. These measurements do not prove repair success or attribute all space changes to RMPCS. Other work, compression, allocation, quotas and open handles can affect observations; failed cleanup may leave partial counters.
 2. **Diagnostic archives:** History can export a selected saved run or the latest 30 RMPCS logs to a new local ZIP. The archive keeps original logs, writes a review manifest, and caps source data at 8 MiB per log / 32 MiB total. Active, linked, inaccessible and oversized logs are skipped. File handles verify final paths and single-link identity before reading; names cannot traverse ZIP paths. The chosen destination is created without overwriting and verified before log content is written. An unsuccessful export may leave an incomplete ZIP. Logs may contain private paths and command output. Review before sharing; archives are unencrypted and never uploaded by the app. No event-channel, browser, crash-dump or account data is automatically gathered.
 3. **Completion notifications:** opt in under Settings and Save. A tray instance must be running in the same Windows sign-in session. Scheduled processes post only one bounded informational status code to that user's resident app; default Windows integrity isolation is preserved, and no incoming message can run maintenance or change settings. No paths, arbitrary text or credentials are sent. Notices are not authenticated evidence: check History/Activity. Delivery is best effort, rate-limited, not queued, and can be suppressed by Windows or an unavailable/closed tray. Manual runs use the same notification preference. No notification polling, service or extra task is installed.
 
-The maintenance command set and existing deletion/repair safety rules remain unchanged. Restore points, broader cleanup targets and workload-based unattended deferral remain future work requiring more Windows validation.
+The maintenance command set and existing deletion/repair safety rules remain unchanged. The v0.8 additions below keep privileged changes explicit; broader cleanup targets remain future work.
 
 ## New in v0.6 — Rusty's PC Toolkit
 
@@ -134,9 +145,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.7.0-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.7.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.7.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.8.0-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.8.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.8.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.

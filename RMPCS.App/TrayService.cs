@@ -48,7 +48,7 @@ internal sealed class TrayService : IDisposable
         if (message == CompletionRelay.Message)
         {
             long value = wParam.ToInt64();
-            if (lParam.ToInt64() == CompletionRelay.Marker && value is >= 1 and <= 5 && Enum.IsDefined((RMPCS.Core.CompletionNotice)(int)value)) completion?.Invoke((RMPCS.Core.CompletionNotice)(int)value);
+            if (lParam.ToInt64() == CompletionRelay.Marker && value is >= 1 and <= 6 && Enum.IsDefined((RMPCS.Core.CompletionNotice)(int)value)) completion?.Invoke((RMPCS.Core.CompletionNotice)(int)value);
             handled = true; return IntPtr.Zero;
         }
         if ((uint)message == taskbarCreated) { if (!disposed && icon != IntPtr.Zero) { Add(); if (!Available) show(); } }

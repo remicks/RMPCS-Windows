@@ -2,7 +2,7 @@
  Title="RMPCS - Rusty's PC Toolkit" Icon="Assets/RMPCS.ico" Width="1320" Height="820" MinWidth="1180" MinHeight="720" Background="#F5F7FA" Foreground="#202938" FontFamily="Segoe UI Variable Text, Segoe UI" WindowStartupLocation="CenterScreen" Closing="Window_Closing" StateChanged="Window_StateChanged">
  <Window.Resources>
   <Style TargetType="TabItem"><Setter Property="Foreground" Value="#202938"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TabItem">
-   <Border x:Name="Header" Background="#FFFFFF" CornerRadius="6" Padding="14,13" Margin="0,0,8,6" Width="122"><ContentPresenter ContentSource="Header"/></Border>
+   <Border x:Name="Header" Background="#FFFFFF" CornerRadius="6" Padding="14,10" Margin="0,0,8,6" Width="122"><ContentPresenter ContentSource="Header"/></Border>
    <ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter TargetName="Header" Property="Background" Value="#FBEAF0"/></Trigger></ControlTemplate.Triggers>
   </ControlTemplate></Setter.Value></Setter></Style>
   
@@ -70,6 +70,9 @@
       <TextBlock Text="Day (weekly schedule)"/><ComboBox x:Name="WeekDay" SelectedIndex="0"><ComboBoxItem Content="Sunday"/><ComboBoxItem Content="Monday"/><ComboBoxItem Content="Tuesday"/><ComboBoxItem Content="Wednesday"/><ComboBoxItem Content="Thursday"/><ComboBoxItem Content="Friday"/><ComboBoxItem Content="Saturday"/></ComboBox>
       <TextBlock Text="Local PC time (24-hour HH:mm)"/><TextBox x:Name="ScheduleTime" Text="19:00" Margin="0,6,0,12"/>
       <TextBlock Text="Profile"/><ComboBox x:Name="ScheduleProfile" SelectedIndex="0"><ComboBoxItem Content="Light: 7-day temp cleanup + DNS"/><ComboBoxItem Content="Repair: light care + DISM + SFC"/></ComboBox>
+      <TextBlock Text="Allowed start window"/><ComboBox x:Name="StartWindowChoice" SelectedIndex="0"><ComboBoxItem Content="Off - allow late starts"/><ComboBoxItem Content="1 hour after scheduled time"/><ComboBoxItem Content="2 hours after scheduled time"/><ComboBoxItem Content="4 hours after scheduled time"/></ComboBox>
+      <TextBlock Text="Defer while busy (best-effort signals)"/><ComboBox x:Name="WorkloadDeferChoice" SelectedIndex="0"><ComboBoxItem Content="Off - existing idle/AC rules only"/><ComboBoxItem Content="Wait up to 15 minutes, then skip"/><ComboBoxItem Content="Wait up to 30 minutes, then skip"/><ComboBoxItem Content="Wait up to 60 minutes, then skip"/></ComboBox>
+      <TextBlock Text="Checks full-screen/presentation, active microphone sessions, CPU, RAM and network traffic. Unknown signals defer. These guards only decide when to start; active repairs finish normally." TextWrapping="Wrap" Foreground="#596678" Margin="0,4,0,10"/>
       <CheckBox x:Name="IdleOnly" Content="Start only when idle for 10 minutes" IsChecked="True"/><CheckBox x:Name="AcOnly" Content="Start only on AC power" IsChecked="True"/>
       <TextBlock Text="Runs while this Windows user is signed in. Missed runs may start later. Does not wake the PC. An active repair is allowed to finish if you resume work or unplug power." TextWrapping="Wrap" Foreground="#596678" Margin="0,8,0,14"/>
       <WrapPanel><Button Content="Save schedule" Click="SaveSchedule_Click" Padding="12,10"/><Button Content="Remove schedule" Click="RemoveSchedule_Click" Padding="12,10"/></WrapPanel>
@@ -111,6 +114,8 @@
      <TextBlock Text="Activity text size"/><ComboBox x:Name="ActivitySizeChoice"/>
      <TextBlock Text="Default age for manual file cleanup"/><ComboBox x:Name="DefaultAgeChoice"><ComboBoxItem Content="Older than 1 day"/><ComboBoxItem Content="Older than 7 days"/><ComboBoxItem Content="Older than 30 days"/></ComboBox>
      <TextBlock Text="Scheduled profiles keep their fixed seven-day cutoff. Saved preferences never start maintenance." TextWrapping="Wrap" Foreground="#596678" Margin="0,0,0,18"/>
+     <CheckBox x:Name="RestoreBeforeRepairChoice" Content="Request a restore point before manual Windows repairs"/>
+     <TextBlock Text="Applies to DISM, SFC and Search resets. If verification fails, you decide whether to continue. Excludes unattended runs and cleanup-only runs. System Restore is not a backup of deleted files." TextWrapping="Wrap" Foreground="#596678" Margin="0,4,0,16"/>
      <TextBlock x:Name="UpdatesHeading" Text="GITHUB UPDATES" FontWeight="SemiBold" Foreground="#596678"/>
      <CheckBox x:Name="AutoUpdatesChoice" Content="Check for updates when RMPCS starts"/>
      <CheckBox x:Name="PreviewUpdatesChoice" Content="Include preview / prerelease builds"/>
@@ -145,6 +150,32 @@
      <TextBox x:Name="SupportSummary" IsReadOnly="True" TextWrapping="Wrap" Height="130" VerticalScrollBarVisibility="Auto"/>
      <Button Content="Copy support summary" Click="CopySupport_Click" Margin="0,10,0,10"/>
      <TextBlock Text="An unsigned Degenerates Inc. development app, based on the original WMPCS script. Review command output; maintenance cannot guarantee higher FPS or resolve hardware faults." TextWrapping="Wrap" Foreground="#596678"/>
+    </StackPanel></ScrollViewer></TabItem>
+    <TabItem Header="Diagnostics"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="DiagnosticsPanel">
+     <TextBlock Text="CRASH &amp; STABILITY REPORT" Foreground="#BE2B4E" FontWeight="Bold"/>
+     <TextBlock Text="Summarize recent crashes, unexpected shutdowns and recurring System/Application errors. Metadata only: times, sources and event IDs. No event messages are collected." TextWrapping="Wrap" Foreground="#596678" Margin="0,10,0,10"/>
+     <ComboBox x:Name="StabilityPeriod" SelectedIndex="1"><ComboBoxItem Content="Last 24 hours"/><ComboBoxItem Content="Last 7 days"/><ComboBoxItem Content="Last 30 days"/></ComboBox>
+     <Button Content="Read stability report" Click="StabilityReport_Click"/>
+     <TextBlock Text="NETWORK DIAGNOSTICS" Foreground="#596678" FontWeight="Bold" Margin="0,20,0,8"/>
+     <TextBlock Text="Check DNS and HTTPS to a fixed public host, plus five gateway pings for latency/loss. Contacts the selected host only when you click Run. No network settings are changed." TextWrapping="Wrap" Foreground="#596678" Margin="0,0,0,10"/>
+     <ComboBox x:Name="NetworkTarget" SelectedIndex="0"><ComboBoxItem Content="Microsoft (www.microsoft.com)"/><ComboBoxItem Content="GitHub (github.com)"/></ComboBox>
+     <WrapPanel><Button Content="Run network tests" Click="NetworkReport_Click"/><Button Content="Use result as baseline" Click="NetworkBaseline_Click"/></WrapPanel>
+     <TextBlock x:Name="DiagnosticStatus" Text="Reports appear in Activity. Baselines and the last report stay in memory until you close RMPCS." TextWrapping="Wrap" Foreground="#596678" Margin="0,10,0,10"/>
+
+     <Button Content="Export last diagnostic report" Click="DiagnosticExport_Click" Margin="0,10,0,0"/>
+     <TextBlock Text="Review before sharing. Reports may include private gateway addresses. Short samples do not establish a cause or prove that a repair helped." TextWrapping="Wrap" Foreground="#596678" Margin="0,10,0,0"/>
+    </StackPanel></ScrollViewer></TabItem>
+    <TabItem Header="Protection"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="ProtectionPanel">
+     <TextBlock Text="RESTORE POINTS" Foreground="#BE2B4E" FontWeight="Bold"/>
+     <TextBlock Text="Ask Windows to create a restore point and verify that a new matching entry exists. Administrator access and available System Protection are required." TextWrapping="Wrap" Foreground="#596678" Margin="0,10,0,12"/>
+     <Button x:Name="CreateRestoreButton" Content="Create &amp; verify restore point" Click="CreateRestore_Click"/>
+     <TextBlock Text="Windows may limit creation frequency. RMPCS reports a skipped/unavailable request and never enables protection, changes its frequency or restores Windows automatically. Restore points do not recover permanently deleted personal files. You can opt in to pre-repair creation in Settings." TextWrapping="Wrap" Foreground="#596678" Margin="0,10,0,18"/>
+     <TextBlock Text="UNDO RMPCS PREFERENCES" FontWeight="Bold" Foreground="#596678"/>
+     <TextBlock Text="Undo the most recent saved interface/tray/update/repair preference change for this Windows identity. Later conflicting changes prevent undo. This does not undo file deletion, repairs, schedules or third-party settings." TextWrapping="Wrap" Foreground="#596678" Margin="0,10,0,12"/>
+     <Button Content="Undo last interface preference change" Click="UndoInterface_Click"/>
+     <Button x:Name="UndoAdminButton" Content="Undo last administrator preference change" Click="UndoAdmin_Click"/>
+     <TextBlock Text="Administrator-preference undo requires the installed copy, administrator rights and the same Windows identity that made the change. Startup entries disabled by RMPCS have their own Restore action in Startup." TextWrapping="Wrap" Foreground="#596678" Margin="0,10,0,14"/>
+     <TextBlock x:Name="ProtectionStatus" Text="No protection action requested this session." TextWrapping="Wrap"/>
     </StackPanel></ScrollViewer></TabItem>
    </TabControl>
    <Border Grid.Column="2" Background="#FFFFFF" CornerRadius="10" Padding="18"><Grid>

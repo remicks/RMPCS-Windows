@@ -3,7 +3,11 @@ using System.Xml.Linq;
 namespace RMPCS.Core;
 
 public enum ScheduleFrequency { Daily, Weekly }
-public sealed record ScheduleOptions(ScheduleFrequency Frequency, DayOfWeek Day, int Hour, int Minute, bool Repair, bool RequireIdle, bool RequireAc);
+public sealed record ScheduleOptions(ScheduleFrequency Frequency, DayOfWeek Day, int Hour, int Minute, bool Repair, bool RequireIdle, bool RequireAc)
+{
+    public int StartWindowMinutes { get; init; }
+    public int WorkloadDeferMinutes { get; init; }
+}
 
 public static class TaskDefinition
 {
@@ -14,6 +18,7 @@ public static class TaskDefinition
         if (!Path.IsPathFullyQualified(executable)) throw new ArgumentException("An absolute executable path is required.");
         if (!startup && options is null) throw new ArgumentException("Schedule options required.");
         if (options is not null && (options.Hour is < 0 or > 23 || options.Minute is < 0 or > 59 || !Enum.IsDefined(options.Day) || !Enum.IsDefined(options.Frequency))) throw new ArgumentException("Invalid schedule time.");
+        if (options is not null && (options.StartWindowMinutes is not (0 or 60 or 120 or 240) || options.WorkloadDeferMinutes is not (0 or 15 or 30 or 60))) throw new ArgumentException("Invalid start safeguard limits.");
         XNamespace ns = "http://schemas.microsoft.com/windows/2004/02/mit/task";
         XElement E(string name, object? content) => new(ns + name, content);
         XElement trigger;
@@ -39,7 +44,7 @@ public static class TaskDefinition
             E("Principals", new XElement(ns + "Principal", new XAttribute("id", "Owner"), E("UserId", sid), E("LogonType", "InteractiveToken"), E("RunLevel", "HighestAvailable"))),
             settings,
             new XElement(ns + "Actions", new XAttribute("Context", "Owner"), E("Exec", new[] { E("Command", executable),
-                E("Arguments", startup ? "--startup" : options!.Repair ? "--scheduled-repair" : "--scheduled-light"), E("WorkingDirectory", Path.GetDirectoryName(executable)) })));
+                E("Arguments", startup ? "--startup" : new ScheduleLaunch(options!.Repair, options.Hour, options.Minute, options.StartWindowMinutes, options.WorkloadDeferMinutes, options.Frequency == ScheduleFrequency.Weekly ? options.Day : null, options.RequireIdle, options.RequireAc).Arguments), E("WorkingDirectory", Path.GetDirectoryName(executable)) })));
         return root.ToString();
     }
 }

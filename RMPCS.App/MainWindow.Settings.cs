@@ -40,6 +40,7 @@ public partial class MainWindow
         MinimizeToTrayChoice.IsChecked = preferences.MinimizeToTray;
         TrayNotificationsChoice.IsChecked = preferences.TrayNotifications;
         CompletionNotificationsChoice.IsChecked = preferences.CompletionNotifications;
+        RestoreBeforeRepairChoice.IsChecked = preferences.RestoreBeforeRepair;
         AutoUpdatesChoice.IsChecked = preferences.CheckUpdatesOnLaunch;
         PreviewUpdatesChoice.IsChecked = preferences.IncludePrereleases;
         StartPageChoice.SelectedItem = preferences.StartPage;
@@ -60,6 +61,7 @@ public partial class MainWindow
             CloseToTray = CloseToTrayChoice.IsChecked == true, MinimizeToTray = MinimizeToTrayChoice.IsChecked == true,
             TrayNotifications = TrayNotificationsChoice.IsChecked == true, CheckUpdatesOnLaunch = AutoUpdatesChoice.IsChecked == true,
             CompletionNotifications = CompletionNotificationsChoice.IsChecked == true,
+            RestoreBeforeRepair = RestoreBeforeRepairChoice.IsChecked == true,
             IncludePrereleases = PreviewUpdatesChoice.IsChecked == true, StartPage = StartPageChoice.SelectedItem as string ?? "Health",
             ActivityFontSize = ActivitySizeChoice.SelectedItem is int size ? size : 12,
             CleanupAgeDays = DefaultAgeChoice.SelectedIndex switch { 0 => 1, 2 => 30, _ => 7 }

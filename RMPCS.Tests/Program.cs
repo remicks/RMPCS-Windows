@@ -4,7 +4,7 @@ if (args.Length == 1 && args[0] == "--github-smoke")
 {
     using var handler = new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false, UseDefaultCredentials = false };
     using var client = new HttpClient(handler);
-    var result = await new UpdateChecker(client).CheckAsync("0.7.0", true);
+    var result = await new UpdateChecker(client).CheckAsync("0.8.0", true);
     if (result.Latest is null) throw new Exception(result.Message);
     Console.WriteLine("Live public GitHub update request and release parsing passed: " + result.Latest.Tag);
     return;
@@ -83,6 +83,7 @@ try
     await Version03Checks.RunAsync(Check);
     await Version06Checks.RunAsync(Check);
     await Version07Checks.RunAsync(Check, fixture);
+    Version08Checks.Run(Check);
     Check(DesktopPolicy.StartHidden(new[] { "--startup" }) && !DesktopPolicy.StartHidden(Array.Empty<string>()), "sign-in startup hides to tray; normal launches stay visible");
     Check(!DesktopPolicy.StartHidden(new[] { "--scheduled-light" }) && !DesktopPolicy.StartHidden(new[] { "--scheduled-repair" }), "maintenance profiles remain separate from desktop tray startup");
     Check(DesktopPolicy.HideOnClose(true, false, false) && !DesktopPolicy.HideOnClose(false, false, false), "close hides only when a tray icon is available");

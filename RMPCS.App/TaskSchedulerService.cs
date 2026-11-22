@@ -68,9 +68,10 @@ internal static class TaskSchedulerService
         var time = DateTime.Parse(trigger.Element(ns + "StartBoundary")!.Value, System.Globalization.CultureInfo.InvariantCulture);
         var week = trigger.Element(ns + "ScheduleByWeek");
         DayOfWeek day = week is null ? DayOfWeek.Sunday : Enum.Parse<DayOfWeek>(week.Element(ns + "DaysOfWeek")!.Elements().Single().Name.LocalName);
-        return new(week is null ? ScheduleFrequency.Daily : ScheduleFrequency.Weekly, day, time.Hour, time.Minute,
-            task.Descendants(ns + "Arguments").Single().Value == "--scheduled-repair",
+        if (!ScheduleLaunch.TryParse(task.Descendants(ns + "Arguments").Single().Value.Split(' ', StringSplitOptions.RemoveEmptyEntries), out var launch)) throw new InvalidOperationException("Unsupported scheduled profile arguments.");
+        return new ScheduleOptions(week is null ? ScheduleFrequency.Daily : ScheduleFrequency.Weekly, day, time.Hour, time.Minute,
+            launch.Repair,
             task.Descendants(ns + "RunOnlyIfIdle").Single().Value == "true",
-            task.Descendants(ns + "DisallowStartIfOnBatteries").Single().Value == "true");
+            task.Descendants(ns + "DisallowStartIfOnBatteries").Single().Value == "true") { StartWindowMinutes = launch.WindowMinutes, WorkloadDeferMinutes = launch.DeferMinutes };
     }
 }

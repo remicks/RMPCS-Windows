@@ -14,6 +14,20 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Length == 2 && e.Args[0] == "--diagnostic-read-check")
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            try
+            {
+                string report = await DiagnosticsService.StabilityAsync(7);
+                var sample = await WorkloadProbe.SampleAsync().WaitAsync(TimeSpan.FromSeconds(10));
+                // Persist only validation status, never the underlying event/resource details.
+                System.IO.File.WriteAllText(e.Args[1], $"Stability metadata read completed ({report.Length} characters; report not saved). Workload probe completed. Decision: {WorkloadRules.DeferReason(sample) ?? "signals allowed a start"}. No network tests, restore creation, preferences or maintenance were invoked.\n");
+                Shutdown(0);
+            }
+            catch { System.IO.File.WriteAllText(e.Args[1], "Read-only diagnostic check failed."); Shutdown(1); }
+            return;
+        }
         if (e.Args.Length == 1 && e.Args[0] == "--backup-acl-check")
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -34,7 +48,7 @@ public partial class App : Application
             catch (Exception ex) { System.IO.File.WriteAllText(e.Args[1], "Read-only check failed: " + ex.Message); Shutdown(1); }
             return;
         }
-        if (e.Args.Length == 1 && e.Args[0] is "--scheduled-light" or "--scheduled-repair")
+        if (e.Args.Length > 0 && e.Args[0].StartsWith("--scheduled-", StringComparison.Ordinal))
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
             int exit = 1;
@@ -42,12 +56,14 @@ public partial class App : Application
             {
                 if (!new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)) throw new InvalidOperationException("Scheduled care requires administrator rights.");
                 if (!TaskSchedulerService.IsInstalled) throw new InvalidOperationException("Scheduled care only runs from the protected installed copy.");
+                if (!ScheduleLaunch.TryParse(e.Args, out var launch)) throw new InvalidOperationException("Invalid scheduled launch arguments.");
                 using var log = new SessionLog(e.Args[0]);
+                if (!await ScheduledStartGuard.MayStartAsync(launch, log.Write)) { CompletionRelay.Send(log.Error is null ? CompletionNotice.Deferred : CompletionNotice.NeedsReview); Shutdown(log.Error is null ? 0 : 1); return; }
                 using var lease = RunLease.Acquire();
                 if (lease is null) { log.Write("Skipped: another maintenance session is active."); CompletionRelay.Send(CompletionNotice.Skipped); exit = 0; }
                 else
                 {
-                    var plan = e.Args[0] == "--scheduled-repair" ? MaintenancePlan.Care : MaintenancePlan.Light;
+                    var plan = launch.Repair ? MaintenancePlan.Care : MaintenancePlan.Light;
                     log.Write(plan.Describe());
                     var before = DriveSpaceSnapshot.Capture();
                     var clock = System.Diagnostics.Stopwatch.StartNew();

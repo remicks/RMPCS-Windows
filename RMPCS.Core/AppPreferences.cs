@@ -8,12 +8,13 @@ public sealed record AppPreferences
     public bool MinimizeToTray { get; init; } = true;
     public bool TrayNotifications { get; init; } = true;
     public bool CompletionNotifications { get; init; }
+    public bool RestoreBeforeRepair { get; init; }
     public bool CheckUpdatesOnLaunch { get; init; }
     public bool IncludePrereleases { get; init; } = true;
     public int ActivityFontSize { get; init; } = 12;
     public int CleanupAgeDays { get; init; } = 7;
     public string StartPage { get; init; } = "Health";
-    public static readonly string[] Pages = ["Health", "Maintenance", "Automation", "Startup", "History", "Settings", "Help"];
+    public static readonly string[] Pages = ["Health", "Maintenance", "Automation", "Startup", "History", "Settings", "Help", "Diagnostics", "Protection"];
     public AppPreferences Normalize() => this with
     {
         ActivityFontSize = ActivityFontSize is >= 11 and <= 18 ? ActivityFontSize : 12,
