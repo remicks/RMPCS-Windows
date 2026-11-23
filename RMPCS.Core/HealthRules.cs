@@ -20,6 +20,9 @@ public static class HealthRules
 
 public sealed record StartupItem(string Id, string Name, string Command, string Scope, bool Enabled, bool Expand, string OwnerSid)
 {
+    [System.Text.Json.Serialization.JsonIgnore] public string ScopeLabel => Scope switch { "User64" => "This Windows user", "Machine32" => "All users (32-bit)", _ => "All users (64-bit)" };
+    [System.Text.Json.Serialization.JsonIgnore] public string SwitchLabel => Enabled ? "On" : "Off";
+    [System.Text.Json.Serialization.JsonIgnore] public string AccessibleName => Name + " startup entry: " + SwitchLabel + ", " + ScopeLabel;
     public string State => Enabled ? "Run entry present" : "Disabled by RMPCS";
 }
 public static class StartupPolicy

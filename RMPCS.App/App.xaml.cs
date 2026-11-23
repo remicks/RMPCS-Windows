@@ -8,7 +8,7 @@ public partial class App : Application
     private TrayService? tray;
     private DesktopSession? desktop;
     protected override void OnExit(ExitEventArgs e)
-    { tray?.Dispose(); desktop?.Dispose(); base.OnExit(e); }
+    { ThemeManager.Dispose(); tray?.Dispose(); desktop?.Dispose(); base.OnExit(e); }
     protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
     { if (MainWindow is MainWindow window) window.SessionEnding = true; base.OnSessionEnding(e); }
     protected override async void OnStartup(StartupEventArgs e)
@@ -82,25 +82,34 @@ public partial class App : Application
             }
             Shutdown(exit); return;
         }
+        ThemeManager.Initialize();
         bool smoke = e.Args.Contains("--smoke-test");
-        bool preview = e.Args.Length is 2 or 3 && e.Args[0] == "--ui-preview";
+        bool preview = e.Args.Length is >= 2 and <= 6 && e.Args[0] == "--ui-preview";
         bool traySmoke = e.Args.Length is 1 or 2 && e.Args[0] == "--tray-smoke-test";
-        bool test = smoke || preview || traySmoke;
+        bool themeCheck = e.Args.Length==2 && e.Args[0]=="--theme-ui-check";
+        bool earlyDialogVerified=false;
+        if(themeCheck)
+        {
+            try {earlyDialogVerified=Dialogs.VerifyEarlyDialog();if(!earlyDialogVerified)throw new InvalidOperationException("Startup dialog state was not restored.");}
+            catch(Exception ex){System.IO.File.WriteAllText(e.Args[1],"Startup dialog check failed: "+ex.Message);Shutdown(1);return;}
+        }
+        bool test = smoke || preview || traySmoke || themeCheck;
         if (!test)
         {
             try { if (LaunchPreference.RelaunchIfRequested(e.Args)) { Shutdown(); return; } }
             catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { /* UAC cancellation leaves a usable standard session. */ }
-            catch (Exception ex) { MessageBox.Show("Administrator launch could not complete. RMPCS will open in a standard session.\n\n" + ex.Message, "RMPCS"); }
+            catch (Exception ex) { Dialogs.Show("Administrator launch could not complete. RMPCS will open in a standard session.\n\n" + ex.Message, "RMPCS"); }
             try
             {
                 desktop = new DesktopSession();
                 if (!desktop.IsOwner) { Shutdown(); return; }
             }
-            catch (Exception ex) { MessageBox.Show("RMPCS could not establish its desktop session: " + ex.Message, "RMPCS"); Shutdown(1); return; }
+            catch (Exception ex) { Dialogs.Show("RMPCS could not establish its desktop session: " + ex.Message, "RMPCS"); Shutdown(1); return; }
         }
         var window = new MainWindow(test); MainWindow = window;
-        if (preview && e.Args.Length == 3 && int.TryParse(e.Args[2], out int tab) && tab >= 0 && tab < window.MainTabs.Items.Count) window.MainTabs.SelectedIndex = tab;
-        if (!smoke && !preview)
+        if (preview && e.Args.Length >= 3 && int.TryParse(e.Args[2], out int tab) && tab >= 0 && tab < window.MainTabs.Items.Count) window.MainTabs.SelectedIndex = tab;
+        if(preview)window.PreviewAppearance(e.Args.Length>=4?e.Args[3]:"Light",e.Args.Length>=5?e.Args[4]:"Crimson Red",e.Args.Length==6&&e.Args[5]=="compact");
+        if (!smoke && !preview && !themeCheck)
         {
             try { tray = new TrayService(window.ShowFromTray, window.RequestExit, window.NotifyCompletion); window.AttachTray(tray); }
             catch (Exception ex) { window.TrayUnavailable(); if (traySmoke && e.Args.Length == 2) System.IO.File.WriteAllText(e.Args[1], "Tray creation failed: " + ex); }
@@ -119,7 +128,12 @@ public partial class App : Application
         {
             if (contentHandled) return;
             contentHandled = true;
-            if (preview)
+            if(themeCheck)
+            {
+                try { window.VerifyThemeUi(e.Args[1],earlyDialogVerified);window.Close(); }
+                catch(Exception ex) {System.IO.File.WriteAllText(e.Args[1],"Theme UI check failed: "+ex.Message);Shutdown(1);}
+            }
+            else if (preview)
             {
                 try
                 {

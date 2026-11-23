@@ -1,4 +1,4 @@
-# RMPCS 0.8.0 - Rusty's PC Toolkit
+# RMPCS 0.9.0 - Rusty's PC Toolkit
 
 A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prerequisite setup, read-only health checks, cleanup previews, reversible Run-entry management, and scheduled care.
 
@@ -6,9 +6,9 @@ A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prer
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.8.0/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.8.0/RMPCS-Setup-0.8.0-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.8.0/RMPCS-v0.8.0-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.9.0/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.9.0/RMPCS-Setup-0.9.0-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.9.0/RMPCS-v0.9.0-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -20,6 +20,15 @@ The bootstrap launchers use the .NET Framework supplied with Windows 11 and do n
 Microsoft runtime downloads use HTTPS, an exact pinned SHA-512 from official release metadata, and Windows Authenticode trust verification with a Microsoft Corporation publisher check. A failed integrity/trust check stops execution. No certificate-validation bypass or unknown-host redirect is accepted. Downloads are size-limited, cancellable, and have a deadline. An offline-file option accepts the exact pinned installer and applies the same checks; offline signature validation depends on available certificate/revocation information. A compatible already-installed runtime is reused.
 
 Microsoft's setup remains visible for its Windows permissions and license prompts. Cancelled or failed setup stops the chain. Restart-required results are reported; RMPCS's prerequisite launcher does not request an automatic restart. Runtime and MSI files are held against modification during verification/execution. The portable launcher similarly verifies and holds its app payload while the session runs.
+
+## New in v0.9 - simpler controls and complete app themes
+
+- **Guided Overview:** Check my PC performs a read-only health scan; Review recommended care opens the maintenance selection without running it. Startup apps is a separate clear next step. The run action appears only while reviewing Maintenance. Less-used tools and raw startup-command details stay expandable. The window adapts to smaller work areas and content scrolls.
+- **Startup-entry switches:** On means a common Run entry is present; Off means RMPCS has a saved disabled-entry backup. The switch does not claim Task Manager or Windows approval status. Administrator rights, confirmation, protected backups, current-value revalidation and conflicting-restore protection remain required. Loading/refreshing the list never invokes a write. Cancelled/denied changes return to the prior state; failures refresh the inventory rather than show unverified success. Stored commands are displayed only and never launched.
+- **Theme-aware switches:** Window/tray, update and repair preferences, administrator prompting, sign-in startup, schedule enablement and idle/AC conditions use restrained switches. General settings still require Save preferences; administrator prompting uses its separate Apply button. Startup and schedule switches apply only after confirmation, while Save & enable schedule applies the reviewed schedule form. Unknown task status disables its switches. Maintenance task selections remain checkboxes with a separate run confirmation.
+- **Appearance in Settings:** System (follow Windows), Light and Dark modes; Midnight Purple, Electric Blue, Neon Cyan, Emerald Green, Crimson Red, Sunset Orange, Hot Pink and Gold accent presets; or custom HEX/RGB. Midnight Purple uses LootDrop's #D58AFF accent and a related dark palette. Save appearance persists only appearance; Save preferences saves all general choices. Preview is immediate; Discard preview restores saved appearance. App-owned views, controls, dropdowns, grids, text, scrollbars, confirmations and tray menus share dynamic colors. Windows High Contrast overrides custom colors, and Windows theme changes are observed in System mode. Accent text and labels choose contrasting colors. Windows-owned file/UAC dialogs and installer surfaces retain their OS/installer styling.
+
+Appearance preferences are bounded data stored alongside existing local preferences and covered by one-step preference undo. No theme downloads, external theme code, extra dependency, credential collection or maintenance category is introduced. Confirmation dialogs default to Cancel; Escape/window-close never approve a Yes/No action. Existing schedules and deletion/repair policies are preserved. See release notes for validation limits.
 
 ## New in v0.8
 
@@ -145,9 +154,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.8.0-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.8.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.8.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.9.0-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.9.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.9.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.

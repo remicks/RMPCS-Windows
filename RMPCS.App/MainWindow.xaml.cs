@@ -12,6 +12,8 @@ namespace RMPCS.App;
 public partial class MainWindow : Window
 {
     private bool busy, stopRequested;
+    public static readonly DependencyProperty CanChangeStartupProperty=DependencyProperty.Register(nameof(CanChangeStartup),typeof(bool),typeof(MainWindow),new PropertyMetadata(false));
+    public bool CanChangeStartup {get=>(bool)GetValue(CanChangeStartupProperty);private set=>SetValue(CanChangeStartupProperty,value);}
     private TrayService? tray;
     private bool exitRequested, trayNoticeShown;
     internal bool TestMode { get; set; }
@@ -37,7 +39,7 @@ public partial class MainWindow : Window
     }
     internal void RequestExit()
     {
-        if (!DesktopPolicy.CanExit(busy)) { ShowFromTray(); MessageBox.Show(this, "Wait for the active task to finish. Stop after current task prevents later tasks from starting.", "Task running"); return; }
+        if (!DesktopPolicy.CanExit(busy)) { ShowFromTray(); Dialogs.Show(this, "Wait for the active task to finish. Stop after current task prevents later tasks from starting.", "Task running"); return; }
         exitRequested = true; Close();
     }
     private void Tray_Click(object sender, RoutedEventArgs e) => HideToTray();
@@ -51,9 +53,9 @@ public partial class MainWindow : Window
         AdminStatus.Text = admin ? "Administrator session" : "Standard session";
         ElevateButton.Visibility = admin ? Visibility.Collapsed : Visibility.Visible;
         SetBusy(false);
+        SourceInitialized += (_,_)=>{ThemeManager.ApplyTitleBar(this);if(!TestMode){var area=SystemParameters.WorkArea;MinWidth=Math.Min(MinWidth,area.Width);MinHeight=Math.Min(MinHeight,area.Height);Width=Math.Min(Width,area.Width);Height=Math.Min(Height,area.Height);}};
         InitializePreferences();
-        Log("RMPCS 0.8.0 - Written by Rusty. Health scan, cleanup previews and startup management are ready.");
-        Log("Select full batch to include advanced tasks and reboot, or use recommended care.");
+        Activity.Text="Your results will appear here.\n\nStart with Check my PC for a read-only health snapshot. Review maintenance tasks before choosing Run selected tasks. Help explains what each tool does.";
     }
     public void CheckAdministrator(bool showWarning = true)
     {
@@ -61,7 +63,7 @@ public partial class MainWindow : Window
         if (!admin)
         {
             Status.Text = "Administrator access required.";
-            if (showWarning) MessageBox.Show(this, "Right-click RMPCS.exe and select Run as administrator, or use the Run as administrator button here. Maintenance and automation changes stay disabled until you relaunch with admin rights.", "Run RMPCS as administrator", MessageBoxButton.OK, MessageBoxImage.Warning);
+            if (showWarning) Dialogs.Show(this, "Right-click RMPCS.exe and select Run as administrator, or use the Run as administrator button here. Maintenance and automation changes stay disabled until you relaunch with admin rights.", "Run RMPCS as administrator", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         RefreshAutomation();
         RefreshHistory();
@@ -75,7 +77,7 @@ public partial class MainWindow : Window
     }
     private void SetBusy(bool value)
     {
-        busy = value;
+        busy = value;CanChangeStartup=!value&&admin;
         tray?.Status(value);
         TaskPanel.IsEnabled = PreviewButton.IsEnabled = HistoryPanel.IsEnabled = !value;
         HealthPanel.IsEnabled = StartupAppsPanel.IsEnabled = !value;
@@ -84,15 +86,17 @@ public partial class MainWindow : Window
         CreateRestoreButton.IsEnabled = !value && admin;
         UndoAdminButton.IsEnabled = !value && admin && TaskSchedulerService.IsInstalled;
         ApplyAdminPreference.IsEnabled = InstalledAdminChoice.IsEnabled = !value && admin && TaskSchedulerService.IsInstalled;
-        DisableStartupApp.IsEnabled = RestoreStartupApp.IsEnabled = !value && admin;
-        RunButton.IsEnabled = CareButton.IsEnabled = AutomationPanel.IsEnabled = !value && admin;
+
+        RunButton.IsEnabled = AutomationPanel.IsEnabled = !value && admin;
+        CareButton.IsEnabled = !value;
+        AutostartSwitch.IsEnabled=ScheduleEnabledSwitch.IsEnabled=!value&&admin&&automationStatusKnown&&TaskSchedulerService.IsInstalled;
         ElevateButton.IsEnabled = !value && !admin;
         StopButton.IsEnabled = value;
         StopButton.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
         Progress.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
         Progress.IsIndeterminate = value;
     }
-    private bool Confirm(string text) => MessageBox.Show(this, text, "RMPCS", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
+    private bool Confirm(string text) => Dialogs.Show(this, text, "RMPCS", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
     private MaintenancePlan SelectedPlan() => new()
     {
         UserTemp = UserTemp.IsChecked == true, WindowsTemp = SystemTemp.IsChecked == true,
@@ -118,7 +122,7 @@ public partial class MainWindow : Window
     }
     private void SelectCare_Click(object sender, RoutedEventArgs e) => ApplyPlan(MaintenancePlan.Care);
     private void SelectBatch_Click(object sender, RoutedEventArgs e) { ApplyPlan(MaintenancePlan.FullBatch); AdvancedOptions.IsExpanded = true; Status.Text = "Full batch selected. Review advanced tasks and reboot before running."; }
-    private async void Care_Click(object sender, RoutedEventArgs e) { ApplyPlan(MaintenancePlan.Care); await StartPlanAsync(SelectedPlan()); }
+    private void Care_Click(object sender, RoutedEventArgs e) { if(busy)return;ApplyPlan(MaintenancePlan.Care);MainTabs.SelectedIndex=1;Status.Text="Review the selected tasks, then choose Run selected tasks. Nothing has run yet."; }
     private async void Run_Click(object sender, RoutedEventArgs e) => await StartPlanAsync(SelectedPlan());
     private async Task StartPlanAsync(MaintenancePlan plan)
     {
@@ -201,25 +205,33 @@ public partial class MainWindow : Window
     }
     private void RefreshStartupApps()
     {
-        try { StartupEntries.ItemsSource = StartupManager.List(Log); StartupCommand.Text = "Select an entry to review its stored command."; }
+        try { var entries=TestMode?Array.Empty<StartupItem>():StartupManager.List(Log);StartupEntries.ItemsSource = entries; StartupCommand.Text = "Select an entry to review its stored command. Commands are never launched here.";StartupListStatus.Text=(entries.GroupBy(x=>x.Id).Any(g=>g.Count()>1)?"A live entry and saved backup overlap. Review the details; conflicting values are never overwritten. ":"")+$"{entries.Count} startup entries. On means an entry is present, not that Windows guarantees it will start."+(!admin?" Run as administrator to change these switches.":""); }
         catch (Exception ex) { Log("Startup list unavailable: " + ex.Message); }
     }
     private void StartupAppsRefresh_Click(object sender, RoutedEventArgs e) => RefreshStartupApps();
     private void StartupSelection_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     { if (StartupEntries.SelectedItem is StartupItem item) StartupCommand.Text = $"{item.Name}\n{item.Scope} - {item.State}\n{item.Command}"; }
-    private void DisableStartupApp_Click(object sender, RoutedEventArgs e)
+    private void StartupToggle_Click(object sender, RoutedEventArgs e)
     {
-        if (!admin || busy || StartupEntries.SelectedItem is not StartupItem { Enabled: true } item) return;
-        if (!Confirm($"Disable the Run entry '{item.Name}' ({item.Scope})?\n\n{item.Command}\n\nA protected backup is kept so you can restore it. The currently running program is not stopped. Disabling vendor utilities may affect their features at your next sign-in.")) return;
-        try { StartupManager.Disable(item); Log("Startup entry disabled with backup: " + item.Name); } catch (Exception ex) { Log("Startup change failed: " + ex.Message); }
-        RefreshStartupApps();
+        if(sender is not System.Windows.Controls.CheckBox toggle || toggle.DataContext is not StartupItem item)return;
+        bool requested=toggle.IsChecked==true;
+        toggle.SetCurrentValue(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty,item.Enabled);
+        try
+        {
+            var outcome=StartupSwitchFlow.Change(item,requested,admin&&!busy&&!TestMode,
+                ()=>Confirm($"Turn {(requested?"on":"off")} the startup entry for '{item.Name}'?\n{item.ScopeLabel}\n\n{item.Command}\n\n"+(requested?"Restore the original entry saved by RMPCS. This can allow the app to start at the next sign-in; it will not be launched now.":"A protected backup is kept so you can turn it back on. The running app will not be stopped. Turn off only entries you recognize; vendor utilities may provide hardware features.")),
+                StartupManager.Disable,StartupManager.Restore);
+            if(outcome==StartupSwitchResult.Changed){Log("Startup entry " +(requested?"restored: ":"disabled with backup: ")+item.Name);RefreshStartupApps();}
+            else StartupListStatus.Text=outcome==StartupSwitchResult.Denied?"Administrator access is required to change startup entries.":"No startup entry was changed.";
+        }
+        catch(Exception ex){Log("Startup change could not be completed: "+ex.Message);RefreshStartupApps();StartupListStatus.Text="Change could not be confirmed. Review the refreshed entry and its details. "+ex.Message;}
     }
-    private void RestoreStartupApp_Click(object sender, RoutedEventArgs e)
+    private void ShowStartup_Click(object sender,RoutedEventArgs e)=>MainTabs.SelectedIndex=3;
+    private void MainTabs_Changed(object sender,System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (!admin || busy || StartupEntries.SelectedItem is not StartupItem { Enabled: false } item) return;
-        if (!Confirm($"Restore the original Run entry '{item.Name}' ({item.Scope})?\n\n{item.Command}\n\nThis can allow it to start at sign-in, subject to Windows/app approvals. It will not be launched now.")) return;
-        try { StartupManager.Restore(item); Log("Startup entry restored: " + item.Name); } catch (Exception ex) { Log("Startup restore failed: " + ex.Message); }
-        RefreshStartupApps();
+        if(!ReferenceEquals(e.Source,MainTabs)||RunButton is null)return;
+        RunButton.Visibility=MainTabs.SelectedIndex==1?Visibility.Visible:Visibility.Collapsed;
+        if(MainTabs.SelectedIndex==3&&!busy&&!TestMode)RefreshStartupApps();
     }
     private void Stop_Click(object sender, RoutedEventArgs e) { stopRequested = true; StopButton.IsEnabled = false; Log("Stopping after current task; DHCP renewal is still attempted after release."); }
     private void Elevate_Click(object sender, RoutedEventArgs e)
@@ -236,8 +248,12 @@ public partial class MainWindow : Window
     {
         try
         {
-            StartupStatus.Text = TaskSchedulerService.Read(true).Status;
+            automationStatusKnown=false;
+            var startup = TaskSchedulerService.Read(true);StartupStatus.Text = startup.Status;
+            autostartEnabled=startup.Status.StartsWith("Enabled",StringComparison.Ordinal);AutostartSwitch.IsChecked=autostartEnabled;AutostartSwitch.IsEnabled=admin&&!busy&&TaskSchedulerService.IsInstalled;
             var state = TaskSchedulerService.Read(false); ScheduleStatus.Text = state.Status;
+            automationStatusKnown=true;
+            scheduleEnabled=state.Status.StartsWith("Enabled",StringComparison.Ordinal);ScheduleEnabledSwitch.IsChecked=scheduleEnabled;ScheduleEnabledSwitch.IsEnabled=admin&&!busy&&TaskSchedulerService.IsInstalled;
             if (state.Xml is not null)
             {
                 var options = TaskSchedulerService.ParseOptions(state.Xml);
@@ -248,19 +264,19 @@ public partial class MainWindow : Window
                 WorkloadDeferChoice.SelectedIndex = Array.IndexOf(new[] { 0, 15, 30, 60 }, options.WorkloadDeferMinutes);
             }
         }
-        catch (Exception ex) { StartupStatus.Text = ScheduleStatus.Text = "Status unavailable: " + ex.Message; }
+        catch (Exception ex) { StartupStatus.Text = ScheduleStatus.Text = "Status unavailable: " + ex.Message;automationStatusKnown=false;AutostartSwitch.IsEnabled=ScheduleEnabledSwitch.IsEnabled=false; }
     }
     private void ChangeAutomation(Action action)
     {
         if (!admin || busy) return;
-        try { action(); Log("Automation settings updated."); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "Automation not changed", MessageBoxButton.OK, MessageBoxImage.Information); }
+        try { action(); Log("Automation settings updated."); } catch (Exception ex) { Dialogs.Show(this, ex.Message, "Automation not changed", MessageBoxButton.OK, MessageBoxImage.Information); }
         RefreshAutomation();
     }
     private void StartupOn_Click(object sender, RoutedEventArgs e) { if (Confirm("Start RMPCS in the system tray with administrator rights at sign-in for this Windows user? No maintenance runs just because the app opens.\n\nOnly the protected installed copy supports automatic startup. This updates any existing RMPCS sign-in task.")) ChangeAutomation(() => TaskSchedulerService.Save(true)); }
     private void StartupOff_Click(object sender, RoutedEventArgs e) => ChangeAutomation(() => TaskSchedulerService.Remove(true));
     private void SaveSchedule_Click(object sender, RoutedEventArgs e)
     {
-        if (!TimeOnly.TryParseExact(ScheduleTime.Text.Trim(), "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var time)) { MessageBox.Show(this, "Enter a 24-hour local time such as 19:00."); return; }
+        if (!TimeOnly.TryParseExact(ScheduleTime.Text.Trim(), "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var time)) { Dialogs.Show(this, "Enter a 24-hour local time such as 19:00."); return; }
         var options = new ScheduleOptions(Frequency.SelectedIndex == 0 ? ScheduleFrequency.Daily : ScheduleFrequency.Weekly, (DayOfWeek)WeekDay.SelectedIndex, time.Hour, time.Minute, ScheduleProfile.SelectedIndex == 1, IdleOnly.IsChecked == true, AcOnly.IsChecked == true)
         { StartWindowMinutes = new[] { 0, 60, 120, 240 }[Math.Clamp(StartWindowChoice.SelectedIndex, 0, 3)], WorkloadDeferMinutes = new[] { 0, 15, 30, 60 }[Math.Clamp(WorkloadDeferChoice.SelectedIndex, 0, 3)] };
         if (!Confirm($"Enable {options.Frequency.ToString().ToLowerInvariant()} automatic {(options.Repair ? "cleanup and Windows repair" : "light cleanup")} at {time:HH:mm} local PC time" + (options.Frequency == ScheduleFrequency.Weekly ? $" on {options.Day}" : "") + "?\n\nThis authorizes unattended permanent deletion of eligible temp files older than 7 days and DNS flushing" + (options.Repair ? ", followed by DISM and SFC" : "") + ". You must be signed in. Advanced cleanup, network lease resets and restarts are excluded. Logs are saved locally.")) return;
@@ -297,6 +313,6 @@ public partial class MainWindow : Window
     {
         if (SessionEnding) return;
         if (DesktopPolicy.HideOnClose(tray?.Available == true && preferences.CloseToTray, exitRequested, TestMode)) { e.Cancel = true; HideToTray(); return; }
-        if (busy) { e.Cancel = true; MessageBox.Show(this, "Wait for the active task to finish. Stop after current task prevents later tasks from starting.", "Task running"); }
+        if (busy) { e.Cancel = true; Dialogs.Show(this, "Wait for the active task to finish. Stop after current task prevents later tasks from starting.", "Task running"); }
     }
 }

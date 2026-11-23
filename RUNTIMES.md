@@ -1,4 +1,4 @@
-# RMPCS v0.8 runtime setup
+# RMPCS v0.9 runtime setup
 
 ## Easiest path
 
@@ -25,4 +25,4 @@ They also require valid Windows Authenticode trust and a Microsoft Corporation s
 
 You can cancel and install a compatible newer .NET 10 Desktop Runtime manually using Microsoft's download page, then reopen the launcher. A compatible installed runtime is reused rather than unnecessarily reinstalling the pinned version. Reported restart requirements are displayed; RMPCS's prerequisite flow does not schedule an automatic restart.
 
-Native Microsoft runtime installation and full elevated install/uninstall have not been exercised in this managed development environment. Treat v0.8 as a development prerelease pending supervised validation on a suitable PC.
+Native Microsoft runtime installation and full elevated install/uninstall have not been exercised in this managed development environment. Treat v0.9 as a development prerelease pending supervised validation on a suitable PC.

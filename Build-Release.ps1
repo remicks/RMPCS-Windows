@@ -25,6 +25,7 @@ Check-Exe $setup @('--self-test',('"'+(Join-Path $release 'installer-check.txt')
 Check-Exe (Join-Path $portable 'Launch-RMPCS.exe') @('--self-test',('"'+(Join-Path $release 'portable-check.txt')+'"'))
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--backup-acl-check')
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--diagnostic-read-check',('"'+(Join-Path $release 'diagnostic-read-check.txt')+'"'))
+Check-Exe (Join-Path $app 'RMPCS.exe') @('--theme-ui-check',('"'+(Join-Path $release 'theme-ui-check.txt')+'"'))
 if($DesktopChecks) {
     Check-Exe (Join-Path $app 'RMPCS.exe') @('--smoke-test')
     Check-Exe $setup @('--smoke-test')

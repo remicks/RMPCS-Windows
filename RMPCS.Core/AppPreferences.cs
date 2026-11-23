@@ -13,10 +13,16 @@ public sealed record AppPreferences
     public bool IncludePrereleases { get; init; } = true;
     public int ActivityFontSize { get; init; } = 12;
     public int CleanupAgeDays { get; init; } = 7;
+    public string ThemeMode { get; init; } = "System";
+    public string AccentName { get; init; } = "Crimson Red";
+    public string CustomAccent { get; init; } = "#D58AFF";
     public string StartPage { get; init; } = "Health";
     public static readonly string[] Pages = ["Health", "Maintenance", "Automation", "Startup", "History", "Settings", "Help", "Diagnostics", "Protection"];
     public AppPreferences Normalize() => this with
     {
+        ThemeMode = ThemeCatalog.Modes.Contains(ThemeMode, StringComparer.Ordinal) ? ThemeMode : "System",
+        AccentName = AccentName == "Custom" || ThemeCatalog.Presets.Any(x=>x.Name==AccentName) ? AccentName : "Crimson Red",
+        CustomAccent = ThemeCatalog.NormalizeHex(CustomAccent),
         ActivityFontSize = ActivityFontSize is >= 11 and <= 18 ? ActivityFontSize : 12,
         CleanupAgeDays = CleanupAgeDays is 1 or 7 or 30 ? CleanupAgeDays : 7,
         StartPage = Pages.Contains(StartPage, StringComparer.Ordinal) ? StartPage : "Health"
