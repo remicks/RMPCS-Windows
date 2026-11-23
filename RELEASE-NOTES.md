@@ -1,6 +1,6 @@
-RMPCS v0.10.0 - Rusty's PC Toolkit
+RMPCS v0.10.1 - Rusty's PC Toolkit
 
-A compact sidebar keeps RMPCS tools close at hand without occupying a full desktop window.
+A compact sidebar keeps RMPCS tools close at hand without occupying a full desktop window. This build also refreshes the reservation status correctly after mode changes and a successful retry.
 
 - Choose Sidebar in the main header for a single-pane view with a page picker, Results & activity, tray access and a quick Full window button. Every existing page, task confirmation and administrator check is retained. Health checks, cleanup previews and maintenance display their output in the results pane.
 - Settings > Sidebar provides Left/Right docking, current or selected display, and 360/400/440/480 scaled-unit widths. Apply sidebar settings saves only sidebar preferences; the main Save preferences button includes them too. Sidebar mode and reservation are off by default. Themes and switches follow the rest of the app.

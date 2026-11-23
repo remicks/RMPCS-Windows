@@ -27,6 +27,7 @@ public partial class MainWindow
                 await Task.Delay(250); UpdateLayout();
                 Check(sidebarVisual && MinWidth == 0 && ResizeMode == ResizeMode.NoResize && SidebarHeader.IsVisible, "Compact layout is active");
                 Check(!sidebarDock.Reserved && SidebarDock.Screens().Single(s => s.Device == screen.Device).Work == screen.Work, "Overlay does not reserve work area");
+                Check(!SidebarStatus.Text.Contains("is off"), "Entering or reentering sidebar mode refreshes its status");
                 Check(sidebarDock.WindowArea.Top == screen.Work.Top && sidebarDock.WindowArea.Bottom == screen.Work.Bottom, "Sidebar respects taskbar height");
                 Check(edge == "Left" ? sidebarDock.WindowArea.Left == screen.Work.Left : sidebarDock.WindowArea.Right == screen.Work.Right, "Selected monitor and edge are honored");
                 for (int i = 0; i < MainTabs.Items.Count; i++)
@@ -112,6 +113,9 @@ public partial class MainWindow
             failSet = true; dock.Configure(options);
             check(!owned && !dock.Reserved && status.Contains("released"), "Failed SETPOS releases registration and reports failure");
             failSet = false; dock.Configure(options); check(owned, "Retry after a failed position can reserve again");
+            check(status.Contains("reserved"), "Successful retry replaces the prior failure status");
+            status = "Sidebar is off"; dock.Configure(options);
+            check(status.Contains("reserved"), "Unchanged placement still refreshes a stale status label");
             dock.Dispose(); dock.Dispose();
             check(!owned && registrations == removals, "Disposal is idempotent and balances all appbar registrations");
             check(SidebarDock.Screens().SequenceEqual(baseline), "Isolated shell fixtures never change the real desktop work area");

@@ -33,7 +33,6 @@ internal sealed class SidebarDock : IDisposable
     private WindowState restoreState;
     private bool restoreTopmost;
     private string? currentMonitor;
-    private string? lastReport;
     internal bool Reserved => registered;
     internal int PositionCount { get; private set; }
     internal ScreenArea WindowArea => GetWindowRect(hwnd, out var rect) ? rect.Area : throw new Win32Exception();
@@ -159,7 +158,7 @@ internal sealed class SidebarDock : IDisposable
             window.Topmost = !fullscreen;
             string status = (missing && options.SidebarMonitor != "Current" ? "Selected display unavailable; using an available display. " : "") +
                 (reserveFailed ? "Space reservation unavailable. Sidebar is overlaying the desktop; try applying again." : registered ? "Desktop space reserved while visible." : "Overlay mode · desktop space is not reserved.");
-            if (lastReport != status) { lastReport = status; report(status); }
+            report(status);
         }
         catch
         {
