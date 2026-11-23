@@ -23,6 +23,8 @@ $setup=Join-Path $release 'Bootstrap\RMPCS.Setup.exe'
 $portable=Join-Path $release 'Bootstrap\Portable'
 Check-Exe $setup @('--self-test',('"'+(Join-Path $release 'installer-check.txt')+'"'))
 Check-Exe (Join-Path $portable 'Launch-RMPCS.exe') @('--self-test',('"'+(Join-Path $release 'portable-check.txt')+'"'))
+Check-Exe $setup @('--progress-ui-check',('"'+(Join-Path $release 'setup-progress-check.txt')+'"'))
+Check-Exe (Join-Path $portable 'Launch-RMPCS.exe') @('--progress-ui-check',('"'+(Join-Path $release 'portable-progress-check.txt')+'"'))
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--backup-acl-check')
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--diagnostic-read-check',('"'+(Join-Path $release 'diagnostic-read-check.txt')+'"'))
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--theme-ui-check',('"'+(Join-Path $release 'theme-ui-check.txt')+'"'))

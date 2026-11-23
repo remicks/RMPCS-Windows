@@ -4,7 +4,7 @@ if (args.Length == 1 && args[0] == "--github-smoke")
 {
     using var handler = new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false, UseDefaultCredentials = false };
     using var client = new HttpClient(handler);
-    var result = await new UpdateChecker(client).CheckAsync("0.9.1", true);
+    var result = await new UpdateChecker(client).CheckAsync("0.9.2", true);
     if (result.Latest is null) throw new Exception(result.Message);
     Console.WriteLine("Live public GitHub update request and release parsing passed: " + result.Latest.Tag);
     return;

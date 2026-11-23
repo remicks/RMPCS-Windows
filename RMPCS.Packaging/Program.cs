@@ -53,7 +53,7 @@ foreach (var sequence in new[] { "InstallExecuteSequence", "InstallUISequence" }
 const string upgrade = "{C19B49F3-55BC-4427-AE35-3E1E27B732A5}";
 string product = Guid.NewGuid().ToString("B").ToUpperInvariant();
 foreach (var property in new Dictionary<string,string> {
-    ["ProductCode"] = product, ["UpgradeCode"] = upgrade, ["ProductName"] = "RMPCS - Rusty\u0027s PC Toolkit", ["ProductVersion"] = "0.9.1", ["ProductLanguage"] = "1033",
+    ["ProductCode"] = product, ["UpgradeCode"] = upgrade, ["ProductName"] = "RMPCS - Rusty\u0027s PC Toolkit", ["ProductVersion"] = "0.9.2", ["ProductLanguage"] = "1033",
     ["Manufacturer"] = "Degenerates Inc.", ["ALLUSERS"] = "1", ["ARPNOMODIFY"] = "1", ["ARPPRODUCTICON"] = "RMPCS.ico", ["ARPCOMMENTS"] = "Rusty's PC maintenance toolkit. Automation is opt-in.",
     ["SecureCustomProperties"] = "OLDPRODUCTS;NEWERFOUND;DOTNETDESKTOP10;CREATE_DESKTOP;CREATE_STARTMENU;ALWAYS_ADMIN", ["MSIRESTARTMANAGERCONTROL"] = "Disable", ["MSIDISABLERMRESTART"] = "1", ["INSTALLLEVEL"] = "1", ["RUN_AFTER"] = "1" }) db.Row("Property", property.Key, property.Value);
 db.Row("Directory", "TARGETDIR", null, "SourceDir");
@@ -124,8 +124,8 @@ db.Row("DrLocator", "Desktop10File", "DotnetRoot", @"shared\Microsoft.WindowsDes
 db.Row("Signature", "Desktop10File", "PresentationFramework.dll", "10.0.0.0", "10.65535.65535.65535", null, null, null, null, null);
 db.Row("LaunchCondition", "Installed OR DOTNETDESKTOP10", "Install the Microsoft .NET 10 Desktop Runtime (Windows x64), then run this installer again. Download: https://dotnet.microsoft.com/download/dotnet/10.0");
 db.Row("LaunchCondition", "VersionNT64", "RMPCS requires 64-bit Windows.");
-db.Row("Upgrade", upgrade, "0.0.0", "0.9.1", "1033", 257, null, "OLDPRODUCTS");
-db.Row("Upgrade", upgrade, "0.9.1", null, "1033", 258, null, "NEWERFOUND");
+db.Row("Upgrade", upgrade, "0.0.0", "0.9.2", "1033", 257, null, "OLDPRODUCTS");
+db.Row("Upgrade", upgrade, "0.9.2", null, "1033", 258, null, "NEWERFOUND");
 db.Row("LaunchCondition", "Installed OR NOT NEWERFOUND", "The same or a newer RMPCS version is installed. Uninstall it first or use its Repair option.");
 string cleanupId = $"F{files.Length - 1:0000}";
 db.Row("CustomAction", "CleanupTasks", 3106, "System64Folder", $"\"[System64Folder]WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"[#{cleanupId}]\" -InstallRoot \"[INSTALLFOLDER].\"");
@@ -135,6 +135,8 @@ db.Row("InstallExecuteSequence", "CleanupTasks", "REMOVE~=\"ALL\" AND NOT UPGRAD
 db.Sql("CREATE TABLE `Dialog` (`Dialog` CHAR(72) NOT NULL, `HCentering` SHORT NOT NULL, `VCentering` SHORT NOT NULL, `Width` SHORT NOT NULL, `Height` SHORT NOT NULL, `Attributes` LONG, `Title` CHAR(128) LOCALIZABLE, `Control_First` CHAR(50), `Control_Default` CHAR(50), `Control_Cancel` CHAR(50) PRIMARY KEY `Dialog`)");
 db.Sql("CREATE TABLE `Control` (`Dialog_` CHAR(72) NOT NULL, `Control` CHAR(50) NOT NULL, `Type` CHAR(20) NOT NULL, `X` SHORT NOT NULL, `Y` SHORT NOT NULL, `Width` SHORT NOT NULL, `Height` SHORT NOT NULL, `Attributes` LONG, `Property` CHAR(72), `Text` CHAR(0) LOCALIZABLE, `Control_Next` CHAR(50), `Help` CHAR(50) LOCALIZABLE PRIMARY KEY `Dialog_`, `Control`)");
 db.Sql("CREATE TABLE `ControlEvent` (`Dialog_` CHAR(72) NOT NULL, `Control_` CHAR(50) NOT NULL, `Event` CHAR(50) NOT NULL, `Argument` CHAR(255), `Condition` CHAR(255), `Ordering` SHORT PRIMARY KEY `Dialog_`, `Control_`, `Event`, `Argument`, `Condition`)");
+db.Sql("CREATE TABLE `EventMapping` (`Dialog_` CHAR(72) NOT NULL, `Control_` CHAR(50) NOT NULL, `Event` CHAR(50) NOT NULL, `Attribute` CHAR(50) NOT NULL PRIMARY KEY `Dialog_`, `Control_`, `Event`)");
+db.Sql("CREATE TABLE `ActionText` (`Action` CHAR(72) NOT NULL, `Description` CHAR(0) LOCALIZABLE, `Template` CHAR(0) LOCALIZABLE PRIMARY KEY `Action`)");
 db.Sql("CREATE TABLE `TextStyle` (`TextStyle` CHAR(72) NOT NULL, `FaceName` CHAR(32) NOT NULL, `Size` SHORT NOT NULL, `Color` LONG, `StyleBits` SHORT PRIMARY KEY `TextStyle`)");
 db.Sql("CREATE TABLE `CheckBox` (`Property` CHAR(72) NOT NULL, `Value` CHAR(64) LOCALIZABLE PRIMARY KEY `Property`)");
 foreach (string property in new[] { "CREATE_DESKTOP", "CREATE_STARTMENU", "ALWAYS_ADMIN", "RUN_AFTER" }) db.Row("CheckBox", property, "1");
@@ -156,7 +158,7 @@ void Dialog(string name, string title, string body, string button, string action
     db.Row("ControlEvent", name, "Continue", "EndDialog", action, "1", 2);
     db.Row("ControlEvent", name, "Cancel", "EndDialog", "Exit", "1", 1);
 }
-Dialog("WelcomeDlg", "RMPCS 0.9.1 Setup", "Install Rusty's PC maintenance toolkit to:\n[ProgramFiles64Folder]Degenerates Inc\\RMPCS\n\nRequires the .NET 10 Desktop Runtime.\n\nCreates a Start Menu shortcut and an uninstall entry. Startup and schedules remain OFF until you enable them in the app.\n\nClose RMPCS before installing or updating.", "Install", "Return");
+Dialog("WelcomeDlg", "RMPCS 0.9.2 Setup", "Install Rusty's PC maintenance toolkit to:\n[ProgramFiles64Folder]Degenerates Inc\\RMPCS\n\nRequires the .NET 10 Desktop Runtime.\n\nCreates a Start Menu shortcut and an uninstall entry. Startup and schedules remain OFF until you enable them in the app.\n\nClose RMPCS before installing or updating.", "Install", "Return");
 db.Sql("UPDATE `Control` SET `Text`='Choose how RMPCS fits into your desktop.\nWindows will still ask for permission when administrator access is requested.\n\nClose RMPCS using Exit before continuing.' WHERE `Dialog_`='WelcomeDlg' AND `Control`='Body'");
 db.Sql("UPDATE `Control` SET `Height`=62 WHERE `Dialog_`='WelcomeDlg' AND `Control`='Body'");
 db.Sql("UPDATE `Control` SET `Control_Next`='DesktopChoice' WHERE `Dialog_`='WelcomeDlg' AND `Control`='Cancel'");
@@ -168,6 +170,58 @@ foreach (var (action, number) in new (string,int)[] { ("FindRelatedProducts",25)
 db.Row("InstallUISequence", "WelcomeDlg", "NOT Installed", 750);
 foreach (string name in new[] { "Desktop", "StartMenu", "AlwaysAdmin" }) db.Sql($"UPDATE `InstallUISequence` SET `Sequence`={760 + Array.IndexOf(new[] { "Desktop", "StartMenu", "AlwaysAdmin" }, name)} WHERE `Action`='Normalize{name}'");
 db.Row("InstallUISequence", "RemoveDlg", "Installed AND NOT REINSTALL", 1101);
+
+// Modeless action display: return to the engine while keeping a real progress window alive.
+db.Row("Property", "INSTALL_OPERATION", "Installing RMPCS");
+foreach (var (id, text, condition, sequence) in new[] {
+    ("DescribeRemoval", "Removing RMPCS", "REMOVE~=\"ALL\"", 1210),
+    ("DescribeRepair", "Updating RMPCS", "Installed AND NOT REMOVE", 1211),
+    ("DescribeUpgrade", "Upgrading RMPCS", "OLDPRODUCTS AND NOT Installed AND NOT REMOVE", 1212) })
+{
+    db.Row("CustomAction", id, 51, "INSTALL_OPERATION", text);
+    db.Row("InstallUISequence", id, condition, sequence);
+}
+db.Row("Dialog", "ProgressDlg", 50, 50, 420, 285, 1, "RMPCS Setup - [INSTALL_OPERATION]", "Cancel", "Cancel", "Cancel");
+db.Row("Control", "ProgressDlg", "Brand", "Icon", 20, 22, 36, 36, 3, null, "BrandIcon", null, null);
+db.Row("Control", "ProgressDlg", "Heading", "Text", 70, 24, 326, 32, 3, null, "{\\Heading}[INSTALL_OPERATION]", null, null);
+db.Row("Control", "ProgressDlg", "Body", "Text", 24, 90, 372, 44, 3, null, "Please keep setup open while Windows applies your changes.", null, null);
+db.Row("Control", "ProgressDlg", "Action", "Text", 24, 143, 372, 30, 3, null, "Preparing Windows Installer...", null, null);
+db.Row("Control", "ProgressDlg", "Progress", "ProgressBar", 24, 184, 372, 16, 3, null, "1", null, null);
+db.Row("Control", "ProgressDlg", "Note", "Text", 24, 210, 372, 26, 3, null, "Progress may pause during validation or move backwards during rollback.", null, null);
+db.Row("Control", "ProgressDlg", "Cancel", "PushButton", 308, 244, 90, 24, 3, null, "Cancel", "Cancel", null);
+db.Row("EventMapping", "ProgressDlg", "Progress", "SetProgress", "Progress");
+db.Row("EventMapping", "ProgressDlg", "Action", "ActionText", "Text");
+db.Row("ControlEvent", "ProgressDlg", "Cancel", "SpawnDialog", "CancelConfirmDlg", "1", 1);
+db.Row("Dialog", "CancelConfirmDlg", 50, 50, 300, 120, 3, "Cancel RMPCS setup?", "Keep", "Keep", "Keep");
+db.Row("Control", "CancelConfirmDlg", "Body", "Text", 20, 20, 260, 46, 3, null, "Cancel this operation? Windows may need time to roll back changes. Setup will not forcibly stop Windows Installer.", null, null);
+db.Row("Control", "CancelConfirmDlg", "Keep", "PushButton", 155, 82, 125, 24, 3, null, "Keep working", "Stop", null);
+db.Row("Control", "CancelConfirmDlg", "Stop", "PushButton", 20, 82, 125, 24, 3, null, "Cancel operation", "Keep", null);
+db.Row("ControlEvent", "CancelConfirmDlg", "Keep", "EndDialog", "Return", "1", 1);
+db.Row("ControlEvent", "CancelConfirmDlg", "Stop", "EndDialog", "Exit", "1", 1);
+db.Row("InstallUISequence", "ProgressDlg", null, 1290);
+foreach (var (action, description) in new[] {
+    ("InstallValidate", "Validating the requested changes..."), ("InstallInitialize", "Preparing the installation transaction..."),
+    ("RemoveExistingProducts", "Removing the previous RMPCS version..."), ("CleanupTasks", "Removing RMPCS sign-in and maintenance tasks..."),
+    ("RemoveFiles", "Removing application files..."), ("InstallFiles", "Copying application files..."),
+    ("WriteRegistryValues", "Saving installation preferences..."), ("RemoveRegistryValues", "Removing installation preferences..."),
+    ("CreateShortcuts", "Creating shortcuts..."), ("RemoveShortcuts", "Removing shortcuts..."),
+    ("RegisterProduct", "Registering RMPCS with Windows..."), ("PublishProduct", "Updating Windows installation records..."),
+    ("InstallFinalize", "Completing the requested changes...") }) db.Row("ActionText", action, description, null);
+
+void Outcome(string name, string title, string body, string condition, int sequence)
+{
+    db.Row("Dialog", name, 50, 50, 420, 285, 3, title, "Close", "Close", "Close");
+    db.Row("Control", name, "Brand", "Icon", 20, 22, 36, 36, 3, null, "BrandIcon", null, null);
+    db.Row("Control", name, "Heading", "Text", 70, 24, 326, 36, 3, null, "{\\Heading}"+title, null, null);
+    db.Row("Control", name, "Body", "Text", 24, 94, 372, 126, 3, null, body, null, null);
+    db.Row("Control", name, "Close", "PushButton", 308, 244, 90, 24, 3, null, "Close", "Close", null);
+    db.Row("ControlEvent", name, "Close", "EndDialog", "Return", "1", 1);
+    db.Row("InstallUISequence", name, condition, sequence);
+}
+Outcome("RemovedDlg", "RMPCS was removed", "The application and its automatic tasks have been removed. Saved user logs and disabled-startup backups are preserved.", "REMOVE~=\"ALL\"", -1);
+Outcome("UpdatedDlg", "RMPCS was updated", "Windows Installer completed the requested changes. You can close setup now.", "Installed AND NOT REMOVE", -1);
+Outcome("CancelledDlg", "Setup was cancelled", "The requested operation did not complete. Windows Installer has finished handling cancellation. Review any Windows Installer messages before retrying.", "1", -2);
+Outcome("FailedDlg", "Setup did not complete", "Windows Installer could not complete the requested changes. Review its error message, then close setup and retry when the issue is resolved.", "1", -3);
 db.Row("Dialog", "FinishDlg", 50, 50, 420, 285, 3, "RMPCS is ready", "LaunchChoice", "Finish", "Close");
 db.Row("Control", "FinishDlg", "Brand", "Icon", 20, 24, 36, 36, 3, null, "BrandIcon", null, null);
 db.Row("Control", "FinishDlg", "Heading", "Text", 70, 26, 325, 32, 3, null, "{\\Heading}You're all set", null, null);
@@ -331,7 +385,7 @@ static class MsiVerification
         using var db = new MsiDatabase(Path.GetFullPath(package), true);
         void Check(bool valid, string description) { if (!valid) throw new InvalidDataException(description); Console.WriteLine("PASS: " + description); }
         var properties = db.Query("SELECT `Property`,`Value` FROM `Property`").ToDictionary(r => r[0], r => r[1]);
-        Check(properties["ProductVersion"] == "0.9.1" && properties["ALLUSERS"] == "1", "MSI version and per-machine installation metadata");
+        Check(properties["ProductVersion"] == "0.9.2" && properties["ALLUSERS"] == "1", "MSI version and per-machine installation metadata");
         var components = db.Query("SELECT `Component`,`ComponentId`,`Attributes`,`KeyPath` FROM `Component`");
         Check(components.All(c => (int.Parse(c[2]) & 256) != 0 && Guid.TryParse(c[1], out _)), "all installed components are x64 and have valid identities");
         var fileRows = db.Query("SELECT `File`,`Component_`,`FileName`,`FileSize` FROM `File`");
@@ -352,6 +406,15 @@ static class MsiVerification
         Check(int.Parse(ui.Single(r => r[0] == "WelcomeDlg")[1]) < 800 && ui.Single(r => r[0] == "FinishDlg")[1] == "-1", "choices precede costing and completion page runs only after success");
         Check(db.Query("SELECT `Control_`,`Condition` FROM `ControlEvent` WHERE `Argument`='LaunchInstalledApp'").Single()[1] == "RUN_AFTER = \"1\"", "post-install launch requires the completion checkbox");
         Check(!sequence.Any(r => r[0] == "LaunchInstalledApp") && db.Query("SELECT `Type`,`Source` FROM `CustomAction` WHERE `Action`='LaunchInstalledApp'").Single()[0] == "210", "post-install launch is asynchronous and absent from unattended execution");
+        var progressDialog=db.Query("SELECT `Attributes`,`Control_Default`,`Control_Cancel` FROM `Dialog` WHERE `Dialog`='ProgressDlg'").Single();
+        Check((int.Parse(progressDialog[0])&1)!=0&&(int.Parse(progressDialog[0])&2)==0&&progressDialog[1]=="Cancel"&&progressDialog[2]=="Cancel", "progress dialog is visible and modeless while Windows Installer executes");
+        var progressSequence=ui.Single(r=>r[0]=="ProgressDlg");
+        Check(int.Parse(progressSequence[1])<int.Parse(ui.Single(r=>r[0]=="ExecuteAction")[1])&&db.Query("SELECT `Condition` FROM `InstallUISequence` WHERE `Action`='ProgressDlg'").Single()[0]=="", "progress is scheduled for install, upgrade, repair and removal before execution");
+        var mappings=db.Query("SELECT `Control_`,`Event`,`Attribute` FROM `EventMapping` WHERE `Dialog_`='ProgressDlg'");
+        Check(mappings.Any(r=>r[0]=="Progress"&&r[1]=="SetProgress"&&r[2]=="Progress")&&mappings.Any(r=>r[0]=="Action"&&r[1]=="ActionText"&&r[2]=="Text"), "progress bar and status text subscribe to native Windows Installer events");
+        Check(db.Query("SELECT `Control_Default`,`Control_Cancel` FROM `Dialog` WHERE `Dialog`='CancelConfirmDlg'").Single().All(v=>v=="Keep")&&db.Query("SELECT `Event`,`Argument` FROM `ControlEvent` WHERE `Dialog_`='ProgressDlg' AND `Control_`='Cancel'").Single().SequenceEqual(new[]{"SpawnDialog","CancelConfirmDlg"}), "cancellation asks before delegating rollback to Windows Installer");
+        Check(ui.Single(r=>r[0]=="RemovedDlg")[1]=="-1"&&ui.Single(r=>r[0]=="CancelledDlg")[1]=="-2"&&ui.Single(r=>r[0]=="FailedDlg")[1]=="-3", "removal, cancellation and error completion each retain a visible outcome");
+        Check(db.Query("SELECT `Condition` FROM `InstallUISequence` WHERE `Action`='FinishDlg'").Single()[0]=="NOT Installed AND NOT REMOVE", "uninstall and failed operations cannot reach the post-install launch page");
         var verifyFolder = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(package))!, "verify-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(verifyFolder);
         string cabinet = Path.Combine(verifyFolder, "payload.cab"); db.ExtractCabinet(cabinet);

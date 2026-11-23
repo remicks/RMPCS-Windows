@@ -10,11 +10,11 @@ namespace RMPCS.Bootstrap
 {
     internal sealed partial class SetupForm
     {
-        private readonly Panel requirementsPage=new Panel(), optionsPage=new Panel(), finishPage=new Panel();
+        private readonly Panel requirementsPage=new Panel(), optionsPage=new Panel(), operationPage=new Panel(), finishPage=new Panel();
         private readonly Label heading=new Label(), caption=new Label(), summary=new Label();
         private readonly CheckBox desktopChoice=new CheckBox(), menuChoice=new CheckBox(), adminChoice=new CheckBox(), runAfter=new CheckBox();
         private readonly Button back=new Button();
-        private readonly Label[] steps=new Label[3];
+        private readonly Label[] steps=new Label[4];
         private int page;
         private bool completed;
         private static readonly Color Ink=Color.FromArgb(28,36,48), Muted=Color.FromArgb(94,105,121), Accent=Color.FromArgb(190,43,78);
@@ -53,13 +53,13 @@ namespace RMPCS.Bootstrap
             rail.Controls.Add(TextLabel("RMPCS",94,35,130,32,20,Ink));
             rail.Controls.Add(TextLabel("Rusty\u0027s PC Toolkit",96,70,128,24,9,Muted));
             rail.Controls.Add(TextLabel("Windows\nmaintenance",26,125,186,80,16,Ink));
-            string[] labels={"01   Requirements","02   Your preferences","03   Ready to go"};
-            for(int i=0;i<3;i++) {steps[i]=TextLabel(labels[i],26,250+i*52,190,30,11,Muted);rail.Controls.Add(steps[i]);}
+            string[] labels={"01   Requirements","02   Your preferences","03   Installation","04   Finished"};
+            for(int i=0;i<4;i++) {steps[i]=TextLabel(labels[i],26,250+i*52,190,30,11,Muted);rail.Controls.Add(steps[i]);}
             rail.Controls.Add(TextLabel("DEGENERATES INC.\nVersion 0.9",26,539,190,44,9,Muted));
             Controls.Add(rail);
             heading.SetBounds(270,34,590,44); heading.Font=new Font("Segoe UI",25,FontStyle.Bold);
             caption.SetBounds(272,92,588,50); caption.ForeColor=Muted;
-            foreach(var panel in new[] {requirementsPage,optionsPage,finishPage}) {panel.SetBounds(270,158,590,331);panel.BackColor=Color.White;Controls.Add(panel);}
+            foreach(var panel in new[] {requirementsPage,optionsPage,operationPage,finishPage}) {panel.SetBounds(270,158,590,331);panel.BackColor=Color.White;Controls.Add(panel);}
             requirementsPage.Controls.Add(TextLabel("Everything you need, in one place",22,22,546,32,15,Ink));
             status.SetBounds(22,67,546,84); status.ForeColor=Muted;
             status.Text=Program.RuntimePresent()?"Microsoft .NET 10 Desktop Runtime is ready.\nContinue to choose how RMPCS is installed.":"Microsoft .NET 10 Desktop Runtime is required.\nSetup can install the verified Microsoft runtime for you.";
@@ -79,38 +79,38 @@ namespace RMPCS.Bootstrap
             finishPage.Controls.Add(TextLabel("Your toolkit is ready",95,34,455,38,18,Ink));
             summary.SetBounds(22,108,546,92); summary.ForeColor=Muted;finishPage.Controls.Add(summary);
             Choice(finishPage,runAfter,"Run RMPCS after installation","Opens the app only. No maintenance starts automatically.",221,true);
-            progress.SetBounds(270,509,590,4);progress.Visible=false;
+            BuildOperationPage();
             back.SetBounds(270,538,100,40);back.Text="Back";back.Click+=delegate {ShowPage(0);};
-            cancel.SetBounds(638,538,100,40);cancel.Text="Cancel";cancel.Click+=delegate {if(busy && !installing)cancellation.Cancel();else if(!busy)Close();};
+            cancel.SetBounds(638,538,100,40);cancel.Text="Cancel";cancel.Click+=delegate {if(busy && !installing){cancellation.Cancel();status.Text="Cancellation requested. Waiting for the current preparation step to finish.";}else if(!busy)Close();};
             proceed.SetBounds(750,538,110,40);proceed.Text="Continue";proceed.Click+=async delegate {
                 if(completed){if(runAfter.Checked){try{Process.Start(new ProcessStartInfo(InstalledExe()){UseShellExecute=true,WorkingDirectory=Path.GetDirectoryName(InstalledExe())});}catch(Exception ex){MessageBox.Show(this,"RMPCS is installed, but could not open.\n\n"+ex.Message,"Launch RMPCS");return;}}Close();}
                 else if(Program.Installer && page==0)ShowPage(1);
                 else await ContinueAsync();
             };
             StyleButton(back,false);StyleButton(cancel,false);StyleButton(offline,false);StyleButton(proceed,true);
-            Controls.AddRange(new Control[]{heading,caption,progress,back,cancel,proceed});
+            Controls.AddRange(new Control[]{heading,caption,back,cancel,proceed});
             AcceptButton=proceed;CancelButton=cancel;
             ShowPage(0);
             FormClosed+=delegate {brandImage.Dispose();cancellation.Dispose();};
-            FormClosing+=delegate(object sender,FormClosingEventArgs e){if(busy){e.Cancel=true;if(!installing)cancellation.Cancel();status.Text=installing?"Finish or cancel the Windows/Microsoft installer first. It will not be terminated by this launcher.":"Cancelling download...";}};
+            FormClosing+=delegate(object sender,FormClosingEventArgs e){if(busy){e.Cancel=true;if(!installing)cancellation.Cancel();status.Text=installing?"Finish or cancel the Windows/Microsoft installer first. It will not be terminated by this launcher.":"Cancellation requested. Waiting for the current preparation step to finish.";}};
         }
         private static string InstalledExe() {return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),"Degenerates Inc","RMPCS","RMPCS.exe");}
         private void ShowPage(int next)
         {
-            page=next;requirementsPage.Visible=next==0;optionsPage.Visible=next==1;finishPage.Visible=next==2;
-            heading.Text=next==0?"Welcome to RMPCS":next==1?"Make it yours":"You're all set";
-            caption.Text=next==0?"A clean start for your Windows maintenance toolkit.":next==1?"Choose your shortcuts and how the app requests permissions.":"Installation is complete. Choose what happens next.";
+            page=next;requirementsPage.Visible=next==0;optionsPage.Visible=next==1;operationPage.Visible=next==2;finishPage.Visible=next==3;
+            heading.Text=next==0?"Welcome to RMPCS":next==1?"Make it yours":next==2?"Working on it":"You're all set";
+            caption.Text=next==0?"A clean start for your Windows maintenance toolkit.":next==1?"Choose your shortcuts and how the app requests permissions.":next==2?"Keep setup open while Windows completes this operation.":"Installation is complete. Choose what happens next.";
             back.Visible=Program.Installer && next==1 && !busy;
-            proceed.Text=next==2?"Finish":next==1?"Install":Program.Installer?"Continue":"Open RMPCS";
+            proceed.Text=next==3?"Finish":next==2?(busy?"Working...":"Retry"):next==1?"Install":Program.Installer?"Continue":"Open RMPCS";
             for(int i=0;i<steps.Length;i++){steps[i].ForeColor=i==next?Accent:Muted;steps[i].Font=new Font("Segoe UI",11,i==next?FontStyle.Bold:FontStyle.Regular);}
         }
         internal void PreviewPage(int index)
-        {if(index==2){summary.Text="RMPCS installed successfully.\nYour shortcut and administrator preferences have been saved.";}ShowPage(index);}
+        {if(index==3){cancel.Text="Close";summary.Text="RMPCS installed successfully.\nYour shortcut and administrator preferences have been saved.";}ShowPage(index);if(index==2)PreviewOperation();}
         private void CompleteSetup(int code)
         {
             completed=true;
             summary.Text="Desktop shortcut: "+(desktopChoice.Checked?"Yes":"No")+"\nStart Menu entry: "+(menuChoice.Checked?"Yes":"No")+"\nAdministrator prompt: "+(adminChoice.Checked?"Always request when needed":"Request manually")+(code==3010?"\nWindows requests a restart when you are ready.":"");
-            ShowPage(2);cancel.Text="Close";
+            ShowPage(3);cancel.Text="Close";
         }
     }
 }

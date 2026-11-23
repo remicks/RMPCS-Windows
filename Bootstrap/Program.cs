@@ -16,8 +16,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-[assembly: AssemblyVersion("0.9.1.0")]
-[assembly: AssemblyFileVersion("0.9.1.0")]
+[assembly: AssemblyVersion("0.9.2.0")]
+[assembly: AssemblyFileVersion("0.9.2.0")]
 [assembly: AssemblyProduct("RMPCS")]
 [assembly: AssemblyCompany("Degenerates Inc.")]
 
@@ -86,26 +86,34 @@ namespace RMPCS.Bootstrap
             }
             Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
             bool smoke = Array.IndexOf(args, "--smoke-test") >= 0;
-            bool preview = args.Length == 2 && (args[0] == "--ui-preview" || args[0] == "--ui-preview-options" || args[0] == "--ui-preview-finish");
+            bool progressCheck=args.Length==2&&args[0]=="--progress-ui-check";
+            bool preview = args.Length == 2 && (args[0] == "--ui-preview" || args[0] == "--ui-preview-options" || args[0] == "--ui-preview-finish" || args[0] == "--ui-preview-progress");
             try
             {
-                if (!Installer && !smoke && !preview && Array.IndexOf(args, "--setup") < 0 && RuntimePresent())
+                if (!Installer && !smoke && !preview && !progressCheck && Array.IndexOf(args, "--setup") < 0 && RuntimePresent())
                 {
                     using (var ownership = new HeldPayload(OpenVerifiedPayload()))
                     { using (var app = Process.Start(new ProcessStartInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RMPCS.exe")) { UseShellExecute = false, WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory })) app.WaitForExit(); }
                     return 0;
                 }
+                int checkExit=0;
                 using (var form = new SetupForm())
                 {
+                    if(progressCheck)form.Shown+=delegate {form.BeginInvoke((Action)(async delegate {
+                        try {int count=await form.VerifyProgressUiAsync();File.WriteAllText(args[1],count+" setup progress checks passed. No downloads, installation, removal, upgrade or app launch performed.");}
+                        catch(Exception ex){checkExit=1;File.WriteAllText(args[1],ex.ToString());}
+                        finally {form.EndProgressCheck();form.Close();}
+                    }));};
                     if(preview && args[0]=="--ui-preview-options")form.PreviewPage(1);
-                    if(preview && args[0]=="--ui-preview-finish")form.PreviewPage(2);
+                    if(preview && args[0]=="--ui-preview-finish")form.PreviewPage(3);
+                    if(preview && args[0]=="--ui-preview-progress")form.PreviewPage(2);
                     if (smoke || preview) form.Shown += delegate { form.BeginInvoke((Action)delegate {
                         if (!smoke) using (var bitmap = new Bitmap(form.Width, form.Height)) { form.DrawToBitmap(bitmap, new Rectangle(0,0,form.Width,form.Height)); bitmap.Save(args[1], System.Drawing.Imaging.ImageFormat.Png); }
                         form.Close();
                     }); };
                     Application.Run(form);
                 }
-                return 0;
+                return checkExit;
             }
             catch (Exception ex) { MessageBox.Show(ex.Message, "RMPCS setup could not continue", MessageBoxButtons.OK, MessageBoxIcon.Error); return 1; }
         }
@@ -156,21 +164,26 @@ namespace RMPCS.Bootstrap
             if (busy) return;
             if (!Program.RuntimePresent() && !prerequisite.Checked) { MessageBox.Show(this, "Install the Desktop Runtime manually using the Microsoft link, then try again. No changes were made."); return; }
             if (!Program.RuntimePresent() && MessageBox.Show(this, "Download/use the selected Microsoft .NET 10 Desktop Runtime installer and launch it? This installs a shared system component. Follow Microsoft's setup and license prompts. RMPCS will not request an automatic restart.", "Install prerequisite", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
-            busy = true; progress.Visible=true; ShowPage(0); back.Visible=false; proceed.Enabled = offline.Enabled = prerequisite.Enabled = false;
+            busy = true; Stage("Preparing setup", "Preparing verified installation files..."); back.Visible=false; proceed.Enabled = offline.Enabled = prerequisite.Enabled = false;
             string temp = null;
+            bool sessionCompleted=false;
             try
             {
                 temp = PrivateDirectory();
                 if (!Program.RuntimePresent())
                 {
                     string runtime = Path.Combine(temp, "MicrosoftDesktopRuntime.exe");
+                    Stage("Preparing the Microsoft runtime", "Preparing the required Microsoft Desktop Runtime installer...");
                     if (offlinePath == null) await DownloadAsync(runtime);
                     else { using (var source = new FileStream(offlinePath, FileMode.Open, FileAccess.Read, FileShare.Read)) { if (source.Length <= 0 || source.Length > 200L * 1024 * 1024) throw new IOException("Unexpected offline runtime installer size."); using (var dest = new FileStream(runtime, FileMode.CreateNew, FileAccess.Write, FileShare.None)) await source.CopyToAsync(dest); } }
                     using (var held = new FileStream(runtime, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
-                        status.Text = "Verifying runtime checksum and Microsoft Authenticode trust...";
-                        if (BootstrapPolicy.Hash(held, true) != BootstrapPolicy.RuntimeSha512) throw new InvalidDataException("Runtime checksum mismatch. Nothing was executed. Choose Microsoft's exact 10.0.15 Windows x64 Desktop Runtime installer or retry the official download.");
-                        Signature.VerifyMicrosoft(runtime, held.SafeFileHandle.DangerousGetHandle());
+                        Stage("Verifying the Microsoft runtime", "Checking the runtime checksum and Microsoft Authenticode trust...");
+                        await Task.Run((Action)delegate {
+                            if (BootstrapPolicy.Hash(held, true) != BootstrapPolicy.RuntimeSha512) throw new InvalidDataException("Runtime checksum mismatch. Nothing was executed. Choose Microsoft's exact 10.0.15 Windows x64 Desktop Runtime installer or retry the official download.");
+                            Signature.VerifyMicrosoft(runtime, held.SafeFileHandle.DangerousGetHandle());
+                        });
+                        operationHeading.Text="Installing the Microsoft runtime";
                         int code = await ExecuteAsync(runtime, "/install /norestart", true);
                         if (!BootstrapPolicy.AcceptedExit(code)) throw new InvalidOperationException(code == 1602 ? "Runtime installation was cancelled." : "Runtime installer returned " + code + ". Setup stopped.");
                         if (code == 3010) MessageBox.Show(this, "Microsoft reports that a restart is required. Save your work and restart later. RMPCS will not schedule a restart.", "Restart needed");
@@ -179,11 +192,13 @@ namespace RMPCS.Bootstrap
                 }
                 if (Program.Installer)
                 {
+                    Stage("Preparing RMPCS", "Extracting and verifying the embedded Windows Installer package...");
                     string msi = Path.Combine(temp, "RMPCS.msi");
                     using (var source = Assembly.GetExecutingAssembly().GetManifestResourceStream("InstallerPayload")) using (var dest = new FileStream(msi, FileMode.CreateNew, FileAccess.Write, FileShare.None)) await source.CopyToAsync(dest);
                     using (var held = new FileStream(msi, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
-                        if (BootstrapPolicy.Hash(held, false) != Program.Manifest()["RMPCS.msi"]) throw new InvalidDataException("Embedded installer integrity check failed.");
+                        await Task.Run((Action)delegate {if (BootstrapPolicy.Hash(held, false) != Program.Manifest()["RMPCS.msi"]) throw new InvalidDataException("Embedded installer integrity check failed.");});
+                        operationHeading.Text=File.Exists(InstalledExe())?"Upgrading RMPCS":"Installing RMPCS";
                         int code = await ExecuteAsync(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "msiexec.exe"), SetupChoices.MsiArguments(msi,desktopChoice.Checked,menuChoice.Checked,adminChoice.Checked), false);
                         if (!BootstrapPolicy.AcceptedExit(code)) throw new InvalidOperationException(code == 1602 ? "RMPCS installation was cancelled." : "Windows Installer returned " + code + ". Review its message and retry.");
                         CompleteSetup(code);
@@ -191,15 +206,20 @@ namespace RMPCS.Bootstrap
                 }
                 else
                 {
-                    using (var held = new Program.HeldPayload(Program.OpenVerifiedPayload())) await ExecuteAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RMPCS.exe"), "", false);
+                    Stage("RMPCS is opening", "Verifying the portable application. This launcher keeps its payload files protected until the app closes.");
+                    int code;
+                    using (var held = new Program.HeldPayload(Program.OpenVerifiedPayload())) code=await ExecuteAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RMPCS.exe"), "", false);
+                    if(code!=0)throw new InvalidOperationException("RMPCS closed with exit code "+code+". Review the application before retrying.");
                     status.Text = "RMPCS session finished.";
+                    sessionCompleted=true;
                 }
             }
-            catch (OperationCanceledException) { status.Text = "Download cancelled or timed out. No downloaded installer was executed. Close and reopen the launcher to retry."; }
+            catch (OperationCanceledException) { status.Text = "Setup was cancelled or timed out before the next launch. Any earlier completed prerequisite installation is kept. Close and reopen setup to retry."; }
             catch (Exception ex) { status.Text = ex.Message; MessageBox.Show(this, ex.Message, "Setup did not complete", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
             finally
             {
-                installing = busy = false; progress.Visible=false; cancel.Enabled = true; cancel.Text="Close";
+                installing = busy = false; cancel.Enabled = true; cancel.Text="Close";
+                if(completed){progress.Style=ProgressBarStyle.Blocks;progress.Value=100;}else if(sessionCompleted)PortableSessionFinished();else OperationDidNotComplete();
                 proceed.Enabled = !cancellation.IsCancellationRequested; offline.Enabled = !Program.RuntimePresent() && !cancellation.IsCancellationRequested;
                 prerequisite.Enabled = !Program.RuntimePresent(); progress.Style = ProgressBarStyle.Blocks;
                 if (temp != null) { foreach (string name in new[] { "MicrosoftDesktopRuntime.exe", "RMPCS.msi" }) try { File.Delete(Path.Combine(temp, name)); } catch (IOException) { } catch (UnauthorizedAccessException) { } try { Directory.Delete(temp, false); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
@@ -223,6 +243,8 @@ namespace RMPCS.Bootstrap
                     {
                         total += count; if (total > 200L * 1024 * 1024) throw new IOException("Runtime download exceeded the size limit.");
                         await dest.WriteAsync(buffer, 0, count, deadline.Token); status.Text = "Downloading from Microsoft: " + (total / 1048576d).ToString("N1") + " MB. You can cancel before installation.";
+                        long? length=response.Content.Headers.ContentLength;
+                        if(length.HasValue&&length.Value>0){progress.Style=ProgressBarStyle.Blocks;progress.Value=(int)Math.Min(100,100d*total/length.Value);}
                     }
                 }
                 }
@@ -230,12 +252,14 @@ namespace RMPCS.Bootstrap
         }
         private async Task<int> ExecuteAsync(string executable, string arguments, bool elevated)
         {
+            cancellation.Token.ThrowIfCancellationRequested();
             installing = true; cancel.Enabled = false; progress.Style = ProgressBarStyle.Marquee;
             status.Text = "Follow the " + (Program.Installer || elevated ? "Windows/Microsoft installer" : "RMPCS application") + " window. Waiting for it to finish...";
+            operationHint.Text=Program.Installer||elevated?"This window remains open. Windows Installer displays detailed progress in its own window. To cancel, use that window and allow any rollback to finish.":"RMPCS is running. Close the application when you are finished; the portable launcher will keep its verified payload protected until then.";
             var start = new ProcessStartInfo(executable, arguments) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(executable) };
             if (elevated) start.Verb = "runas";
             try { using (var process = Process.Start(start)) { if (process == null) throw new IOException("The process did not start."); await Task.Run((Action)process.WaitForExit); return process.ExitCode; } }
-            finally { installing = false; cancel.Enabled = true; progress.Style = ProgressBarStyle.Blocks; }
+            finally { installing = false; cancel.Enabled = true; }
         }
         private static string PrivateDirectory()
         {
