@@ -51,7 +51,9 @@ foreach($folder in @('RMPCS.App','RMPCS.Core','RMPCS.Tests','RMPCS.Packaging','I
 }
 Copy-Item Build-Release.ps1,NuGet.Config,.gitignore,README.md,RUNTIMES.md,ROADMAP.md,RELEASE-NOTES.md,release-version.txt -Destination $source -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $source '.github\workflows') | Out-Null
-Copy-Item .github\workflows\release.yml -Destination (Join-Path $source '.github\workflows') -Force
+Get-ChildItem .github\workflows -File | Copy-Item -Destination (Join-Path $source '.github\workflows') -Force
+New-Item -ItemType Directory -Force -Path (Join-Path $source '.github\scripts') | Out-Null
+Get-ChildItem .github\scripts -File | Copy-Item -Destination (Join-Path $source '.github\scripts') -Force
 $fullZip=Join-Path $PSScriptRoot ('artifacts\RMPCS-v'+$version+'.zip')
 Compress-Archive -Path (Join-Path $bundle '*') -DestinationPath $fullZip -Force
 $files=@($setup,$msi,$portableZip,$iconsZip,$fullZip,(Join-Path $PSScriptRoot 'RUNTIMES.md'))

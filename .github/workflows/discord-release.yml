@@ -1,0 +1,83 @@
+name: Announce RMPCS releases
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: Exact published release tag
+        required: true
+        type: string
+      announce:
+        description: Send after preflight verification
+        default: true
+        type: boolean
+      test_message:
+        description: Label an explicitly requested test message
+        default: false
+        type: boolean
+    secrets:
+      DISCORD_WEBHOOK_URL:
+        required: true
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Exact published release tag (for example v0.9.2)
+        required: true
+        type: string
+      announce:
+        description: Send to Discord (leave off to validate only)
+        default: false
+        type: boolean
+      test_message:
+        description: Label this message as a test
+        default: false
+        type: boolean
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/discord-release.yml
+      - .github/workflows/release.yml
+      - .github/scripts/prepare-discord-release.cjs
+      - .github/scripts/prepare-discord-release.test.cjs
+permissions:
+  contents: read
+jobs:
+  announce:
+    if: github.repository == 'remicks/RMPCS-Windows'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Test announcement safeguards without network delivery
+        run: node --test .github/scripts/prepare-discord-release.test.cjs
+      - name: Verify secret and fully uploaded public release
+        id: prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
+          DISCORD_TEST: ${{ inputs.test_message || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Send one RMPCS Discord test announcement')) }}
+        run: node .github/scripts/prepare-discord-release.cjs
+      - name: Announce verified release in Discord
+        if: github.event_name == 'release' || inputs.announce == true || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Send one RMPCS Discord test announcement'))
+        timeout-minutes: 1
+        # Reviewed v1.20.0; immutable pin. No checkout credentials or write token.
+        uses: SethCohen/github-releases-to-discord@24d166886aee4646d448c8a389ff9e1ebcab3682
+        env:
+          GITHUB_EVENT_PATH: ${{ steps.prepare.outputs.event_path }}
+        with:
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          username: RMPCS Releases
+          color: '12462926'
+          content: ''
+          release_name: ${{ steps.prepare.outputs.name }}
+          release_body: ${{ steps.prepare.outputs.body }}
+          release_html_url: ${{ steps.prepare.outputs.url }}
+          footer_title: Rusty's PC Toolkit
+          max_description: '3800'
+          reduce_headings: true

@@ -11,6 +11,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   package:
+    outputs:
+      release_tag: ${{ steps.publish.outputs.tag }}
     runs-on: windows-latest
     timeout-minutes: 20
     permissions:
@@ -34,6 +36,7 @@ jobs:
         shell: pwsh
         run: dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release --no-build -- --github-smoke
       - name: Publish immutable set of prerelease files
+        id: publish
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -45,3 +48,14 @@ jobs:
           $files=@("artifacts/v$version/Bootstrap/RMPCS.Setup.exe","artifacts/v$version/RMPCS-Setup-$version-x64.msi","artifacts/RMPCS-v$version-win-x64-portable.zip","artifacts/RMPCS-v$version-icons.zip","artifacts/RMPCS-v$version.zip",'RUNTIMES.md',"artifacts/v$version/SHA256SUMS.txt")
           gh release create $tag @files --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --prerelease --title "RMPCS v$version - Rusty's PC Toolkit" --notes-file RELEASE-NOTES.md
           if($LASTEXITCODE -ne 0){throw 'Release publication failed'}
+          Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value ("tag="+$tag)
+  discord:
+    needs: package
+    permissions:
+      contents: read
+    uses: ./.github/workflows/discord-release.yml
+    with:
+      release_tag: ${{ needs.package.outputs.release_tag }}
+      announce: true
+    secrets:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
