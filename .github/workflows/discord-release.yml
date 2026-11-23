@@ -61,10 +61,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
-          DISCORD_TEST: ${{ inputs.test_message || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Send one RMPCS Discord test announcement')) }}
+          DISCORD_TEST: ${{ inputs.test_message }}
         run: node .github/scripts/prepare-discord-release.cjs
       - name: Announce verified release in Discord
-        if: github.event_name == 'release' || inputs.announce == true || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Send one RMPCS Discord test announcement'))
+        if: github.event_name == 'release' || inputs.announce == true
         timeout-minutes: 1
         # Reviewed v1.20.0; immutable pin. No checkout credentials or write token.
         uses: SethCohen/github-releases-to-discord@24d166886aee4646d448c8a389ff9e1ebcab3682
