@@ -1,6 +1,6 @@
-RMPCS v0.9.0 - Rusty's PC Toolkit
+RMPCS v0.9.1 - Rusty's PC Toolkit
 
-A calmer UI with guided choices, theme-aware switches and complete app appearance support.
+A calmer UI with guided choices, theme-aware switches and complete app appearance support. This patch supersedes v0.9.0 and restricts app native-library resolution to Windows System32, including dark-title-bar integration. App-folder DLLs are not considered for native imports.
 
 - Guided Overview: Check my PC, Review recommended care and Manage startup apps. Recommended care now opens the task review rather than starting it. Run selected tasks appears only in Maintenance. Advanced tools and raw startup-entry details are expandable. Results use a clearer shared panel; the window fits smaller work areas.
 - Startup-entry toggles replace separate disable/restore buttons. On means a Run entry is present; Off means a saved RMPCS-disabled entry. Windows/Task Manager may still block an entry. Changes require administrator rights and explicit confirmation and keep existing protected-backup, snapshot and conflict checks. Loading/refreshing does not write. Cancel/denial resets the switch; a failed operation refreshes the inventory instead of claiming success. Stored commands are never executed.

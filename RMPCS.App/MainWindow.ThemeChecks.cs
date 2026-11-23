@@ -24,6 +24,7 @@ public partial class MainWindow
         int checks=0;
         void Check(bool condition,string label){if(!condition)throw new InvalidDataException(label);checks++;}
         Check(earlyDialogVerified,"closing a pre-window dialog preserves application startup");
+        Check(typeof(MainWindow).Assembly.GetCustomAttributes(typeof(System.Runtime.InteropServices.DefaultDllImportSearchPathsAttribute),false).OfType<System.Runtime.InteropServices.DefaultDllImportSearchPathsAttribute>().SingleOrDefault()?.Paths==System.Runtime.InteropServices.DllImportSearchPath.System32,"native imports are restricted to Windows System32");
         string ColorOf(object value)=>value is SolidColorBrush brush?brush.Color.ToString():"unsupported";
         foreach(string mode in new[]{"Light","Dark"})
         foreach(var preset in ThemeCatalog.Presets)
