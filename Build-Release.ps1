@@ -28,6 +28,7 @@ Check-Exe (Join-Path $portable 'Launch-RMPCS.exe') @('--progress-ui-check',('"'+
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--backup-acl-check')
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--diagnostic-read-check',('"'+(Join-Path $release 'diagnostic-read-check.txt')+'"'))
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--theme-ui-check',('"'+(Join-Path $release 'theme-ui-check.txt')+'"'))
+Check-Exe (Join-Path $app 'RMPCS.exe') @('--sidebar-ui-check',('"'+(Join-Path $release 'sidebar-ui-check.txt')+'"'))
 if($DesktopChecks) {
     Check-Exe (Join-Path $app 'RMPCS.exe') @('--smoke-test')
     Check-Exe $setup @('--smoke-test')

@@ -29,7 +29,7 @@
    <Grid Background="Transparent"><Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
     <Border x:Name="Box" Width="18" Height="18" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="4"/>
     <Path x:Name="Tick" Data="M 4,9 L 8,13 L 15,5" Stroke="{DynamicResource OnAccentBrush}" StrokeThickness="2" Visibility="Collapsed" VerticalAlignment="Center" Height="18"/>
-    <ContentPresenter Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+    <ContentPresenter Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True"><ContentPresenter.ContentTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap"/></DataTemplate></ContentPresenter.ContentTemplate></ContentPresenter>
    </Grid>
    <ControlTemplate.Triggers>
     <Trigger Property="IsChecked" Value="True"><Setter TargetName="Box" Property="Background" Value="{DynamicResource AccentBrush}"/><Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/><Setter TargetName="Tick" Property="Visibility" Value="Visible"/></Trigger>

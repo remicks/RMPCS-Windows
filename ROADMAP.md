@@ -1,6 +1,6 @@
 # RMPCS roadmap
 
-Current build: v0.9.2, adding persistent installer progress for setup and full MSI lifecycle operations, along with a guided Overview, startup-entry and preference switches, and System/Light/Dark app themes with LootDrop-inspired accents and HEX/RGB customization.
+Current build: v0.10.0, adding a compact single-pane sidebar, monitor/edge/width settings and optional Windows appbar desktop-space reservation. The previous installer progress, guided Overview, startup switches and app-wide themes remain available.
 
 Existing diagnostics, verified restore-point requests, preference undo, guarded scheduling, reports, archives and update checks remain available. See README and release notes for scope and validation limits.
 

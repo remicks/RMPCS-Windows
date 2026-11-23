@@ -21,7 +21,7 @@ public partial class MainWindow
         preferences = TestMode ? new() : SettingsStore.Load(out warning);
         StartPageChoice.ItemsSource = PageCatalog.All;StartPageChoice.DisplayMemberPath="Label";StartPageChoice.SelectedValuePath="Key";
         ActivitySizeChoice.ItemsSource = Enumerable.Range(11, 8).ToArray();
-        InitializeAppearance();
+        InitializeAppearance(); InitializeSidebar();
         PutPreferenceControls(); ApplyPreferences();
         MainTabs.SelectedIndex = Array.IndexOf(AppPreferences.Pages, preferences.StartPage);
         VersionLabel.Text = $"Rusty's PC Toolkit • RMPCS {AppVersion}";
@@ -37,7 +37,7 @@ public partial class MainWindow
     }
     private void PutPreferenceControls()
     {
-        PutAppearanceControls();
+        PutAppearanceControls(); PutSidebarControls();
         CloseToTrayChoice.IsChecked = preferences.CloseToTray;
         MinimizeToTrayChoice.IsChecked = preferences.MinimizeToTray;
         TrayNotificationsChoice.IsChecked = preferences.TrayNotifications;
@@ -55,12 +55,13 @@ public partial class MainWindow
         Activity.FontSize = preferences.ActivityFontSize;
         Age.SelectedIndex = preferences.CleanupAgeDays switch { 1 => 1, 30 => 3, _ => 2 };
         RefreshTrayHint();
+        ApplySidebarPreferences();
     }
     private void SavePreferences_Click(object sender, RoutedEventArgs e)
     {
         if (busy) return;
         if(AccentChoice.SelectedItem as string=="Custom"&&!ValidCustomControls()){PreferencesStatus.Text="Custom accent is invalid. Enter a six-digit HEX color or RGB values from 0 to 255 before saving.";return;}
-        var next = new AppPreferences
+        var next = SidebarChoices(new AppPreferences
         {
             ThemeMode = AppearancePreview().ThemeMode, AccentName = AppearancePreview().AccentName, CustomAccent = AppearancePreview().CustomAccent,
             CloseToTray = CloseToTrayChoice.IsChecked == true, MinimizeToTray = MinimizeToTrayChoice.IsChecked == true,
@@ -70,7 +71,7 @@ public partial class MainWindow
             IncludePrereleases = PreviewUpdatesChoice.IsChecked == true, StartPage = StartPageChoice.SelectedValue as string ?? "Health",
             ActivityFontSize = ActivitySizeChoice.SelectedItem is int size ? size : 12,
             CleanupAgeDays = DefaultAgeChoice.SelectedIndex switch { 0 => 1, 2 => 30, _ => 7 }
-        }.Normalize();
+        }).Normalize();
         try
         {
             if (!TestMode) SettingsStore.Save(next);

@@ -91,6 +91,7 @@ public partial class MainWindow : Window
         CareButton.IsEnabled = !value;
         AutostartSwitch.IsEnabled=ScheduleEnabledSwitch.IsEnabled=!value&&admin&&automationStatusKnown&&TaskSchedulerService.IsInstalled;
         ElevateButton.IsEnabled = !value && !admin;
+        SidebarElevateButton.IsEnabled = !value && !admin;
         StopButton.IsEnabled = value;
         StopButton.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
         Progress.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
@@ -138,7 +139,7 @@ public partial class MainWindow : Window
         if (plan.Restart) notice += "\nSAVE ALL WORK. Windows may force applications to close at the end of the restart countdown.";
         if (!Confirm(notice)) return;
         RunSummaryText.Clear(); SummaryExpander.Visibility = Visibility.Collapsed;
-        SetBusy(true); stopRequested = false;
+        SetBusy(true); ShowSidebarResults(); stopRequested = false;
         try
         {
             using var lease = RunLease.Acquire();
@@ -175,7 +176,7 @@ public partial class MainWindow : Window
     {
         var plan = SelectedPlan();
         if (!plan.CleanupAreas().Any()) { Status.Text = "Select a file cleanup task first."; return; }
-        stopRequested = false; SetBusy(true);
+        stopRequested = false; SetBusy(true); ShowSidebarResults();
         PreviewRows.Visibility = Visibility.Visible;
         try
         {
@@ -198,7 +199,7 @@ public partial class MainWindow : Window
     }
     private async void HealthScan_Click(object sender, RoutedEventArgs e)
     {
-        if (busy) return; SetBusy(true); Status.Text = "Reading health indicators...";
+        if (busy) return; SetBusy(true); ShowSidebarResults(); Status.Text = "Reading health indicators...";
         try { Activity.Text = await HealthScanner.ScanAsync(); Status.Text = "Health snapshot complete. No settings changed."; }
         catch (Exception ex) { Log("Health scan could not finish: " + ex.Message); }
         finally { SetBusy(false); }
@@ -231,6 +232,7 @@ public partial class MainWindow : Window
     {
         if(!ReferenceEquals(e.Source,MainTabs)||RunButton is null)return;
         RunButton.Visibility=MainTabs.SelectedIndex==1?Visibility.Visible:Visibility.Collapsed;
+        SyncSidebarPage();
         if(MainTabs.SelectedIndex==3&&!busy&&!TestMode)RefreshStartupApps();
     }
     private void Stop_Click(object sender, RoutedEventArgs e) { stopRequested = true; StopButton.IsEnabled = false; Log("Stopping after current task; DHCP renewal is still attempted after release."); }
@@ -294,7 +296,7 @@ public partial class MainWindow : Window
     private void LoadHistory_Click(object sender, RoutedEventArgs e)
     {
         if (HistoryFiles.SelectedItem is not FileInfo file) return;
-        try { Activity.Text = SessionLog.Read(file.FullName); Status.Text = "Saved run: " + file.Name; } catch (Exception ex) { Log(ex.Message); }
+        try { Activity.Text = SessionLog.Read(file.FullName); Status.Text = "Saved run: " + file.Name; ShowSidebarResults(); } catch (Exception ex) { Log(ex.Message); }
     }
     private void Export_Click(object sender, RoutedEventArgs e)
     {

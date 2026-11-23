@@ -1,14 +1,26 @@
-# RMPCS 0.9.2 - Rusty's PC Toolkit
+# RMPCS 0.10.0 - Rusty's PC Toolkit
 
 A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prerequisite setup, read-only health checks, cleanup previews, reversible Run-entry management, and scheduled care.
 
 **This build retains the v0.3.1 permissions fix.** The initial v0.3.0 prerelease is superseded. RMPCS protects the startup-backup registry store with an explicit non-inheriting DACL granting access only to Administrators and SYSTEM. Protection is established before backup writes/restores; failure stops the change. Opening the corrected app elevated also protects an existing store. Administrator rights are needed to view disabled-entry backups as well as change them.
 
+## Compact sidebar
+
+Choose **Sidebar** in the main window header for a phone-like, single-pane layout. Use the page picker for all existing tools and **Results & activity**; checks and maintenance show their output there automatically. **Full window** restores the standard layout and preserves the current session.
+
+In **Settings → Sidebar**, choose the left/right edge, current or selected monitor, and a width of 360/400/440/480 scaled units. **Apply sidebar settings** saves only sidebar choices; **Save preferences** includes them too. Sidebar and reservation are off by default. The current monitor is captured when the sidebar opens; a missing selected display falls back to an available one with a status message. Display identifiers can change after hardware/driver changes; use **Refresh displays** to update the list.
+
+**Reserve desktop space while visible** registers this window with the Windows appbar service, allowing maximized ordinary apps to leave room. It does not edit Windows' global work-area or taskbar settings. The sidebar stays above ordinary windows. Full-screen/exclusive apps, other always-on-top windows and Windows security UI can overlap it; reservation is not an exclusion/security boundary. Hiding to tray, minimizing, leaving sidebar mode and exiting release the reservation. Showing it again reacquires space; hidden sign-in startup reserves none. Registration failure is reported as overlay mode. Width follows Windows DPI, is capped at half the monitor, and may require scrolling on small/high-scale displays.
+
+Existing task confirmations, administrator checks, tray preferences, themes and scheduling guards apply in both layouts. Layout changes never start maintenance. Monitor removal, DPI/work-area changes and Explorer restart trigger layout updates. Standard window bounds are restored or fitted to an available display when leaving sidebar mode.
+
+Validation includes geometry/preference tests, WPF page routing, real positioning on three display layouts, hide/minimize/restore/disposal checks, and isolated appbar success/failure lifecycle tests. This development session has no Explorer appbar service: overlay fallback was verified, while live desktop reservation, Explorer restart, full-screen handoff and physical mixed-DPI hot-plug behavior still require supervised Windows validation.
+
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.9.2/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.9.2/RMPCS-Setup-0.9.2-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.9.2/RMPCS-v0.9.2-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.10.0/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.10.0/RMPCS-Setup-0.10.0-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.10.0/RMPCS-v0.10.0-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -21,7 +33,7 @@ Microsoft runtime downloads use HTTPS, an exact pinned SHA-512 from official rel
 
 Microsoft's setup remains visible for its Windows permissions and license prompts. Cancelled or failed setup stops the chain. Restart-required results are reported; RMPCS's prerequisite launcher does not request an automatic restart. Runtime and MSI files are held against modification during verification/execution. The portable launcher similarly verifies and holds its app payload while the session runs.
 
-## New in v0.9.2 - visible setup progress
+## New in v0.10.0 - visible setup progress
 
 The setup EXE has a dedicated Installation page with a larger progress bar, a current-phase message and a persistent taskbar window while it prepares files and waits for Microsoft/Windows Installer. Checksum/trust verification runs off the UI thread. Known-length downloads show download percentage; installer waiting uses an indeterminate activity indicator, with real installation progress in Windows Installer's own window. No overall percentage is fabricated.
 
@@ -31,7 +43,7 @@ Windows Installed apps/basic UI uses native Windows Installer progress. Explicit
 
 ## New in v0.9 - simpler controls and complete app themes
 
-Current patch: v0.9.2 includes visible setup progress and retains v0.9.1 native Windows-library loading restrictions to System32.
+Current patch: v0.10.0 includes visible setup progress and retains v0.9.1 native Windows-library loading restrictions to System32.
 
 - **Guided Overview:** Check my PC performs a read-only health scan; Review recommended care opens the maintenance selection without running it. Startup apps is a separate clear next step. The run action appears only while reviewing Maintenance. Less-used tools and raw startup-command details stay expandable. The window adapts to smaller work areas and content scrolls.
 - **Startup-entry switches:** On means a common Run entry is present; Off means RMPCS has a saved disabled-entry backup. The switch does not claim Task Manager or Windows approval status. Administrator rights, confirmation, protected backups, current-value revalidation and conflicting-restore protection remain required. Loading/refreshing the list never invokes a write. Cancelled/denied changes return to the prior state; failures refresh the inventory rather than show unverified success. Stored commands are displayed only and never launched.
@@ -164,9 +176,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.9.2-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.9.2-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.9.2-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.10.0-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.10.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.10.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.

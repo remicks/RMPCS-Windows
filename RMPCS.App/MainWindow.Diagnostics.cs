@@ -7,7 +7,7 @@ public partial class MainWindow
 {
     private NetworkSample? networkCurrent, networkBaseline;
     private string diagnosticReport = "";
-    private void ShowDiagnosticReport(string report) { diagnosticReport = report; Activity.Text = report; Status.Text = "Diagnostics complete. No settings were changed."; }
+    private void ShowDiagnosticReport(string report) { diagnosticReport = report; Activity.Text = report; Status.Text = "Diagnostics complete. No settings were changed."; ShowSidebarResults(); }
     private async void StabilityReport_Click(object sender, RoutedEventArgs e)
     {
         if (busy || TestMode) return;
