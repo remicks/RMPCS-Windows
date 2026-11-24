@@ -1,8 +1,16 @@
-# RMPCS 0.11.0 - Rusty's PC Toolkit
+# RMPCS 0.12.0 - Rusty's PC Toolkit
 
 A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prerequisite setup, read-only health checks, cleanup previews, reversible Run-entry management, and scheduled care.
 
 **This build retains the v0.3.1 permissions fix.** The initial v0.3.0 prerelease is superseded. RMPCS protects the startup-backup registry store with an explicit non-inheriting DACL granting access only to Administrators and SYSTEM. Protection is established before backup writes/restores; failure stops the change. Opening the corrected app elevated also protects an existing store. Administrator rights are needed to view disabled-entry backups as well as change them.
+
+## New in v0.12.0 - more themes and fonts
+
+Six new coordinated palettes are available under **Settings → Fonts & appearance → Theme palette**: **Ocean Slate**, **Nordic Frost**, **Forest Mist**, **Warm Sand**, **Rose Quartz**, and **Graphite**. Each provides distinct Light/Dark window, card, text, hover, selection and control colors. System mode follows the Windows appearance. The original eight accent presets and custom HEX/RGB option retain their existing base colors. Windows High Contrast overrides custom colors.
+
+Five new embedded font families—**Lato, Poppins, Hind, PT Sans, and Oxygen**—bring the total to eight bundled families plus the Windows system option. Normal and emphasized faces are included; no font installation or runtime font download is required. Preview, save, discard, reset and preference undo work with the new choices. Original font files, licenses and pinned source hashes are included with the source bundle; installed/portable packages retain all copyright/license notices.
+
+Validation covers all 14 presets in Light/Dark, body and secondary-text contrast across the new surfaces, input-border/switch visibility, accent contrast, preference round-trips, embedded font resolution and licenses, existing theme/navigation/sidebar checks, and distribution integrity. This adds appearance choices only; no maintenance or scheduling behavior changes.
 
 ## New in v0.11.0 - typography and interface refinement
 
@@ -28,9 +36,9 @@ Validation includes geometry/preference tests, WPF page routing, real positionin
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.11.0/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.11.0/RMPCS-Setup-0.11.0-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.11.0/RMPCS-v0.11.0-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.12.0/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.12.0/RMPCS-Setup-0.12.0-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.12.0/RMPCS-v0.12.0-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -186,9 +194,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.11.0-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.11.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.11.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.12.0-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.12.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.12.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.

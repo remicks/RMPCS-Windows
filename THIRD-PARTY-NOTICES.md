@@ -1,8 +1,8 @@
 # Bundled font notices
 
-RMPCS includes unmodified Barlow Regular/SemiBold, Rajdhani Regular/SemiBold and Atkinson Hyperlegible Regular/Bold font files. These are application resources; RMPCS does not install them into Windows or download fonts at runtime.
+RMPCS includes unmodified Barlow, Rajdhani, Atkinson Hyperlegible, Lato, Poppins, Hind, PT Sans and Oxygen font files, with Regular and SemiBold or Bold faces. These are application resources; RMPCS does not install them into Windows or download fonts at runtime.
 
-All three families are distributed under the SIL Open Font License 1.1. Copyright notices and full license terms are preserved in OFL-barlow.txt, OFL-rajdhani.txt and OFL-atkinsonhyperlegible.txt, included with the installed/portable application and embedded in its resources.
+All eight families are distributed under the SIL Open Font License 1.1. Copyright notices and full license terms are preserved in OFL-barlow.txt, OFL-rajdhani.txt, OFL-atkinsonhyperlegible.txt, OFL-lato.txt, OFL-poppins.txt, OFL-hind.txt, OFL-ptsans.txt and OFL-oxygen.txt, included with the installed/portable application and embedded in its resources.
 
 Source: https://github.com/google/fonts/tree/06bfe0d62a98375cb09c942fa18e68bd32cff057/ofl
 

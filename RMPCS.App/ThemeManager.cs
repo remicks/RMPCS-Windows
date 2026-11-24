@@ -32,12 +32,13 @@ internal static class ThemeManager
         Dark=current.ThemeMode=="Dark"||(current.ThemeMode=="System"&&WindowsDark());
         string accent=ThemeCatalog.Accent(current.AccentName,current.CustomAccent);
         void Set(string key,string value) { var brush=new SolidColorBrush((Color)ColorConverter.ConvertFromString(value));brush.Freeze();Application.Current.Resources[key]=brush; }
-        string surface=Dark?"#171522":"#FFFFFF";
-        Set("WindowBrush",Dark?"#111019":"#F5F7FA");Set("SurfaceBrush",surface);Set("RaisedBrush",Dark?"#211E2D":"#EDF1F6");
-        Set("SubtleBorderBrush",Dark?"#393141":"#DCE2EB");
-        Set("SelectedTextBrush",Dark?"#F4F0FF":"#202938");Set("SwitchThumbBrush","#FFFFFF");
-        Set("TextBrush",Dark?"#F4F0FF":"#202938");Set("MutedBrush",Dark?"#AEA6BD":"#526174");Set("BorderBrush",Dark?"#655871":"#8492A6");
-        Set("HoverBrush",Dark?"#393047":"#E7ECF3");Set("SelectionBrush",Dark?"#352844":"#E5EAF3");Set("SwitchOffBrush",Dark?"#51495F":"#637083");
+        var palette=ThemeCatalog.Surfaces(current.AccentName,Dark);
+        string surface=palette.Surface;
+        Set("WindowBrush",palette.Window);Set("SurfaceBrush",surface);Set("RaisedBrush",palette.Raised);
+        Set("SubtleBorderBrush",palette.SubtleBorder);
+        Set("SelectedTextBrush",palette.Text);Set("SwitchThumbBrush","#FFFFFF");
+        Set("TextBrush",palette.Text);Set("MutedBrush",palette.Muted);Set("BorderBrush",palette.Border);
+        Set("HoverBrush",palette.Hover);Set("SelectionBrush",palette.Selection);Set("SwitchOffBrush",palette.SwitchOff);
         Set("AccentBrush",accent);Set("AccentTextBrush",ThemeCatalog.ReadableAccent(accent,surface));Set("OnAccentBrush",ThemeCatalog.OnAccent(accent));
         if(highContrast)
         {

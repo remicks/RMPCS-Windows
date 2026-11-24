@@ -26,7 +26,7 @@ public partial class MainWindow
                 Check(face.TryGetGlyphTypeface(out var glyph) && glyph.FontUri.Scheme == "pack" && glyph.FamilyNames.Values.Contains(name), "Bundled font resolves from application resources without Windows installation: " + name);
             }
         }
-        foreach (string family in new[] { "barlow", "rajdhani", "atkinsonhyperlegible" })
+        foreach (string family in FontCatalog.LicenseIds)
         {
             using var license = Application.GetResourceStream(new Uri($"pack://application:,,,/FontLicenses/OFL-{family}.txt")).Stream;
             using var reader = new StreamReader(license);

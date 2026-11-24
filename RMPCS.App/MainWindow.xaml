@@ -140,7 +140,7 @@
      <TextBlock Text="Interface font"/><ComboBox x:Name="FontChoice" SelectionChanged="ThemeChoice_Changed" AutomationProperties.Name="Interface font"/>
      <TextBlock Text="Aa  •  Rusty's PC Toolkit  •  0123456789" Style="{StaticResource HeadingText}" Margin="0,4,0,8"/>
      <TextBlock x:Name="FontDescription" Text="Bundled fonts work offline without installing anything in Windows." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,14"/>
-     <TextBlock Text="Accent color"/><ComboBox x:Name="AccentChoice" SelectionChanged="ThemeChoice_Changed"/>
+     <TextBlock Text="Theme palette"/><ComboBox x:Name="AccentChoice" SelectionChanged="ThemeChoice_Changed"/>
      <Expander Header="Custom accent color" Margin="0,0,0,10"><StackPanel>
       <TextBlock Text="HEX (#RRGGBB)"/><TextBox x:Name="CustomAccentHex" MaxLength="7" TextChanged="CustomHex_Changed" Margin="0,6,0,10"/>
       <TextBlock Text="RGB (0-255)"/><UniformGrid Columns="3" Margin="0,6,0,10"><TextBox x:Name="AccentRed" MaxLength="3" TextChanged="CustomRgb_Changed" AutomationProperties.Name="Red"/><TextBox x:Name="AccentGreen" MaxLength="3" TextChanged="CustomRgb_Changed" AutomationProperties.Name="Green"/><TextBox x:Name="AccentBlue" MaxLength="3" TextChanged="CustomRgb_Changed" AutomationProperties.Name="Blue"/></UniformGrid>

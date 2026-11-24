@@ -34,9 +34,10 @@ public partial class MainWindow
             UpdateLayout();
             if(!SystemParameters.HighContrast)
             {
-                Check(ColorOf(Background)==(mode=="Dark"?"#FF111019":"#FFF5F7FA"),"live window brush");
-                Check(ColorOf(Activity.Background)==(mode=="Dark"?"#FF211E2D":"#FFEDF1F6"),"read-only output uses the live raised surface");
-                Check(ColorOf(Activity.Foreground)==(mode=="Dark"?"#FFF4F0FF":"#FF202938"),"live text foreground");
+                var palette=ThemeCatalog.Surfaces(preset.Name,mode=="Dark");
+                Check(ColorOf(Background)=="#FF"+palette.Window[1..],"live window brush");
+                Check(ColorOf(Activity.Background)=="#FF"+palette.Raised[1..],"read-only output uses the live raised surface");
+                Check(ColorOf(Activity.Foreground)=="#FF"+palette.Text[1..],"live text foreground");
                 Check(ColorOf(Application.Current.Resources["AccentBrush"])=="#FF"+preset.Hex[1..],"preset accent");
             }
         }

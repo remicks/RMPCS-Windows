@@ -3,7 +3,7 @@ internal static class Version09Checks
 {
     public static void Run(Action<bool,string> check)
     {
-        check(ThemeCatalog.Presets.Count==8&&ThemeCatalog.Presets.Select(x=>x.Name).Distinct().Count()==8&&ThemeCatalog.Presets.First().Hex=="#D58AFF","eight LootDrop-inspired palettes retain Midnight Purple color");
+        check(ThemeCatalog.Presets.Count==14&&ThemeCatalog.Presets.Select(x=>x.Name).Distinct().Count()==14&&ThemeCatalog.Presets.First().Hex=="#D58AFF","fourteen palettes retain the original Midnight Purple color");
         check(ThemeCatalog.ValidHex("#12abEF")&&ThemeCatalog.ValidHex("12abEF")&&!ThemeCatalog.ValidHex("#123")&&!ThemeCatalog.ValidHex("##123456")&&!ThemeCatalog.ValidHex("#12zzff")&&!ThemeCatalog.ValidHex("red")&&!ThemeCatalog.ValidHex("https://example.test"),"custom accents accept only six-digit RGB hex data");
         check(ThemeCatalog.NormalizeHex(" 12abef ")=="#12ABEF"&&ThemeCatalog.NormalizeHex(null)=="#D58AFF"&&ThemeCatalog.Rgb(0,128,255)=="#0080FF"&&ThemeCatalog.Components("#0080FF")== (0,128,255),"HEX and RGB round-trip with bounded defaults");
         bool bad=false;try{ThemeCatalog.Rgb(256,0,0);}catch(ArgumentOutOfRangeException){bad=true;}check(bad,"RGB values outside 0-255 are rejected");

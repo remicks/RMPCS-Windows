@@ -45,6 +45,11 @@ public partial class MainWindow
         {
             "Rajdhani" => "Compact, technical letterforms. Bundled with RMPCS; no Windows font installation needed.",
             "Atkinson Hyperlegible" => "Distinct letter shapes designed for readability. Bundled with RMPCS; no Windows font installation needed.",
+            "Lato" => "Balanced, open letterforms with a warm humanist feel. Bundled with RMPCS; no Windows font installation needed.",
+            "Poppins" => "Clean geometric shapes with a modern, rounded character. Bundled with RMPCS; no Windows font installation needed.",
+            "Hind" => "Calm, clear letterforms for comfortable interface reading. Bundled with RMPCS; no Windows font installation needed.",
+            "PT Sans" => "A practical, familiar sans serif with distinct letterforms. Bundled with RMPCS; no Windows font installation needed.",
+            "Oxygen" => "A crisp desktop-oriented font with a compact footprint. Bundled with RMPCS; no Windows font installation needed.",
             "Windows system" => "Uses the Segoe UI family supplied by Windows.",
             _ => "Modern, balanced letterforms. Bundled with RMPCS; no Windows font installation needed."
         };

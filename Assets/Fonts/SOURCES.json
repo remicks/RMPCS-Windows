@@ -53,6 +53,96 @@
       "source": "ofl/atkinsonhyperlegible/OFL.txt",
       "sha256": "f32d22b3908fcad2c86a74000614ec22e6a7f66ea7e867e616026a27aebdc143",
       "gitBlob": "2befc89b0ee81d5a37e6ca6503bb0db099feb70f"
+    },
+    {
+      "sha256": "d636e4683231f931eda222d588e944d082bfd3bdba02f928bee461c0f185b251",
+      "file": "Lato-Regular.ttf",
+      "gitBlob": "0f3d0f837d24834b9b5b0a6b735459c56f5e75c3",
+      "source": "ofl/lato/Lato-Regular.ttf"
+    },
+    {
+      "sha256": "71b8b7decbe75a881ed267be539d402bd1e9420b799658aada4e0d1bd5af803c",
+      "file": "Lato-SemiBold.ttf",
+      "gitBlob": "3b1bcccc3384aef84a68242e331e1018c8e141e0",
+      "source": "ofl/lato/Lato-SemiBold.ttf"
+    },
+    {
+      "sha256": "74ba064d03f1f1c4a952da936c3eb71866c34404916734de3cae73b34357e59e",
+      "file": "OFL-lato.txt",
+      "gitBlob": "98383e3d835a5c5aea988a74b569193a30dcbcec",
+      "source": "ofl/lato/OFL.txt"
+    },
+    {
+      "sha256": "7e65201e9b79159e2300267cc885e16c8dcef2424cdfa09a29bfb0980a94a7ba",
+      "file": "Poppins-Regular.ttf",
+      "gitBlob": "0bda228ade88b0bb5aac7da2c881d0c3f64d0817",
+      "source": "ofl/poppins/Poppins-Regular.ttf"
+    },
+    {
+      "sha256": "d3bf1bdaf0550e83da9ac0b1d1d9fe6db086835a83aa28578e609a394b9a0286",
+      "file": "Poppins-SemiBold.ttf",
+      "gitBlob": "c30ad104723a0e6e00e54768626cb02c5fdf6aee",
+      "source": "ofl/poppins/Poppins-SemiBold.ttf"
+    },
+    {
+      "sha256": "6be04893d770899a015649c7aa3b582f871b272f8747a92b78b17c3e5c8b2573",
+      "file": "OFL-poppins.txt",
+      "gitBlob": "76df3b565672e3248a5715339d092d4cb6c75019",
+      "source": "ofl/poppins/OFL.txt"
+    },
+    {
+      "sha256": "01de158022f53077b52303e46de3b0ab5fb245222a7ffe25a2a57fdd9e969162",
+      "file": "Hind-Regular.ttf",
+      "gitBlob": "d354dbbcd295b1b7e09b015f0bd490864ad47aca",
+      "source": "ofl/hind/Hind-Regular.ttf"
+    },
+    {
+      "sha256": "1742a1b0aba97b49da1d3ee3af568fa997c59a3cfe73829f7bec293f416d25dd",
+      "file": "Hind-SemiBold.ttf",
+      "gitBlob": "1e1a35515b8338ab48fdff10ba2cb9af6a7b802e",
+      "source": "ofl/hind/Hind-SemiBold.ttf"
+    },
+    {
+      "sha256": "f62ef357d3a1c3d27edd35a6e1ba350e8a8d13499797964eeadefbf0b3b15d1f",
+      "file": "OFL-hind.txt",
+      "gitBlob": "6dd809659a8ccace7ccee108d024d33cd4f936da",
+      "source": "ofl/hind/OFL.txt"
+    },
+    {
+      "sha256": "9cc831490532009bae2b3ce0d39c62adfc889060beb421593bfd9d2396d0f10a",
+      "file": "PT_Sans-Web-Regular.ttf",
+      "gitBlob": "83a21b724c47127a95e725b5c6bdfa30fcc1a7be",
+      "source": "ofl/ptsans/PT_Sans-Web-Regular.ttf"
+    },
+    {
+      "sha256": "3128bd5ecf01816e59a23d54c57a7a6b14615b07db53ff277c77376010265b05",
+      "file": "PT_Sans-Web-Bold.ttf",
+      "gitBlob": "3d4e6fe2f9f5282806cda0553d3ab321605ae37c",
+      "source": "ofl/ptsans/PT_Sans-Web-Bold.ttf"
+    },
+    {
+      "sha256": "2758cf7a872827f39661cf8cc24188113c030447aefb5ca7145993650076ca8c",
+      "file": "OFL-ptsans.txt",
+      "gitBlob": "7b7cfbee39c52f036f5d8655431c6e4928c2df5c",
+      "source": "ofl/ptsans/OFL.txt"
+    },
+    {
+      "sha256": "a328b8fa366bdd94f507ad02e2721ac49cb4257a9ef1e49560b230079386010e",
+      "file": "Oxygen-Regular.ttf",
+      "gitBlob": "c32446f0356b52b75635d1c1846ef5ed6d11aa6f",
+      "source": "ofl/oxygen/Oxygen-Regular.ttf"
+    },
+    {
+      "sha256": "d86d9a11ad1aa242dbf50d2a2a3295baab2a11349dcf6db5bd28e36036b7f6c0",
+      "file": "Oxygen-Bold.ttf",
+      "gitBlob": "7a897d0a46e3d4dbe1af754275af80a809d9e2e8",
+      "source": "ofl/oxygen/Oxygen-Bold.ttf"
+    },
+    {
+      "sha256": "1e20933206ca06421c7c378184da5476d195314cf4bcda2bf122cd45d69a956e",
+      "file": "OFL-oxygen.txt",
+      "gitBlob": "5f3451c67586c7caabfd6a3cb9a5003e7217cfd6",
+      "source": "ofl/oxygen/OFL.txt"
     }
   ],
   "commit": "06bfe0d62a98375cb09c942fa18e68bd32cff057",
