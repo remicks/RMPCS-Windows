@@ -1,0 +1,60 @@
+{
+  "files": [
+    {
+      "file": "Barlow-Regular.ttf",
+      "source": "ofl/barlow/Barlow-Regular.ttf",
+      "sha256": "95aa02c7c43096e0dd44d787ba6216864a67157e402adab59b35572e0c1577ea",
+      "gitBlob": "bb3faec4e243e812b288fbfb9235b12ea781eee4"
+    },
+    {
+      "file": "Barlow-SemiBold.ttf",
+      "source": "ofl/barlow/Barlow-SemiBold.ttf",
+      "sha256": "86577cb32f8abe3673db53ca0f4221e6856751a4f6730c867e00f720f8bb1fc5",
+      "gitBlob": "7c974a4aa67c689a4b2a844b48f624cb4eeaa6bd"
+    },
+    {
+      "file": "OFL-barlow.txt",
+      "source": "ofl/barlow/OFL.txt",
+      "sha256": "186d750eb496a4c17a76385f82be6aea2ac1cf2de074a811d63786cf374ea73f",
+      "gitBlob": "2f22ba6ca4dbc12145ae40b14c3368f387cba0e2"
+    },
+    {
+      "file": "Rajdhani-Regular.ttf",
+      "source": "ofl/rajdhani/Rajdhani-Regular.ttf",
+      "sha256": "6e1fc228a8318251a6e569502ec57bac1e4656c582f92f59ccecc4688e039b98",
+      "gitBlob": "d25bd37233b672ef565e01d998a9412d761d7b00"
+    },
+    {
+      "file": "Rajdhani-SemiBold.ttf",
+      "source": "ofl/rajdhani/Rajdhani-SemiBold.ttf",
+      "sha256": "94bbd25a18ca665999feb05a537de9fd2b860dcfb78bbe9ca00270825bf235da",
+      "gitBlob": "d43750bd05c130d36c8e7fbeb06ecd7c5d3c3b17"
+    },
+    {
+      "file": "OFL-rajdhani.txt",
+      "source": "ofl/rajdhani/OFL.txt",
+      "sha256": "f62ef357d3a1c3d27edd35a6e1ba350e8a8d13499797964eeadefbf0b3b15d1f",
+      "gitBlob": "6dd809659a8ccace7ccee108d024d33cd4f936da"
+    },
+    {
+      "file": "AtkinsonHyperlegible-Regular.ttf",
+      "source": "ofl/atkinsonhyperlegible/AtkinsonHyperlegible-Regular.ttf",
+      "sha256": "7fb917c89019896d0b52ee84b7cbb3304c18cb90b19a62f5e32712bd23e97669",
+      "gitBlob": "b3cc4200fcf09d600eac74002ab4ea65b404a536"
+    },
+    {
+      "file": "AtkinsonHyperlegible-Bold.ttf",
+      "source": "ofl/atkinsonhyperlegible/AtkinsonHyperlegible-Bold.ttf",
+      "sha256": "5a3b0c8cc8ca545155150b4512a1fa248298df121c50d6557e651e61fbdab92f",
+      "gitBlob": "ca3f613847de62b8da83d2dab500ec391c8fe477"
+    },
+    {
+      "file": "OFL-atkinsonhyperlegible.txt",
+      "source": "ofl/atkinsonhyperlegible/OFL.txt",
+      "sha256": "f32d22b3908fcad2c86a74000614ec22e6a7f66ea7e867e616026a27aebdc143",
+      "gitBlob": "2befc89b0ee81d5a37e6ca6503bb0db099feb70f"
+    }
+  ],
+  "commit": "06bfe0d62a98375cb09c942fa18e68bd32cff057",
+  "repository": "google/fonts"
+}

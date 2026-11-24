@@ -1,6 +1,6 @@
 # RMPCS roadmap
 
-Current build: v0.10.1, adding a compact single-pane sidebar, monitor/edge/width settings and optional Windows appbar desktop-space reservation. The previous installer progress, guided Overview, startup switches and app-wide themes remain available.
+Current build: v0.11.0, refining typography and navigation with embedded font choices, Back navigation in both layouts, grouped Settings and consistent rounded controls/text surfaces. The existing sidebar, desktop-space reservation, installer progress, startup switches and app-wide themes remain available.
 
 Existing diagnostics, verified restore-point requests, preference undo, guarded scheduling, reports, archives and update checks remain available. See README and release notes for scope and validation limits.
 

@@ -73,7 +73,7 @@ public partial class MainWindow
             }
             else
             {
-                MainTabs.ClearValue(TemplateProperty);
+                MainTabs.Template = (ControlTemplate)FindResource("DesktopTabs");
                 MinWidth = Math.Min(960, SystemParameters.WorkArea.Width); MinHeight = Math.Min(620, SystemParameters.WorkArea.Height);
                 ResizeMode = ResizeMode.CanResize;
             }
@@ -83,6 +83,7 @@ public partial class MainWindow
         sidebarDock?.Configure(preferences);
         if (!enabled) SidebarStatus.Text = "Sidebar is off. These choices do not start maintenance.";
         UpdateSidebarPane();
+        TrackSection();
         if (enabled && busy) ShowSidebarResults();
     }
     private void SyncSidebarPage()
@@ -110,6 +111,7 @@ public partial class MainWindow
             syncingSidebar = true; MainTabs.SelectedIndex = Array.IndexOf(AppPreferences.Pages, key); syncingSidebar = false;
         }
         UpdateSidebarPane();
+        TrackSection();
     }
     private void ShowSidebarResults() { if (sidebarVisual) SidebarPageChoice.SelectedValue = "Results"; }
     private void SaveSidebar(AppPreferences next)

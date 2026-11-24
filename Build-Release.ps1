@@ -29,6 +29,7 @@ Check-Exe (Join-Path $app 'RMPCS.exe') @('--backup-acl-check')
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--diagnostic-read-check',('"'+(Join-Path $release 'diagnostic-read-check.txt')+'"'))
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--theme-ui-check',('"'+(Join-Path $release 'theme-ui-check.txt')+'"'))
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--sidebar-ui-check',('"'+(Join-Path $release 'sidebar-ui-check.txt')+'"'))
+Check-Exe (Join-Path $app 'RMPCS.exe') @('--presentation-ui-check',('"'+(Join-Path $release 'presentation-ui-check.txt')+'"'))
 if($DesktopChecks) {
     Check-Exe (Join-Path $app 'RMPCS.exe') @('--smoke-test')
     Check-Exe $setup @('--smoke-test')
@@ -50,7 +51,9 @@ foreach($folder in @('RMPCS.App','RMPCS.Core','RMPCS.Tests','RMPCS.Packaging','I
     New-Item -ItemType Directory -Force -Path $target | Out-Null
     Get-ChildItem -LiteralPath $folder -File | Copy-Item -Destination $target -Force
 }
-Copy-Item Build-Release.ps1,NuGet.Config,.gitignore,README.md,RUNTIMES.md,ROADMAP.md,RELEASE-NOTES.md,release-version.txt -Destination $source -Force
+New-Item -ItemType Directory -Force -Path (Join-Path $source 'Assets\Fonts') | Out-Null
+Get-ChildItem Assets\Fonts -File | Copy-Item -Destination (Join-Path $source 'Assets\Fonts') -Force
+Copy-Item Build-Release.ps1,NuGet.Config,.gitignore,README.md,RUNTIMES.md,ROADMAP.md,RELEASE-NOTES.md,release-version.txt,THIRD-PARTY-NOTICES.md -Destination $source -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $source '.github\workflows') | Out-Null
 Get-ChildItem .github\workflows -File | Copy-Item -Destination (Join-Path $source '.github\workflows') -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $source '.github\scripts') | Out-Null

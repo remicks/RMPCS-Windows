@@ -233,6 +233,7 @@ public partial class MainWindow : Window
         if(!ReferenceEquals(e.Source,MainTabs)||RunButton is null)return;
         RunButton.Visibility=MainTabs.SelectedIndex==1?Visibility.Visible:Visibility.Collapsed;
         SyncSidebarPage();
+        TrackSection();
         if(MainTabs.SelectedIndex==3&&!busy&&!TestMode)RefreshStartupApps();
     }
     private void Stop_Click(object sender, RoutedEventArgs e) { stopRequested = true; StopButton.IsEnabled = false; Log("Stopping after current task; DHCP renewal is still attempted after release."); }

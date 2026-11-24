@@ -28,11 +28,13 @@ internal static class ThemeManager
     public static void Apply(AppPreferences preferences)
     {
         current=preferences.Normalize(); bool highContrast=SystemParameters.HighContrast;
+        FontManager.Apply(current);
         Dark=current.ThemeMode=="Dark"||(current.ThemeMode=="System"&&WindowsDark());
         string accent=ThemeCatalog.Accent(current.AccentName,current.CustomAccent);
         void Set(string key,string value) { var brush=new SolidColorBrush((Color)ColorConverter.ConvertFromString(value));brush.Freeze();Application.Current.Resources[key]=brush; }
         string surface=Dark?"#171522":"#FFFFFF";
         Set("WindowBrush",Dark?"#111019":"#F5F7FA");Set("SurfaceBrush",surface);Set("RaisedBrush",Dark?"#211E2D":"#EDF1F6");
+        Set("SubtleBorderBrush",Dark?"#393141":"#DCE2EB");
         Set("SelectedTextBrush",Dark?"#F4F0FF":"#202938");Set("SwitchThumbBrush","#FFFFFF");
         Set("TextBrush",Dark?"#F4F0FF":"#202938");Set("MutedBrush",Dark?"#AEA6BD":"#526174");Set("BorderBrush",Dark?"#655871":"#8492A6");
         Set("HoverBrush",Dark?"#393047":"#E7ECF3");Set("SelectionBrush",Dark?"#352844":"#E5EAF3");Set("SwitchOffBrush",Dark?"#51495F":"#637083");
@@ -43,6 +45,7 @@ internal static class ThemeManager
             foreach(string key in new[]{"WindowBrush","SurfaceBrush","RaisedBrush"})System(key,SystemColors.WindowColor);
             foreach(string key in new[]{"TextBrush","MutedBrush","AccentTextBrush"})System(key,SystemColors.WindowTextColor);
             System("BorderBrush",SystemColors.WindowTextColor);System("SwitchOffBrush",SystemColors.WindowTextColor);
+            System("SubtleBorderBrush",SystemColors.WindowTextColor);
             foreach(string key in new[]{"AccentBrush","SelectionBrush","HoverBrush"})System(key,SystemColors.HighlightColor);
             System("OnAccentBrush",SystemColors.HighlightTextColor);System("SelectedTextBrush",SystemColors.HighlightTextColor);System("SwitchThumbBrush",SystemColors.WindowColor);
         }

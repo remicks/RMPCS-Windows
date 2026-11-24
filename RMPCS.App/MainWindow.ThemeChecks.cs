@@ -6,10 +6,10 @@ using RMPCS.Core;
 namespace RMPCS.App;
 public partial class MainWindow
 {
-    internal void PreviewAppearance(string mode,string accent,bool compact=false,bool sidebar=false)
+    internal void PreviewAppearance(string mode,string accent,bool compact=false,bool sidebar=false,string font="Barlow")
     {
         if(!TestMode)return;
-        preferences=preferences with {ThemeMode=ThemeCatalog.Modes.Contains(mode)?mode:"Light",AccentName=ThemeCatalog.Presets.Any(x=>x.Name==accent)?accent:"Crimson Red"};
+        preferences=preferences with {ThemeMode=ThemeCatalog.Modes.Contains(mode)?mode:"Light",AccentName=ThemeCatalog.Presets.Any(x=>x.Name==accent)?accent:"Crimson Red",UiFont=FontCatalog.Normalize(font)};
         PutAppearanceControls();ApplyPreferences();
         if(compact){Width=1000;Height=720;}
         if(sidebar){preferences=preferences with {SidebarEnabled=true};PutSidebarControls();ApplySidebarPreferences();}
@@ -35,7 +35,7 @@ public partial class MainWindow
             if(!SystemParameters.HighContrast)
             {
                 Check(ColorOf(Background)==(mode=="Dark"?"#FF111019":"#FFF5F7FA"),"live window brush");
-                Check(ColorOf(Activity.Background)==(mode=="Dark"?"#FF171522":"#FFFFFFFF"),"live text surface");
+                Check(ColorOf(Activity.Background)==(mode=="Dark"?"#FF211E2D":"#FFEDF1F6"),"read-only output uses the live raised surface");
                 Check(ColorOf(Activity.Foreground)==(mode=="Dark"?"#FFF4F0FF":"#FF202938"),"live text foreground");
                 Check(ColorOf(Application.Current.Resources["AccentBrush"])=="#FF"+preset.Hex[1..],"preset accent");
             }

@@ -1,10 +1,11 @@
 <Window x:Class="RMPCS.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Title="RMPCS - Rusty's PC Toolkit" Icon="Assets/RMPCS.ico" Width="1320" Height="820" MinWidth="960" MinHeight="620" Background="{DynamicResource WindowBrush}" Foreground="{DynamicResource TextBrush}" FontFamily="Segoe UI Variable Text, Segoe UI" WindowStartupLocation="CenterScreen" Closing="Window_Closing" StateChanged="Window_StateChanged">
+ Title="RMPCS - Rusty's PC Toolkit" Icon="Assets/RMPCS.ico" Width="1320" Height="820" MinWidth="960" MinHeight="620" Background="{DynamicResource WindowBrush}" Foreground="{DynamicResource TextBrush}" FontFamily="{DynamicResource UiFontFamily}" WindowStartupLocation="CenterScreen" Closing="Window_Closing" StateChanged="Window_StateChanged">
  <Window.Resources>
-  <ControlTemplate x:Key="SidebarTabs" TargetType="TabControl"><Border Background="{DynamicResource SurfaceBrush}" CornerRadius="8" Padding="{TemplateBinding Padding}"><ContentPresenter ContentSource="SelectedContent"/></Border></ControlTemplate>
+  <ControlTemplate x:Key="SidebarTabs" TargetType="TabControl"><Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="{TemplateBinding Padding}"><ContentPresenter ContentSource="SelectedContent"/></Border></ControlTemplate>
+  <ControlTemplate x:Key="DesktopTabs" TargetType="TabControl"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Margin="0,0,12,0" Padding="0,6,0,0"><TabPanel IsItemsHost="True" KeyboardNavigation.TabIndex="1"/></Border><Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="{TemplateBinding Padding}"><ContentPresenter ContentSource="SelectedContent"/></Border></Grid></ControlTemplate>
   <Style TargetType="TabItem"><Setter Property="Foreground" Value="{DynamicResource TextBrush}"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TabItem">
-   <Border x:Name="Header" Background="{DynamicResource SurfaceBrush}" CornerRadius="6" Padding="14,10" Margin="0,0,8,6" Width="122"><ContentPresenter ContentSource="Header"/></Border>
-   <ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Foreground" Value="{DynamicResource SelectedTextBrush}"/><Setter TargetName="Header" Property="Background" Value="{DynamicResource SelectionBrush}"/></Trigger></ControlTemplate.Triggers>
+   <Border x:Name="Header" Background="Transparent" CornerRadius="9" Padding="12,11" Margin="0,0,0,5" Width="128"><ContentPresenter ContentSource="Header"/></Border>
+   <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Header" Property="Background" Value="{DynamicResource HoverBrush}"/><Setter TargetName="Header" Property="TextElement.Foreground" Value="{DynamicResource SelectedTextBrush}"/></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="Header" Property="TextElement.Foreground" Value="{DynamicResource SelectedTextBrush}"/><Setter TargetName="Header" Property="Background" Value="{DynamicResource SelectionBrush}"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Header" Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/><Setter TargetName="Header" Property="BorderThickness" Value="1"/></Trigger></ControlTemplate.Triggers>
   </ControlTemplate></Setter.Value></Setter></Style>
   
   
@@ -18,31 +19,34 @@
    </Grid>
    <StackPanel x:Name="SidebarHeader" Visibility="Collapsed">
     <DockPanel LastChildFill="True"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Button Content="Full window" Click="LeaveSidebar_Click" Padding="9,7"/><Button Content="Tray" Click="Tray_Click" Padding="9,7"/></StackPanel><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><Image Source="Assets/RMPCS.png" Width="24" Height="24" Margin="0,0,8,0"/><TextBlock Text="RMPCS" FontWeight="SemiBold" FontSize="18" VerticalAlignment="Center"/></StackPanel></DockPanel>
-    <ComboBox x:Name="SidebarPageChoice" DisplayMemberPath="Label" SelectedValuePath="Key" SelectionChanged="SidebarPage_Changed" AutomationProperties.Name="Sidebar page" Margin="0,14,0,8"/>
+    <DockPanel Margin="0,12,0,8"><Button x:Name="SidebarBackButton" DockPanel.Dock="Left" Content="← Back" Click="Back_Click" ToolTip="Previous section (Alt+Left)" Padding="9,7"/><ComboBox x:Name="SidebarPageChoice" DisplayMemberPath="Label" SelectedValuePath="Key" SelectionChanged="SidebarPage_Changed" AutomationProperties.Name="Sidebar page" Margin="0"/></DockPanel>
     <TextBlock Text="{Binding Text, ElementName=Status}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8"/>
     <Button x:Name="SidebarElevateButton" Content="Run as administrator" Click="Elevate_Click" Visibility="Collapsed" Padding="10,7" Margin="0,0,0,8"/>
    </StackPanel>
   </Grid>
-  <Border x:Name="TrayHintPanel" Grid.Row="1" Background="{DynamicResource RaisedBrush}" CornerRadius="8" Padding="12" Margin="0,16,0,14"><TextBlock x:Name="TrayStatus" Text="Check health, review cleanup, and run only the tasks you choose." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"/></Border>
+  <Border x:Name="TrayHintPanel" Grid.Row="1" Padding="0,0,0,4" Margin="0,18,0,14"><DockPanel><Button x:Name="BackButton" DockPanel.Dock="Left" Content="← Back" Click="Back_Click" ToolTip="Previous section (Alt+Left)" Padding="12,8"/><StackPanel Margin="4,0,0,0"><TextBlock x:Name="SectionTitle" Text="Overview" Style="{StaticResource HeadingText}" FontSize="18"/><TextBlock x:Name="TrayStatus" Text="Check health, review cleanup, and run only the tasks you choose." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,3,0,0"/></StackPanel></DockPanel></Border>
   <Grid Grid.Row="2">
-   <Grid.ColumnDefinitions><ColumnDefinition Width="1.05*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-   <TabControl TabStripPlacement="Left" x:Name="MainTabs" SelectionChanged="MainTabs_Changed" Background="{DynamicResource SurfaceBrush}" BorderThickness="0" Padding="16">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="1.35*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <TabControl TabStripPlacement="Left" x:Name="MainTabs" Template="{StaticResource DesktopTabs}" SelectionChanged="MainTabs_Changed" Background="{DynamicResource SurfaceBrush}" BorderThickness="0" Padding="20">
     <TabItem Header="Overview"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="HealthPanel">
-     <TextBlock Text="Start with a quick check" FontSize="23" FontWeight="SemiBold" TextWrapping="Wrap"/>
-     <TextBlock Text="Start with a check, review what needs attention, then choose what to do. Nothing runs automatically when you open RMPCS." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,22"/>
-     <Border Background="{DynamicResource RaisedBrush}" CornerRadius="8" Padding="16"><StackPanel>
-      <TextBlock Text="1  Check your PC" FontSize="17" FontWeight="SemiBold"/>
-      <TextBlock Text="See memory, storage and recent Windows errors. This check changes no settings." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,14"/>
-      <Button Content="Check my PC" Style="{StaticResource PrimaryButton}" Click="HealthScan_Click"/>
+     <TextBlock Text="A clearer picture of your PC" Style="{StaticResource HeadingText}" FontSize="23"/>
+     <TextBlock Text="Start with a check, then choose your next step. Opening RMPCS runs no maintenance." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,18"/>
+     <Border Background="{DynamicResource RaisedBrush}" CornerRadius="12" Padding="16" Margin="0,0,0,12"><StackPanel>
+      <TextBlock Text="Check your PC" FontSize="17" FontWeight="SemiBold"/>
+      <TextBlock Text="A read-only snapshot of memory, storage and recent Windows errors." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12"/>
+      <Button Content="Check my PC" Style="{StaticResource PrimaryButton}" Click="HealthScan_Click" Margin="0"/>
      </StackPanel></Border>
-     <TextBlock Text="2  Review maintenance" FontSize="17" FontWeight="SemiBold" Margin="0,22,0,8"/>
-     <TextBlock Text="Review recommended tasks before you run them. Cleanup permanently deletes eligible files; Windows repairs can take a while." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12"/>
-     
-     <Button x:Name="CareButton" Content="Review recommended care" Click="Care_Click"/>
-     <TextBlock Text="3  Make Windows startup lighter" FontSize="17" FontWeight="SemiBold" Margin="0,22,0,8"/>
-     <TextBlock Text="Review apps that have common Windows startup entries. Turn off entries you recognize; RMPCS keeps a backup for restoring them." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12"/>
-     <Button Content="Manage startup apps" Click="ShowStartup_Click"/>
-     <TextBlock x:Name="ResultsHint" Text="Need a hand? Help explains each tool. Results appear on the right." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,20,0,0"/>
+     <Border Background="{DynamicResource RaisedBrush}" CornerRadius="12" Padding="16" Margin="0,0,0,12"><StackPanel>
+      <TextBlock Text="Review maintenance" FontSize="17" FontWeight="SemiBold"/>
+      <TextBlock Text="Choose cleanup and repairs before running them. Cleanup deletes eligible files; repairs can take time." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12"/>
+      <Button x:Name="CareButton" Content="Review recommended care" Click="Care_Click" Margin="0"/>
+     </StackPanel></Border>
+     <Border Background="{DynamicResource RaisedBrush}" CornerRadius="12" Padding="16"><StackPanel>
+      <TextBlock Text="Manage startup apps" FontSize="17" FontWeight="SemiBold"/>
+      <TextBlock Text="Review recognized startup entries. RMPCS keeps a backup when you turn one off." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12"/>
+      <Button Content="Review startup apps" Click="ShowStartup_Click" Margin="0"/>
+     </StackPanel></Border>
+     <TextBlock x:Name="ResultsHint" Text="Help explains each tool. Results appear on the right." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,14,0,0"/>
     </StackPanel></ScrollViewer></TabItem>
     <TabItem Header="Maintenance"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
      <StackPanel x:Name="TaskPanel">
@@ -129,9 +133,13 @@
     <TabItem Header="Settings"><ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0"><StackPanel x:Name="SettingsPanel">
      <TextBlock Text="SETTINGS" FontWeight="Bold" Foreground="{DynamicResource AccentTextBrush}"/>
      <TextBlock x:Name="VersionLabel" FontSize="16" FontWeight="SemiBold" Margin="0,10,0,16" TextWrapping="Wrap"/>
-     <TextBlock Text="APPEARANCE" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}"/>
+     <Expander x:Name="AppearanceSection" Header="Fonts &amp; appearance" IsExpanded="True"><StackPanel>
+
      <TextBlock Text="Choose a look that is comfortable to read. Appearance previews immediately; Save appearance keeps it." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,10"/>
      <TextBlock Text="App theme"/><ComboBox x:Name="ThemeModeChoice" SelectionChanged="ThemeChoice_Changed"/>
+     <TextBlock Text="Interface font"/><ComboBox x:Name="FontChoice" SelectionChanged="ThemeChoice_Changed" AutomationProperties.Name="Interface font"/>
+     <TextBlock Text="Aa  •  Rusty's PC Toolkit  •  0123456789" Style="{StaticResource HeadingText}" Margin="0,4,0,8"/>
+     <TextBlock x:Name="FontDescription" Text="Bundled fonts work offline without installing anything in Windows." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,14"/>
      <TextBlock Text="Accent color"/><ComboBox x:Name="AccentChoice" SelectionChanged="ThemeChoice_Changed"/>
      <Expander Header="Custom accent color" Margin="0,0,0,10"><StackPanel>
       <TextBlock Text="HEX (#RRGGBB)"/><TextBox x:Name="CustomAccentHex" MaxLength="7" TextChanged="CustomHex_Changed" Margin="0,6,0,10"/>
@@ -139,7 +147,9 @@
      </StackPanel></Expander>
      <WrapPanel Margin="0,0,0,10"><Button Content="Save appearance" Style="{StaticResource PrimaryButton}" Click="SaveAppearance_Click"/><Button Content="Discard preview" Click="DiscardTheme_Click"/></WrapPanel>
      <TextBlock x:Name="ThemeStatus" Text="Windows High Contrast takes priority over custom colors." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,20"/>
-     <TextBlock Text="SIDEBAR" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" Margin="0,18,0,8"/>
+     </StackPanel></Expander>
+     <Expander x:Name="SidebarSection" Header="Sidebar &amp; displays"><StackPanel>
+
      <CheckBox x:Name="SidebarEnabledChoice" Style="{StaticResource SettingSwitch}" Content="Use the compact sidebar layout"/>
      <TextBlock Text="Monitor"/><ComboBox x:Name="SidebarMonitorChoice" DisplayMemberPath="Label" SelectedValuePath="Key" AutomationProperties.Name="Sidebar monitor"/>
      <Button Content="Refresh displays" Click="RefreshDisplays_Click" Padding="10,7" Margin="0,0,0,10"/>
@@ -149,21 +159,25 @@
      <TextBlock Text="Keeps the sidebar above ordinary windows. Reserving space lets maximized apps leave room for it. Full-screen apps and other always-on-top windows can overlap. Hiding, minimizing or exiting releases the space." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,10"/>
      <Button Content="Apply sidebar settings" Click="ApplySidebar_Click" Padding="10,8" Margin="0,0,0,8"/>
      <TextBlock x:Name="SidebarStatus" Text="Sidebar is off. These choices do not start maintenance." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,18"/>
-     <TextBlock Text="WINDOW &amp; TRAY" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}"/>
+     </StackPanel></Expander>
+     <Expander x:Name="WindowSection" Header="Window, notifications &amp; defaults"><StackPanel>
+
      <TextBlock Text="Use Save preferences below to apply these settings." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,8"/>
      <CheckBox Style="{StaticResource SettingSwitch}" x:Name="CloseToTrayChoice" Content="Close the window to the system tray"/>
      <CheckBox Style="{StaticResource SettingSwitch}" x:Name="MinimizeToTrayChoice" Content="Minimize to the system tray"/>
      <CheckBox Style="{StaticResource SettingSwitch}" x:Name="TrayNotificationsChoice" Content="Show the first-hide tray reminder"/>
      <CheckBox Style="{StaticResource SettingSwitch}" x:Name="CompletionNotificationsChoice" Content="Notify when maintenance finishes or needs review"/>
      <TextBlock Text="Opt-in notices require this app's tray icon in the same Windows sign-in session. Scheduled notices are informational; verify results in History. Windows notification settings may suppress them." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,10"/>
-     <TextBlock Text="Exit always closes the app when no task is active. If the tray is unavailable, closing exits normally." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,14"/>
+     <TextBlock Text="Quit RMPCS closes the app when no task is active. If the tray is unavailable, closing exits normally." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,14"/>
      <TextBlock Text="Open the app on"/><ComboBox x:Name="StartPageChoice"/>
      <TextBlock Text="Activity text size"/><ComboBox x:Name="ActivitySizeChoice"/>
      <TextBlock Text="Default age for manual file cleanup"/><ComboBox x:Name="DefaultAgeChoice"><ComboBoxItem Content="Older than 1 day"/><ComboBoxItem Content="Older than 7 days"/><ComboBoxItem Content="Older than 30 days"/></ComboBox>
      <TextBlock Text="Scheduled profiles keep their fixed seven-day cutoff. Saved preferences never start maintenance." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,18"/>
      <CheckBox Style="{StaticResource SettingSwitch}" x:Name="RestoreBeforeRepairChoice" Content="Request a restore point before manual Windows repairs"/>
      <TextBlock Text="Applies to DISM, SFC and Search resets. If verification fails, you decide whether to continue. Excludes unattended runs and cleanup-only runs. System Restore is not a backup of deleted files." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,16"/>
-     <TextBlock x:Name="UpdatesHeading" Text="GITHUB UPDATES" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}"/>
+     </StackPanel></Expander>
+     <Expander x:Name="UpdatesSection" Header="GitHub updates"><StackPanel>
+<TextBlock x:Name="UpdatesHeading" Text="Review available releases" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}"/>
      <CheckBox Style="{StaticResource SettingSwitch}" x:Name="AutoUpdatesChoice" Content="Check for updates when RMPCS starts"/>
      <CheckBox Style="{StaticResource SettingSwitch}" x:Name="PreviewUpdatesChoice" Content="Include preview / prerelease builds"/>
      <TextBlock Text="Automatic checks are off by default and run at most once every 24 hours. Current RMPCS releases are previews. Checks contact api.github.com without credentials; no PC reports or logs are sent. Updates are never downloaded or installed automatically." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,12"/>
@@ -171,12 +185,15 @@
      <TextBlock x:Name="UpdateStatus" Text="Not checked this session." TextWrapping="Wrap" Margin="0,12,0,10"/>
      <Button x:Name="OpenUpdateButton" Content="Open matching release" IsEnabled="False" Click="OpenUpdate_Click" Margin="0,0,0,10"/>
      <Expander Header="Release notes (plain text)" Foreground="{DynamicResource MutedBrush}"><TextBox x:Name="UpdateNotes" IsReadOnly="True" TextWrapping="Wrap" Height="200" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0"/></Expander>
-     <TextBlock Text="INSTALLATION &amp; AUTOMATION" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" Margin="0,22,0,10"/>
+     </StackPanel></Expander>
+     <Expander x:Name="InstallationSection" Header="Installation &amp; automation"><StackPanel>
+
      <TextBlock x:Name="InstallModeLabel" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"/>
      <CheckBox Style="{StaticResource SettingSwitch}" x:Name="InstalledAdminChoice" Content="Always request administrator access"/>
      <Button x:Name="ApplyAdminPreference" Content="Apply administrator preference" Click="ApplyAdminPreference_Click" Margin="0,0,0,10"/>
      <TextBlock Text="Requires an administrator session in the installed edition. This is separate from general preferences and applies across Windows users. Windows UAC remains active." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12"/>
      <Button Content="Manage startup &amp; maintenance schedules" Click="AutomationSettings_Click" Margin="0,0,0,18"/>
+     </StackPanel></Expander>
      <WrapPanel><Button Content="Save preferences" Click="SavePreferences_Click" Background="{DynamicResource AccentBrush}" Foreground="{DynamicResource OnAccentBrush}"/><Button Content="Reset interface defaults" Click="ResetPreferences_Click"/></WrapPanel>
      <TextBlock x:Name="PreferencesStatus" Text="Preferences are saved for this Windows identity. Use Save to apply changes." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,12,0,6"/>
     </StackPanel></ScrollViewer></TabItem>
@@ -225,13 +242,13 @@
      <TextBlock x:Name="ProtectionStatus" Text="No protection action requested this session." TextWrapping="Wrap"/>
     </StackPanel></ScrollViewer></TabItem>
    </TabControl>
-   <Border x:Name="ResultsPanel" Grid.Column="2" Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="18"><Grid>
+   <Border x:Name="ResultsPanel" Grid.Column="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1" CornerRadius="14" Padding="18"><Grid>
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <TextBlock Text="RESULTS &amp; ACTIVITY" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}"/><TextBlock x:Name="Status" Grid.Row="1" Text="Choose a check to get started." FontSize="19" Margin="0,12,0,15" TextWrapping="Wrap"/>
-    <TextBox x:Name="Activity" Grid.Row="2" BorderThickness="0" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+    <TextBox x:Name="Activity" Grid.Row="2" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="14"/>
     <StackPanel Grid.Row="3" Margin="0,12,0,0"><Expander x:Name="SummaryExpander" Header="Last manual run summary" Visibility="Collapsed" Foreground="{DynamicResource MutedBrush}"><TextBox x:Name="RunSummaryText" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="210" Margin="0,8,0,10"/></Expander><ProgressBar x:Name="Progress" Height="4" Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource RaisedBrush}" Visibility="Collapsed"/><TextBlock Text="Repairs finish before the queue stops. Overlapping maintenance sessions are blocked." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0"/></StackPanel>
    </Grid></Border>
   </Grid>
-  <WrapPanel Grid.Row="3" Margin="0,12,0,0"><Button x:Name="RunButton" Visibility="Collapsed" Content="Run selected tasks" Background="{DynamicResource AccentBrush}" Foreground="{DynamicResource OnAccentBrush}" Click="Run_Click" Margin="0,0,8,6"/><Button x:Name="StopButton" Content="Stop after current task" IsEnabled="False" Click="Stop_Click" Margin="0,0,8,6"/><Button Content="Exit" Click="Exit_Click" Margin="0,0,8,6"/></WrapPanel>
+  <Grid Grid.Row="3" Margin="0,12,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><WrapPanel><Button x:Name="RunButton" Visibility="Collapsed" Content="Run selected tasks" Background="{DynamicResource AccentBrush}" Foreground="{DynamicResource OnAccentBrush}" Click="Run_Click" Margin="0,0,8,6"/><Button x:Name="StopButton" Content="Stop after current task" IsEnabled="False" Click="Stop_Click" Margin="0,0,8,6"/></WrapPanel><Button Grid.Row="1" Content="Quit RMPCS" Style="{StaticResource QuietButton}" Click="Exit_Click" HorizontalAlignment="Right" Padding="10,6" FontSize="12" ToolTip="Closes the app. Use Back above to return to a previous section."/></Grid>
  </Grid>
 </Window>

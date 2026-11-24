@@ -24,6 +24,7 @@ public partial class MainWindow
         InitializeAppearance(); InitializeSidebar();
         PutPreferenceControls(); ApplyPreferences();
         MainTabs.SelectedIndex = Array.IndexOf(AppPreferences.Pages, preferences.StartPage);
+        InitializeNavigation();
         VersionLabel.Text = $"Rusty's PC Toolkit • RMPCS {AppVersion}";
         RefreshInstallPreference(); RefreshHelp();
         SupportSummary.Text = $"Rusty's PC Toolkit / RMPCS {AppVersion}\nWindows: {Environment.OSVersion.Version}\n.NET: {Environment.Version}\nArchitecture: OS {RuntimeInformation.OSArchitecture}, process {RuntimeInformation.ProcessArchitecture}\nSession: {(admin ? "Administrator" : "Standard")}\nEdition: {(TaskSchedulerService.IsInstalled ? "Installed" : "Portable / development")}";
@@ -64,6 +65,7 @@ public partial class MainWindow
         var next = SidebarChoices(new AppPreferences
         {
             ThemeMode = AppearancePreview().ThemeMode, AccentName = AppearancePreview().AccentName, CustomAccent = AppearancePreview().CustomAccent,
+            UiFont = AppearancePreview().UiFont,
             CloseToTray = CloseToTrayChoice.IsChecked == true, MinimizeToTray = MinimizeToTrayChoice.IsChecked == true,
             TrayNotifications = TrayNotificationsChoice.IsChecked == true, CheckUpdatesOnLaunch = AutoUpdatesChoice.IsChecked == true,
             CompletionNotifications = CompletionNotificationsChoice.IsChecked == true,
@@ -148,6 +150,7 @@ public partial class MainWindow
     private void ShowUpdates_Click(object sender, RoutedEventArgs e)
     {
         MainTabs.SelectedIndex = 5;
+        UpdatesSection.IsExpanded = true;
         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() => UpdatesHeading.BringIntoView()));
     }
     private void HelpSearch_Changed(object sender, TextChangedEventArgs e) => RefreshHelp();
