@@ -3,11 +3,16 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 
+[assembly: DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+
 // Offline MSI authoring with Windows' own Installer API and cabinet compressor.
 // Building this package never installs it or registers a scheduled task.
-if (OperatingSystem.IsWindows() && args.Length == 4 && args[0] == "--verify") { MsiVerification.Verify(args[1], args[2], args[3]); return; }
+if (OperatingSystem.IsWindows() && args.Length == 5 && args[0] == "--verify") { MsiVerification.Verify(args[1], args[2], args[3], args[4]); return; }
+if (OperatingSystem.IsWindows() && args.Length == 2 && args[0] == "--inspect") { InstallerAudit.Inspect(args[1]); return; }
+if (OperatingSystem.IsWindows() && args.Length == 5 && args[0] == "--regression-check") { InstallerAudit.Run(args[1], args[2], args[3], args[4]); return; }
 if (!OperatingSystem.IsWindows() || args.Length != 3) throw new ArgumentException("Usage: RMPCS.Packaging <published-app> <TaskCleanup.ps1> <output.msi>");
 string payload = Path.GetFullPath(args[0]), cleanup = Path.GetFullPath(args[1]), output = Path.GetFullPath(args[2]);
+string packageVersion = PackageVersion.FromApp(payload);
 Directory.CreateDirectory(Path.GetDirectoryName(output)!);
 var media = Path.Combine(Path.GetDirectoryName(output)!, "msi-media-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(media);
@@ -50,12 +55,12 @@ db.Sql("CREATE TABLE `Signature` (`Signature` CHAR(72) NOT NULL, `FileName` CHAR
 db.Sql("CREATE TABLE `Upgrade` (`UpgradeCode` CHAR(38) NOT NULL, `VersionMin` CHAR(20), `VersionMax` CHAR(20), `Language` CHAR(255), `Attributes` SHORT NOT NULL, `Remove` CHAR(255), `ActionProperty` CHAR(72) NOT NULL PRIMARY KEY `UpgradeCode`, `VersionMin`, `VersionMax`, `Language`, `Attributes`)");
 foreach (var sequence in new[] { "InstallExecuteSequence", "InstallUISequence" }) db.Sql($"CREATE TABLE `{sequence}` (`Action` CHAR(72) NOT NULL, `Condition` CHAR(255), `Sequence` SHORT PRIMARY KEY `Action`)");
 
-const string upgrade = "{C19B49F3-55BC-4427-AE35-3E1E27B732A5}";
+const string upgrade = PackageVersion.UpgradeCode;
 string product = Guid.NewGuid().ToString("B").ToUpperInvariant();
 foreach (var property in new Dictionary<string,string> {
-    ["ProductCode"] = product, ["UpgradeCode"] = upgrade, ["ProductName"] = "RMPCS - Rusty\u0027s PC Toolkit", ["ProductVersion"] = "0.9.2", ["ProductLanguage"] = "1033",
+    ["ProductCode"] = product, ["UpgradeCode"] = upgrade, ["ProductName"] = "RMPCS - Rusty\u0027s PC Toolkit", ["ProductVersion"] = packageVersion, ["ProductLanguage"] = "1033",
     ["Manufacturer"] = "Degenerates Inc.", ["ALLUSERS"] = "1", ["ARPNOMODIFY"] = "1", ["ARPPRODUCTICON"] = "RMPCS.ico", ["ARPCOMMENTS"] = "Rusty's PC maintenance toolkit. Automation is opt-in.",
-    ["SecureCustomProperties"] = "OLDPRODUCTS;NEWERFOUND;DOTNETDESKTOP10;CREATE_DESKTOP;CREATE_STARTMENU;ALWAYS_ADMIN", ["MSIRESTARTMANAGERCONTROL"] = "Disable", ["MSIDISABLERMRESTART"] = "1", ["INSTALLLEVEL"] = "1", ["RUN_AFTER"] = "1" }) db.Row("Property", property.Key, property.Value);
+    ["SecureCustomProperties"] = "OLDPRODUCTS;NEWERFOUND;DOTNETDESKTOP10;DOTNETCORE10;DOTNETHOST10;CREATE_DESKTOP;CREATE_STARTMENU;ALWAYS_ADMIN", ["MSIRESTARTMANAGERCONTROL"] = "Disable", ["MSIDISABLERMRESTART"] = "1", ["INSTALLLEVEL"] = "1", ["RUN_AFTER"] = "1" }) db.Row("Property", property.Key, property.Value);
 db.Row("Directory", "TARGETDIR", null, "SourceDir");
 db.Row("Directory", "ProgramFiles64Folder", "TARGETDIR", ".");
 db.Row("Directory", "VENDORFOLDER", "ProgramFiles64Folder", "DEGENE~1|Degenerates Inc");
@@ -121,11 +126,17 @@ db.Row("RemoveFile", "VendorDirectory", exeComponent, null, "VENDORFOLDER", 2);
 db.Row("AppSearch", "DOTNETDESKTOP10", "Desktop10File");
 db.Row("RegLocator", "DotnetRoot", 2, @"SOFTWARE\dotnet\Setup\InstalledVersions\x64", "InstallLocation", 0);
 db.Row("DrLocator", "Desktop10File", "DotnetRoot", @"shared\Microsoft.WindowsDesktop.App", 1);
-db.Row("Signature", "Desktop10File", "PresentationFramework.dll", "10.0.0.0", "10.65535.65535.65535", null, null, null, null, null);
-db.Row("LaunchCondition", "Installed OR DOTNETDESKTOP10", "Install the Microsoft .NET 10 Desktop Runtime (Windows x64), then run this installer again. Download: https://dotnet.microsoft.com/download/dotnet/10.0");
+db.Row("Signature", "Desktop10File", "PresentationFramework.dll", "10.0.0.0", "10.0.65535.65535", null, null, null, null, null);
+foreach (var (property, signature, folder, file) in new[] { ("DOTNETCORE10", "Core10File", @"shared\Microsoft.NETCore.App", "coreclr.dll"), ("DOTNETHOST10", "Host10File", @"host\fxr", "hostfxr.dll") })
+{
+    db.Row("AppSearch", property, signature);
+    db.Row("DrLocator", signature, "DotnetRoot", folder, 1);
+    db.Row("Signature", signature, file, "10.0.0.0", "10.0.65535.65535", null, null, null, null, null);
+}
+db.Row("LaunchCondition", "Installed OR (DOTNETDESKTOP10 AND DOTNETCORE10 AND DOTNETHOST10)", "Install or repair the Microsoft .NET 10 Desktop Runtime (Windows x64), then run this installer again. Desktop, Core and host components are required. Download: https://dotnet.microsoft.com/download/dotnet/10.0");
 db.Row("LaunchCondition", "VersionNT64", "RMPCS requires 64-bit Windows.");
-db.Row("Upgrade", upgrade, "0.0.0", "0.9.2", "1033", 257, null, "OLDPRODUCTS");
-db.Row("Upgrade", upgrade, "0.9.2", null, "1033", 258, null, "NEWERFOUND");
+db.Row("Upgrade", upgrade, "0.0.0", packageVersion, "1033", 257, null, "OLDPRODUCTS");
+db.Row("Upgrade", upgrade, packageVersion, null, "1033", 258, null, "NEWERFOUND");
 db.Row("LaunchCondition", "Installed OR NOT NEWERFOUND", "The same or a newer RMPCS version is installed. Uninstall it first or use its Repair option.");
 string cleanupId = $"F{files.Length - 1:0000}";
 db.Row("CustomAction", "CleanupTasks", 3106, "System64Folder", $"\"[System64Folder]WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"[#{cleanupId}]\" -InstallRoot \"[INSTALLFOLDER].\"");
@@ -158,8 +169,8 @@ void Dialog(string name, string title, string body, string button, string action
     db.Row("ControlEvent", name, "Continue", "EndDialog", action, "1", 2);
     db.Row("ControlEvent", name, "Cancel", "EndDialog", "Exit", "1", 1);
 }
-Dialog("WelcomeDlg", "RMPCS 0.9.2 Setup", "Install Rusty's PC maintenance toolkit to:\n[ProgramFiles64Folder]Degenerates Inc\\RMPCS\n\nRequires the .NET 10 Desktop Runtime.\n\nCreates a Start Menu shortcut and an uninstall entry. Startup and schedules remain OFF until you enable them in the app.\n\nClose RMPCS before installing or updating.", "Install", "Return");
-db.Sql("UPDATE `Control` SET `Text`='Choose how RMPCS fits into your desktop.\nWindows will still ask for permission when administrator access is requested.\n\nClose RMPCS using Exit before continuing.' WHERE `Dialog_`='WelcomeDlg' AND `Control`='Body'");
+Dialog("WelcomeDlg", "RMPCS [ProductVersion] Setup", "Install Rusty's PC maintenance toolkit to:\n[ProgramFiles64Folder]Degenerates Inc\\RMPCS\n\nRequires the .NET 10 Desktop Runtime.\n\nCreates a Start Menu shortcut and an uninstall entry. Startup and schedules remain OFF until you enable them in the app.\n\nClose RMPCS before installing or updating.", "Install", "Return");
+db.Sql("UPDATE `Control` SET `Text`='Choose how RMPCS fits into your desktop.\nWindows will still ask for permission when administrator access is requested.\n\nClose RMPCS using Quit RMPCS before continuing.' WHERE `Dialog_`='WelcomeDlg' AND `Control`='Body'");
 db.Sql("UPDATE `Control` SET `Height`=62 WHERE `Dialog_`='WelcomeDlg' AND `Control`='Body'");
 db.Sql("UPDATE `Control` SET `Control_Next`='DesktopChoice' WHERE `Dialog_`='WelcomeDlg' AND `Control`='Cancel'");
 db.Row("Control", "WelcomeDlg", "DesktopChoice", "CheckBox", 24, 159, 372, 18, 3, "CREATE_DESKTOP", "Create a desktop shortcut", "MenuChoice", null);
@@ -169,13 +180,23 @@ Dialog("RemoveDlg", "Remove RMPCS", "Remove the installed application and its st
 foreach (var (action, number) in new (string,int)[] { ("FindRelatedProducts",25), ("AppSearch",50), ("LaunchConditions",100), ("CostInitialize",800), ("FileCost",900), ("CostFinalize",1000), ("ExecuteAction",1300) }) db.Row("InstallUISequence", action, null, number);
 db.Row("InstallUISequence", "WelcomeDlg", "NOT Installed", 750);
 foreach (string name in new[] { "Desktop", "StartMenu", "AlwaysAdmin" }) db.Sql($"UPDATE `InstallUISequence` SET `Sequence`={760 + Array.IndexOf(new[] { "Desktop", "StartMenu", "AlwaysAdmin" }, name)} WHERE `Action`='Normalize{name}'");
-db.Row("InstallUISequence", "RemoveDlg", "Installed AND NOT REINSTALL", 1101);
+Dialog("MaintenanceDlg", "RMPCS [ProductVersion] maintenance", "Repair the installed files, shortcuts and registered preferences, or choose Remove to uninstall RMPCS.\n\nClose RMPCS using Quit RMPCS first. Repair does not run PC cleanup or enable maintenance schedules.", "Repair", "Return");
+db.Sql("UPDATE `ControlEvent` SET `Ordering`=3 WHERE `Dialog_`='MaintenanceDlg' AND `Control_`='Continue' AND `Event`='EndDialog'");
+db.Row("ControlEvent", "MaintenanceDlg", "Continue", "[REINSTALL]", "ALL", "1", 1);
+db.Row("ControlEvent", "MaintenanceDlg", "Continue", "[REINSTALLMODE]", "omus", "1", 2);
+db.Row("Control", "MaintenanceDlg", "Remove", "PushButton", 142, 244, 84, 24, 3, null, "Remove", "Continue", null);
+db.Row("ControlEvent", "MaintenanceDlg", "Remove", "[REMOVE]", "ALL", "1", 1);
+db.Row("ControlEvent", "MaintenanceDlg", "Remove", "EndDialog", "Return", "1", 2);
+db.Sql("UPDATE `Control` SET `Control_Next`='Remove' WHERE `Dialog_`='MaintenanceDlg' AND `Control`='Cancel'");
+db.Row("InstallUISequence", "MaintenanceDlg", "Installed AND NOT REMOVE AND NOT REINSTALL AND NOT UPGRADINGPRODUCTCODE", 740);
+db.Row("InstallUISequence", "RemoveDlg", "Installed AND REMOVE~=\"ALL\" AND NOT UPGRADINGPRODUCTCODE", 1101);
+db.Sql("UPDATE `Dialog` SET `Control_First`='Cancel', `Control_Default`='Cancel' WHERE `Dialog`='RemoveDlg'");
 
 // Modeless action display: return to the engine while keeping a real progress window alive.
 db.Row("Property", "INSTALL_OPERATION", "Installing RMPCS");
 foreach (var (id, text, condition, sequence) in new[] {
     ("DescribeRemoval", "Removing RMPCS", "REMOVE~=\"ALL\"", 1210),
-    ("DescribeRepair", "Updating RMPCS", "Installed AND NOT REMOVE", 1211),
+    ("DescribeRepair", "Repairing RMPCS", "Installed AND NOT REMOVE", 1211),
     ("DescribeUpgrade", "Upgrading RMPCS", "OLDPRODUCTS AND NOT Installed AND NOT REMOVE", 1212) })
 {
     db.Row("CustomAction", id, 51, "INSTALL_OPERATION", text);
@@ -219,23 +240,23 @@ void Outcome(string name, string title, string body, string condition, int seque
     db.Row("InstallUISequence", name, condition, sequence);
 }
 Outcome("RemovedDlg", "RMPCS was removed", "The application and its automatic tasks have been removed. Saved user logs and disabled-startup backups are preserved.", "REMOVE~=\"ALL\"", -1);
-Outcome("UpdatedDlg", "RMPCS was updated", "Windows Installer completed the requested changes. You can close setup now.", "Installed AND NOT REMOVE", -1);
+Outcome("UpdatedDlg", "RMPCS maintenance completed", "Windows Installer completed the requested repair. You can close setup now.", "Installed AND NOT REMOVE", -1);
 Outcome("CancelledDlg", "Setup was cancelled", "The requested operation did not complete. Windows Installer has finished handling cancellation. Review any Windows Installer messages before retrying.", "1", -2);
 Outcome("FailedDlg", "Setup did not complete", "Windows Installer could not complete the requested changes. Review its error message, then close setup and retry when the issue is resolved.", "1", -3);
 db.Row("Dialog", "FinishDlg", 50, 50, 420, 285, 3, "RMPCS is ready", "LaunchChoice", "Finish", "Close");
 db.Row("Control", "FinishDlg", "Brand", "Icon", 20, 24, 36, 36, 3, null, "BrandIcon", null, null);
 db.Row("Control", "FinishDlg", "Heading", "Text", 70, 26, 325, 32, 3, null, "{\\Heading}You're all set", null, null);
-db.Row("Control", "FinishDlg", "Body", "Text", 24, 96, 372, 70, 3, null, "RMPCS was installed successfully.\nStartup to tray and maintenance schedules stay opt-in.\nNo cleanup runs when you open the app.", null, null);
+db.Row("Control", "FinishDlg", "Body", "Text", 24, 96, 372, 70, 3, null, "RMPCS was installed successfully.\nStartup to tray and maintenance schedules stay opt-in.\nNo cleanup runs when you open the app.\nIf Windows needs a restart, restart before opening RMPCS; automatic launch is postponed.", null, null);
 db.Row("Control", "FinishDlg", "LaunchChoice", "CheckBox", 24, 180, 372, 22, 3, "RUN_AFTER", "Run RMPCS after installation", "Finish", null);
 db.Row("Control", "FinishDlg", "Finish", "PushButton", 308, 244, 90, 24, 3, null, "Finish", "Close", null);
 db.Row("Control", "FinishDlg", "Close", "PushButton", 212, 244, 84, 24, 3, null, "Close", "LaunchChoice", null);
 db.Row("ControlEvent", "FinishDlg", "Close", "EndDialog", "Return", "1", 1);
 db.Row("CustomAction", "LaunchInstalledApp", 210, $"F{exeIndex:0000}", null);
 db.Row("ControlEvent", "FinishDlg", "Finish", "EndDialog", "Return", "1", 1);
-db.Row("ControlEvent", "FinishDlg", "Finish", "DoAction", "LaunchInstalledApp", "RUN_AFTER = \"1\"", 2);
+db.Row("ControlEvent", "FinishDlg", "Finish", "DoAction", "LaunchInstalledApp", "RUN_AFTER = \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending", 2);
 db.Row("InstallUISequence", "FinishDlg", "NOT Installed AND NOT REMOVE", -1);
 db.Stream("RMPCS.cab", Path.Combine(media, "RMPCS.cab"));
-db.Summary(2, "RMPCS Installation"); db.Summary(3, "Rusty's PC maintenance toolkit"); db.Summary(4, "Degenerates Inc.");
+db.Summary(2, "RMPCS " + packageVersion + " Installation"); db.Summary(3, "Rusty's PC maintenance toolkit"); db.Summary(4, "Degenerates Inc.");
 db.Summary(7, "x64;1033"); db.Summary(9, Guid.NewGuid().ToString("B").ToUpperInvariant()); db.Summary(14, 500); db.Summary(15, 2); db.Summary(18, "RMPCS offline MSI builder");
 db.Commit();
 Console.WriteLine($"Created {output} ({new FileInfo(output).Length:N0} bytes). ProductCode {product}");
@@ -244,7 +265,7 @@ sealed class MsiDatabase : IDisposable
 {
     private readonly uint handle;
     private readonly Dictionary<string, string[]> columns = [];
-    public MsiDatabase(string path, bool readOnly = false) { MsiNative.Check(MsiNative.MsiOpenDatabaseW(path, readOnly ? IntPtr.Zero : new IntPtr(3), out handle), "Open database"); }
+    public MsiDatabase(string path, bool readOnly = false, bool update = false) { MsiNative.Check(MsiNative.MsiOpenDatabaseW(path, readOnly ? IntPtr.Zero : new IntPtr(update ? 1 : 3), out handle), "Open database"); }
     public List<string[]> Query(string query)
     {
         MsiNative.Check(MsiNative.MsiDatabaseOpenViewW(handle, query, out uint view), query);
@@ -380,12 +401,14 @@ static class MsiNative
 
 static class MsiVerification
 {
-    public static void Verify(string package, string app, string cleanup)
+    public static void Verify(string package, string app, string cleanup, string expectedVersion)
     {
         using var db = new MsiDatabase(Path.GetFullPath(package), true);
         void Check(bool valid, string description) { if (!valid) throw new InvalidDataException(description); Console.WriteLine("PASS: " + description); }
         var properties = db.Query("SELECT `Property`,`Value` FROM `Property`").ToDictionary(r => r[0], r => r[1]);
-        Check(properties["ProductVersion"] == "0.9.2" && properties["ALLUSERS"] == "1", "MSI version and per-machine installation metadata");
+        PackageVersion.RequireExpected(app, expectedVersion);
+        Check(properties["ProductVersion"] == expectedVersion && properties["ALLUSERS"] == "1", "MSI version matches both published application and independently supplied release version");
+        InstallerAudit.VerifyMetadata(db, expectedVersion, Check);
         var components = db.Query("SELECT `Component`,`ComponentId`,`Attributes`,`KeyPath` FROM `Component`");
         Check(components.All(c => (int.Parse(c[2]) & 256) != 0 && Guid.TryParse(c[1], out _)), "all installed components are x64 and have valid identities");
         var fileRows = db.Query("SELECT `File`,`Component_`,`FileName`,`FileSize` FROM `File`");
@@ -395,7 +418,8 @@ static class MsiVerification
         Check(int.Parse(sequence.Single(r => r[0] == "CleanupTasks")[2]) < int.Parse(sequence.Single(r => r[0] == "RemoveFiles")[2]), "automation removal precedes file removal");
         var locator = db.Query("SELECT `Type` FROM `RegLocator`");
         Check(locator.Count(r => r[0] == "0") == 1 && locator.Count(r => r[0] == "18") == 3, "runtime and saved install choices use their correct registry views");
-        Check(db.Query("SELECT `MinVersion` FROM `Signature`").Single()[0] == "10.0.0.0", "installer checks the .NET 10 Desktop Runtime version");
+        var runtimeSignatures=db.Query("SELECT `FileName`,`MinVersion`,`MaxVersion` FROM `Signature`");
+        Check(runtimeSignatures.Count==3&&runtimeSignatures.All(r=>r[1]=="10.0.0.0"&&r[2]=="10.0.65535.65535")&&new[]{"PresentationFramework.dll","coreclr.dll","hostfxr.dll"}.All(name=>runtimeSignatures.Any(r=>r[0]==name)), "installer checks .NET 10.0 Desktop, Core and host components consistently with the launcher");
         var shortcuts = db.Query("SELECT `Shortcut`,`Icon_`,`IconIndex` FROM `Shortcut`");
         Check(db.Query("SELECT `Action` FROM `InstallUISequence`").Any(r => r[0] == "WelcomeDlg") && shortcuts.Count == 2 && shortcuts.All(r => r[1] == "RMPCS.ico" && r[2] == "0"), "installer has branded Start Menu and desktop shortcuts");
         Check(properties["ARPPRODUCTICON"] == "RMPCS.ico" && db.Query("SELECT `Name` FROM `Icon`").Single()[0] == "RMPCS.ico" && db.Query("SELECT `Name` FROM `Binary`").Single()[0] == "BrandIcon", "installer embeds branding for dialogs and Installed apps");
@@ -404,7 +428,7 @@ static class MsiVerification
         Check(db.Query("SELECT `Name`,`Value` FROM `Registry` WHERE `Registry`='OptionAlwaysAdmin'").Single()[1] == "[ALWAYS_ADMIN]", "administrator preference is installed and removed by MSI");
         var ui = db.Query("SELECT `Action`,`Sequence` FROM `InstallUISequence`");
         Check(int.Parse(ui.Single(r => r[0] == "WelcomeDlg")[1]) < 800 && ui.Single(r => r[0] == "FinishDlg")[1] == "-1", "choices precede costing and completion page runs only after success");
-        Check(db.Query("SELECT `Control_`,`Condition` FROM `ControlEvent` WHERE `Argument`='LaunchInstalledApp'").Single()[1] == "RUN_AFTER = \"1\"", "post-install launch requires the completion checkbox");
+        Check(db.Query("SELECT `Control_`,`Condition` FROM `ControlEvent` WHERE `Argument`='LaunchInstalledApp'").Single()[1] == "RUN_AFTER = \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending", "post-install launch requires the checkbox and no pending MSI restart flags");
         Check(!sequence.Any(r => r[0] == "LaunchInstalledApp") && db.Query("SELECT `Type`,`Source` FROM `CustomAction` WHERE `Action`='LaunchInstalledApp'").Single()[0] == "210", "post-install launch is asynchronous and absent from unattended execution");
         var progressDialog=db.Query("SELECT `Attributes`,`Control_Default`,`Control_Cancel` FROM `Dialog` WHERE `Dialog`='ProgressDlg'").Single();
         Check((int.Parse(progressDialog[0])&1)!=0&&(int.Parse(progressDialog[0])&2)==0&&progressDialog[1]=="Cancel"&&progressDialog[2]=="Cancel", "progress dialog is visible and modeless while Windows Installer executes");

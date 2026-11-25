@@ -16,15 +16,17 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-[assembly: AssemblyVersion("0.9.2.0")]
-[assembly: AssemblyFileVersion("0.9.2.0")]
 [assembly: AssemblyProduct("RMPCS")]
 [assembly: AssemblyCompany("Degenerates Inc.")]
+[assembly: DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
 
 namespace RMPCS.Bootstrap
 {
     internal static class Program
     {
+        internal static string VersionLabel { get { return Assembly.GetExecutingAssembly().GetName().Version.ToString(3); } }
+        internal static bool SameProductInstalled() { return BootstrapPolicy.RequiresRepair(MsiQueryProductStateW(PackageIdentity.ProductCode)); }
+        [DllImport("msi.dll", CharSet=CharSet.Unicode, ExactSpelling=true)] private static extern int MsiQueryProductStateW(string productCode);
         internal static bool Installer {
             get {
 #if INSTALLER
@@ -126,10 +128,13 @@ namespace RMPCS.Bootstrap
             check(BootstrapPolicy.RuntimeSha512.Length == 128 && BootstrapPolicy.IsHex(BootstrapPolicy.RuntimeSha512));
             check(new Uri(BootstrapPolicy.RuntimeUrl).Scheme == "https" && new Uri(BootstrapPolicy.RuntimeUrl).Host == "builds.dotnet.microsoft.com");
             check(BootstrapPolicy.AcceptedExit(0) && BootstrapPolicy.AcceptedExit(3010) && !BootstrapPolicy.AcceptedExit(1602) && !BootstrapPolicy.AcceptedExit(1641));
+            check(BootstrapPolicy.RequiresRepair(5)&&!BootstrapPolicy.RequiresRepair(-1)&&!BootstrapPolicy.RequiresRepair(0)&&!BootstrapPolicy.RequiresRepair(1));
+            check(Guid.Parse(PackageIdentity.ProductCode).ToString("B").ToUpperInvariant()==PackageIdentity.ProductCode);
             for(int mask=0;mask<8;mask++)
             {
                 string arguments=SetupChoices.MsiArguments(@"C:\safe path\RMPCS.msi",(mask&1)!=0,(mask&2)!=0,(mask&4)!=0);
                 check(arguments.Contains("CREATE_DESKTOP="+((mask&1)!=0?"1":"0")) && arguments.Contains("CREATE_STARTMENU="+((mask&2)!=0?"1":"0")) && arguments.Contains("ALWAYS_ADMIN="+((mask&4)!=0?"1":"0")) && !arguments.Contains("RUN_AFTER"));
+                check(!arguments.Contains("REINSTALL")&&SetupChoices.MsiArguments(@"C:\safe path\RMPCS.msi",(mask&1)!=0,(mask&2)!=0,(mask&4)!=0,true).EndsWith(" REINSTALL=ALL REINSTALLMODE=omus"));
             }
             bool badPath=false;try{SetupChoices.MsiArguments("bad\"path",true,true,true);}catch(ArgumentException){badPath=true;}check(badPath);
             bool rejected = false; try { BootstrapPolicy.ParseManifest("../bad.exe|" + new string('a', 64)); } catch (InvalidDataException) { rejected = true; } check(rejected);
@@ -157,7 +162,7 @@ namespace RMPCS.Bootstrap
         private readonly Button proceed = new Button(), offline = new Button(), cancel = new Button();
         private readonly ProgressBar progress = new ProgressBar();
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
-        private bool busy, installing;
+        private bool busy, installing, restartRequired;
         private string offlinePath;
         private async Task ContinueAsync()
         {
@@ -186,7 +191,7 @@ namespace RMPCS.Bootstrap
                         operationHeading.Text="Installing the Microsoft runtime";
                         int code = await ExecuteAsync(runtime, "/install /norestart", true);
                         if (!BootstrapPolicy.AcceptedExit(code)) throw new InvalidOperationException(code == 1602 ? "Runtime installation was cancelled." : "Runtime installer returned " + code + ". Setup stopped.");
-                        if (code == 3010) MessageBox.Show(this, "Microsoft reports that a restart is required. Save your work and restart later. RMPCS will not schedule a restart.", "Restart needed");
+                        if (code == 3010) { restartRequired=true; MessageBox.Show(this, "Microsoft reports that a restart is required. Save your work and restart later. RMPCS will not schedule a restart or automatically open the app before that restart.", "Restart needed"); }
                     }
                     if (!Program.RuntimePresent()) throw new InvalidOperationException("The required runtime is not available yet. Restart if Microsoft requested it, then retry. A custom DOTNET_ROOT override can also prevent portable runtime discovery; installing a system runtime does not change that override.");
                 }
@@ -198,14 +203,16 @@ namespace RMPCS.Bootstrap
                     using (var held = new FileStream(msi, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
                         await Task.Run((Action)delegate {if (BootstrapPolicy.Hash(held, false) != Program.Manifest()["RMPCS.msi"]) throw new InvalidDataException("Embedded installer integrity check failed.");});
-                        operationHeading.Text=File.Exists(InstalledExe())?"Upgrading RMPCS":"Installing RMPCS";
-                        int code = await ExecuteAsync(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "msiexec.exe"), SetupChoices.MsiArguments(msi,desktopChoice.Checked,menuChoice.Checked,adminChoice.Checked), false);
+                        bool repair=Program.SameProductInstalled();
+                        operationHeading.Text=repair?"Repairing RMPCS":File.Exists(InstalledExe())?"Upgrading RMPCS":"Installing RMPCS";
+                        int code = await ExecuteAsync(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "msiexec.exe"), SetupChoices.MsiArguments(msi,desktopChoice.Checked,menuChoice.Checked,adminChoice.Checked,repair), false);
                         if (!BootstrapPolicy.AcceptedExit(code)) throw new InvalidOperationException(code == 1602 ? "RMPCS installation was cancelled." : "Windows Installer returned " + code + ". Review its message and retry.");
-                        CompleteSetup(code);
+                        CompleteSetup(code == 3010 || restartRequired ? 3010 : 0);
                     }
                 }
                 else
                 {
+                    if (restartRequired) throw new InvalidOperationException("The Microsoft runtime was installed but requires a Windows restart. Restart Windows, then open Launch-RMPCS.exe again. RMPCS was not launched.");
                     Stage("RMPCS is opening", "Verifying the portable application. This launcher keeps its payload files protected until the app closes.");
                     int code;
                     using (var held = new Program.HeldPayload(Program.OpenVerifiedPayload())) code=await ExecuteAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RMPCS.exe"), "", false);

@@ -17,10 +17,15 @@ Run-Dotnet @('build','RMPCS.Packaging\RMPCS.Packaging.csproj','-c','Release')
 $builder=Join-Path $PSScriptRoot 'RMPCS.Packaging\bin\Release\net10.0\RMPCS.Packaging.dll'
 $msi=Join-Path $release ('RMPCS-Setup-'+$version+'-x64.msi')
 Run-Dotnet @($builder,$app,'Installer\TaskCleanup.ps1',$msi)
-Run-Dotnet @($builder,'--verify',$msi,$app,'Installer\TaskCleanup.ps1')
-& (Join-Path $PSScriptRoot 'Bootstrap\Build.ps1') -AppPath $app -MsiPath $msi -OutputPath (Join-Path $release 'Bootstrap')
+Run-Dotnet @($builder,'--verify',$msi,$app,'Installer\TaskCleanup.ps1',$version)
+Run-Dotnet @($builder,'--regression-check',$msi,$app,'Installer\TaskCleanup.ps1',$version)
+& (Join-Path $PSScriptRoot 'Bootstrap\Build.ps1') -AppPath $app -MsiPath $msi -OutputPath (Join-Path $release 'Bootstrap') -ExpectedVersion $version
 $setup=Join-Path $release 'Bootstrap\RMPCS.Setup.exe'
 $portable=Join-Path $release 'Bootstrap\Portable'
+foreach($launcher in @($setup,(Join-Path $portable 'Launch-RMPCS.exe'))){
+    $launcherInfo=[Diagnostics.FileVersionInfo]::GetVersionInfo($launcher)
+    if($launcherInfo.FileVersion -ne ($version+'.0') -or $launcherInfo.ProductVersion -ne $version){throw 'Launcher/release version mismatch'}
+}
 Check-Exe $setup @('--self-test',('"'+(Join-Path $release 'installer-check.txt')+'"'))
 Check-Exe (Join-Path $portable 'Launch-RMPCS.exe') @('--self-test',('"'+(Join-Path $release 'portable-check.txt')+'"'))
 Check-Exe $setup @('--progress-ui-check',('"'+(Join-Path $release 'setup-progress-check.txt')+'"'))

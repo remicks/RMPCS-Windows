@@ -28,5 +28,6 @@ namespace RMPCS.Bootstrap
         public static string Hash(Stream stream, bool sha512)
         { using (HashAlgorithm hash = sha512 ? (HashAlgorithm)SHA512.Create() : SHA256.Create()) return BitConverter.ToString(hash.ComputeHash(stream)).Replace("-", "").ToLowerInvariant(); }
         public static bool AcceptedExit(int exit) { return exit == 0 || exit == 3010; }
+        public static bool RequiresRepair(int state) { return state == 5; } // INSTALLSTATE_DEFAULT for this exact ProductCode.
     }
 }

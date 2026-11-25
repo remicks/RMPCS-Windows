@@ -46,6 +46,8 @@ namespace RMPCS.Bootstrap
         internal async Task<int> VerifyProgressUiAsync()
         {
             int count=0;Action<bool> check=delegate(bool ok){if(!ok)throw new InvalidOperationException("Progress UI check "+(count+1)+" failed.");count++;};
+            bool versionFooter=false;foreach(Control parent in Controls)foreach(Control child in parent.Controls)if(child is Label&&child.Text=="DEGENERATES INC.\nVersion "+Program.VersionLabel)versionFooter=true;
+            check(Text.EndsWith(Program.VersionLabel)&&versionFooter);
             ShowPage(1);Stage("Preparing setup","Checking fixture status...");
             check(operationPage.Visible&&!optionsPage.Visible&&!finishPage.Visible);
             check(progress.Visible&&progress.Height>=20&&progress.Style==ProgressBarStyle.Marquee);
@@ -57,6 +59,8 @@ namespace RMPCS.Bootstrap
             status.Text="Fixture error";OperationDidNotComplete();
             check(operationPage.Visible&&!finishPage.Visible&&progress.Value==0&&!completed);
             CompleteSetup(0);check(finishPage.Visible&&!operationPage.Visible&&completed&&proceed.Text=="Finish");
+            CompleteSetup(3010);check(finishPage.Visible&&!runAfter.Checked&&!runAfter.Enabled&&summary.Text.Contains("Restart Windows"));
+            completed=false;bool failedCompletionBlocked=false;try{CompleteSetup(1603);}catch(InvalidOperationException){failedCompletionBlocked=true;}check(failedCompletionBlocked&&!completed);
             completed=false;status.Text="Fixture portable session finished";PortableSessionFinished();
             check(operationPage.Visible&&progress.Value==100&&proceed.Text=="Open again");
             cancellation.Cancel();bool blocked=false;

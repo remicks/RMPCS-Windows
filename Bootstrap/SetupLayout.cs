@@ -39,7 +39,7 @@ namespace RMPCS.Bootstrap
         }
         public SetupForm()
         {
-            Text=Program.Installer?"RMPCS Setup":"RMPCS Portable";
+            Text=(Program.Installer?"RMPCS Setup ":"RMPCS Portable ")+Program.VersionLabel;
             AutoScaleDimensions=new SizeF(96,96); AutoScaleMode=AutoScaleMode.Dpi;
             ClientSize=new Size(900,610); StartPosition=FormStartPosition.CenterScreen;
             FormBorderStyle=FormBorderStyle.FixedDialog; MaximizeBox=false;
@@ -55,7 +55,7 @@ namespace RMPCS.Bootstrap
             rail.Controls.Add(TextLabel("Windows\nmaintenance",26,125,186,80,16,Ink));
             string[] labels={"01   Requirements","02   Your preferences","03   Installation","04   Finished"};
             for(int i=0;i<4;i++) {steps[i]=TextLabel(labels[i],26,250+i*52,190,30,11,Muted);rail.Controls.Add(steps[i]);}
-            rail.Controls.Add(TextLabel("DEGENERATES INC.\nVersion 0.9",26,539,190,44,9,Muted));
+            rail.Controls.Add(TextLabel("DEGENERATES INC.\nVersion "+Program.VersionLabel,26,539,190,44,9,Muted));
             Controls.Add(rail);
             heading.SetBounds(270,34,590,44); heading.Font=new Font("Segoe UI",25,FontStyle.Bold);
             caption.SetBounds(272,92,588,50); caption.ForeColor=Muted;
@@ -83,7 +83,7 @@ namespace RMPCS.Bootstrap
             back.SetBounds(270,538,100,40);back.Text="Back";back.Click+=delegate {ShowPage(0);};
             cancel.SetBounds(638,538,100,40);cancel.Text="Cancel";cancel.Click+=delegate {if(busy && !installing){cancellation.Cancel();status.Text="Cancellation requested. Waiting for the current preparation step to finish.";}else if(!busy)Close();};
             proceed.SetBounds(750,538,110,40);proceed.Text="Continue";proceed.Click+=async delegate {
-                if(completed){if(runAfter.Checked){try{Process.Start(new ProcessStartInfo(InstalledExe()){UseShellExecute=true,WorkingDirectory=Path.GetDirectoryName(InstalledExe())});}catch(Exception ex){MessageBox.Show(this,"RMPCS is installed, but could not open.\n\n"+ex.Message,"Launch RMPCS");return;}}Close();}
+                if(completed){if(runAfter.Checked&&runAfter.Enabled){try{Process.Start(new ProcessStartInfo(InstalledExe()){UseShellExecute=true,WorkingDirectory=Path.GetDirectoryName(InstalledExe())});}catch(Exception ex){MessageBox.Show(this,"RMPCS is installed, but could not open.\n\n"+ex.Message,"Launch RMPCS");return;}}Close();}
                 else if(Program.Installer && page==0)ShowPage(1);
                 else await ContinueAsync();
             };
@@ -108,8 +108,11 @@ namespace RMPCS.Bootstrap
         {if(index==3){cancel.Text="Close";summary.Text="RMPCS installed successfully.\nYour shortcut and administrator preferences have been saved.";}ShowPage(index);if(index==2)PreviewOperation();}
         private void CompleteSetup(int code)
         {
+            if(!BootstrapPolicy.AcceptedExit(code))throw new InvalidOperationException("Installation did not return a success status.");
             completed=true;
-            summary.Text="Desktop shortcut: "+(desktopChoice.Checked?"Yes":"No")+"\nStart Menu entry: "+(menuChoice.Checked?"Yes":"No")+"\nAdministrator prompt: "+(adminChoice.Checked?"Always request when needed":"Request manually")+(code==3010?"\nWindows requests a restart when you are ready.":"");
+            runAfter.Enabled=code==0;
+            if(code==3010)runAfter.Checked=false;
+            summary.Text="Desktop shortcut: "+(desktopChoice.Checked?"Yes":"No")+"\nStart Menu entry: "+(menuChoice.Checked?"Yes":"No")+"\nAdministrator prompt: "+(adminChoice.Checked?"Always request when needed":"Request manually")+(code==3010?"\nRestart Windows before opening RMPCS. Automatic launch is disabled.":"");
             ShowPage(3);cancel.Text="Close";
         }
     }

@@ -1,6 +1,6 @@
 # RMPCS roadmap
 
-Current build: v0.12.0, expanding appearance choices to 14 theme presets and eight embedded font families plus Windows system. Six coordinated palettes include Light/Dark surfaces; five additional fonts work offline. Back navigation, grouped Settings, rounded controls, sidebar, desktop-space reservation and installer progress remain available.
+Current build: v0.12.1, correcting stale MSI/launcher versions and upgrade boundaries, adding independent installer regression/native-condition checks and a clear same-product Repair/Remove path. The v0.12.0 themes/fonts, Back navigation, sidebar and visible installer progress remain available.
 
 Existing diagnostics, verified restore-point requests, preference undo, guarded scheduling, reports, archives and update checks remain available. See README and release notes for scope and validation limits.
 
