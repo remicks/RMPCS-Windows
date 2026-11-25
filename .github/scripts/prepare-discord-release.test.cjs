@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { versionTag, webhookToken, prepareRelease, testMessage, readRelease, outputFields } = require('./prepare-discord-release.cjs');
+const { versionTag, webhookToken, summarizeNotes, prepareRelease, testMessage, readRelease, outputFields } = require('./prepare-discord-release.cjs');
 const base = 'https://github.com/remicks/RMPCS-Windows';
 function release() {
   const names = ['RMPCS.Setup.exe','RMPCS-Setup-0.9.2-x64.msi','RMPCS-v0.9.2-win-x64-portable.zip','RMPCS-v0.9.2-icons.zip','RMPCS-v0.9.2.zip','RUNTIMES.md','SHA256SUMS.txt'];
@@ -23,6 +23,35 @@ test('preview announcement includes only verified download links and neutralizes
 test('stable announcement label and bounded notes', () => {
   const value = release(); value.prerelease = false; value.body = 'x'.repeat(60000);
   const prepared = prepareRelease(value, 'v0.9.2'); assert.ok(!prepared.name.includes('Preview')); assert.ok(prepared.body.length < 3800);
+});
+
+test('changelog summary keeps three short highlights and omits later details', () => {
+  const notes = '# Changes\n- Fixed installer upgrades. Additional implementation details.\n- Improved runtime checks. More details.\n- Restart handling ' + 'improved '.repeat(100) + '\n- Fourth change should remain on GitHub.';
+  const summary = summarizeNotes(notes);
+  assert.equal(summary.split('\n').length, 3);
+  assert.match(summary, /Fixed installer upgrades\./);
+  assert.ok(!summary.includes('implementation details'));
+  assert.ok(!summary.includes('Fourth change'));
+  assert.ok(summary.split('\n').every(line => line.length <= 142));
+  assert.ok(summary.length < 450);
+});
+
+test('summary supports prose, empty notes, markdown and mention safety', () => {
+  assert.equal(summarizeNotes(''), 'See the release notes for details.');
+  assert.equal(summarizeNotes('RMPCS v0.12.1\n\nFixed upgrades. Technical details follow.'), '\u2022 Fixed upgrades.');
+  const summary = summarizeNotes('```text\n- Hidden example\n```\n- **Updated** [settings](https://example.com). More details.\n- Notify @everyone safely.');
+  assert.ok(!summary.includes('Hidden example'));
+  assert.match(summary, /Updated settings\./);
+  assert.ok(!summary.includes('@'));
+});
+
+test('large release notes produce a compact embed with a full changelog link', () => {
+  const value = release(); value.body = Array.from({length: 100}, (_, i) => `- Change ${i}: ${'detail '.repeat(70)}`).join('\n');
+  const prepared = prepareRelease(value, 'v0.9.2');
+  assert.ok(prepared.body.length < 1400);
+  assert.ok(testMessage(prepared, true).body.length < 1600);
+  assert.ok(prepared.body.endsWith(`[Full release notes and all downloads](${value.html_url})`));
+  assert.ok(!prepared.body.includes('Change 3:'));
 });
 test('drafts, mismatched tags, foreign links and incomplete uploads fail closed', () => {
   for (const change of [{draft:true},{tag_name:'v0.9.3'},{html_url:'https://evil.test'},{assets:[]},{prerelease:null}]) assert.throws(() => prepareRelease({...release(),...change},'v0.9.2'));

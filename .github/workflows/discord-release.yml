@@ -79,5 +79,5 @@ jobs:
           release_body: ${{ steps.prepare.outputs.body }}
           release_html_url: ${{ steps.prepare.outputs.url }}
           footer_title: Rusty's PC Toolkit
-          max_description: '3800'
+          max_description: '1600'
           reduce_headings: true

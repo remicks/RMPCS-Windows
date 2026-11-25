@@ -15,13 +15,32 @@ function webhookToken(value) {
   if (url.protocol !== 'https:' || !['discord.com', 'discordapp.com'].includes(url.hostname) || url.port || url.username || url.password || url.search || url.hash || !match) throw new Error('Use a standard HTTPS Discord webhook URL without query parameters.');
   return match[1];
 }
+function summarizeNotes(body) {
+  // Keep announcements deterministic and short; the full changelog stays on GitHub.
+  const lines = body.replace(/\r/g, '').replace(/```[^\n]*\n[\s\S]*?(?:```|$)/g, '').split('\n');
+  const bullets = lines.filter(line => /^[-*+]\s+/.test(line)).map(line => line.replace(/^[-*+]\s+/, ''));
+  const candidates = bullets.length ? bullets : lines.filter(line => line.trim() && !/^\s*(?:#|RMPCS\s+v\d|\[|https?:\/\/)/i.test(line));
+  const highlights = [];
+  for (const candidate of candidates) {
+    let text = candidate.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/<[^>]*>/g, '').replace(/[*_`~]/g, '').replace(/@/g, '\uFF20').replace(/\s+/g, ' ').trim();
+    if (!text) continue;
+    text = text.match(/^.*?[.!?](?=\s|$)/u)?.[0] || text;
+    if (text.length > 140) {
+      const shortened = text.slice(0, 139).replace(/\s+\S*$/, '').trimEnd();
+      text = shortened + '\u2026';
+    }
+    if (!highlights.includes(text)) highlights.push(text);
+    if (highlights.length === 3) break;
+  }
+  return highlights.length ? highlights.map(text => `\u2022 ${text}`).join('\n') : 'See the release notes for details.';
+}
 function prepareRelease(release, tag) {
   const version = versionTag(tag);
   if (!release || release.draft !== false || release.tag_name !== tag || release.html_url !== `${BASE}/releases/tag/${tag}` || typeof release.body !== 'string' || release.body.length > 65536 || typeof release.prerelease !== 'boolean') throw new Error('The requested release is not a valid published RMPCS release.');
   const names = ['RMPCS.Setup.exe', `RMPCS-Setup-${version}-x64.msi`, `RMPCS-v${version}-win-x64-portable.zip`, `RMPCS-v${version}-icons.zip`, `RMPCS-v${version}.zip`, 'RUNTIMES.md', 'SHA256SUMS.txt'];
   if (!Array.isArray(release.assets) || !names.every(name => release.assets.filter(a => a.name === name && a.state === 'uploaded' && Number.isSafeInteger(a.size) && a.size > 0 && a.browser_download_url === `${BASE}/releases/download/${tag}/${name}`).length === 1)) throw new Error('Release files are missing or still uploading. No announcement prepared.');
   const download = `${BASE}/releases/download/${tag}`;
-  const notes = release.body.replace(/@/g, '\uFF20').replace(/\r/g, '').slice(0, 2400);
+  const notes = summarizeNotes(release.body);
   return {
     name: `RMPCS ${tag} - Rusty's PC Toolkit${release.prerelease ? ' (Preview)' : ''}`,
     url: release.html_url,
@@ -63,4 +82,4 @@ async function main() {
   console.log(`Verified ${tag}: published release, complete download set, and webhook-secret format. No Discord request made during preflight.`);
 }
 if (require.main === module) main().catch(() => { console.error('Announcement preflight failed. Check the saved webhook secret, exact release tag and completed release files. Secret values were not printed.'); process.exitCode = 1; });
-module.exports = { versionTag, webhookToken, prepareRelease, testMessage, readRelease, outputFields };
+module.exports = { versionTag, webhookToken, summarizeNotes, prepareRelease, testMessage, readRelease, outputFields };
