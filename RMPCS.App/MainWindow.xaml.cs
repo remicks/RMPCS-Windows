@@ -259,7 +259,15 @@ public partial class MainWindow : Window
             scheduleEnabled=state.Status.StartsWith("Enabled",StringComparison.Ordinal);ScheduleEnabledSwitch.IsChecked=scheduleEnabled;ScheduleEnabledSwitch.IsEnabled=admin&&!busy&&TaskSchedulerService.IsInstalled;
             if (state.Xml is not null)
             {
-                var options = TaskSchedulerService.ParseOptions(state.Xml);
+                // A task edited outside RMPCS (extra trigger, changed arguments) must not hide the
+                // known enabled/disabled state: keep both switches usable so the schedule can be turned off.
+                ScheduleOptions options;
+                try { options = TaskSchedulerService.ParseOptions(state.Xml); }
+                catch (InvalidDataException)
+                {
+                    ScheduleStatus.Text = state.Status + "\nThe saved schedule was changed outside RMPCS, so its settings could not be shown. Turn it off, or review the form and save to replace it.";
+                    return;
+                }
                 Frequency.SelectedIndex = options.Frequency == ScheduleFrequency.Daily ? 0 : 1;
                 WeekDay.SelectedIndex = (int)options.Day; ScheduleTime.Text = $"{options.Hour:00}:{options.Minute:00}";
                 ScheduleProfile.SelectedIndex = options.Repair ? 1 : 0; IdleOnly.IsChecked = options.RequireIdle; AcOnly.IsChecked = options.RequireAc;

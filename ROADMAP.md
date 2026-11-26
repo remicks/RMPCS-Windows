@@ -1,6 +1,6 @@
 # RMPCS roadmap
 
-Current build: v0.12.1, correcting stale MSI/launcher versions and upgrade boundaries, adding independent installer regression/native-condition checks and a clear same-product Repair/Remove path. The v0.12.0 themes/fonts, Back navigation, sidebar and visible installer progress remain available.
+Current build: v0.12.2, keeping automation switches usable when a saved schedule was edited outside RMPCS and correcting stale log/core version labels. The v0.12.1 installer version, upgrade and Repair/Remove fixes, v0.12.0 themes/fonts, Back navigation, sidebar and visible installer progress remain available.
 
 Existing diagnostics, verified restore-point requests, preference undo, guarded scheduling, reports, archives and update checks remain available. See README and release notes for scope and validation limits.
 

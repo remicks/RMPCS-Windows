@@ -60,7 +60,14 @@ internal static class TaskSchedulerService
         finally { if (task is not null) Marshal.FinalReleaseComObject(task); }
     });
 
+    // Any task shape RMPCS did not write (edited in Task Scheduler, older/newer layout) is reported
+    // as one InvalidDataException so callers can keep the known on/off state usable.
     public static ScheduleOptions ParseOptions(string xml)
+    {
+        try { return ParseOwnedOptions(xml); }
+        catch (Exception ex) when (ex is not InvalidDataException) { throw new InvalidDataException("The saved schedule does not match the layout RMPCS creates.", ex); }
+    }
+    private static ScheduleOptions ParseOwnedOptions(string xml)
     {
         XNamespace ns = "http://schemas.microsoft.com/windows/2004/02/mit/task";
         var task = XDocument.Parse(xml);

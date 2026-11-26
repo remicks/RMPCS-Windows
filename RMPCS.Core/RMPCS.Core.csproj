@@ -1,3 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><Version>0.9.2</Version><AssemblyVersion>1.0.0.0</AssemblyVersion><FileVersion>1.0.9.2</FileVersion></PropertyGroup>
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <!-- Version follows release-version.txt (validated by release.yml). AssemblyVersion stays fixed for binding stability;
+       FileVersion keeps the existing 1.0.<minor>.<patch> scheme so it only increases (0.9.2 was 1.0.9.2). -->
+  <PropertyGroup>
+    <ReleaseVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)../release-version.txt').Trim())</ReleaseVersion>
+    <Version>$(ReleaseVersion)</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.$(ReleaseVersion.Split('.')[1]).$(ReleaseVersion.Split('.')[2])</FileVersion>
+  </PropertyGroup>
 </Project>
