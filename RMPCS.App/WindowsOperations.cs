@@ -63,9 +63,11 @@ internal sealed class WindowsOperations(Action<string> log) : IMaintenanceOperat
         async Task Pump(StreamReader reader)
         {
             char[] buffer = new char[1024];
+            var lines = new OutputLines();
             int count;
             while ((count = await reader.ReadAsync(buffer)) > 0)
-                foreach (var line in new string(buffer, 0, count).Replace("\0", "").Replace('\r', '\n').Split('\n', StringSplitOptions.RemoveEmptyEntries)) log(line);
+                foreach (var line in lines.Push(buffer.AsSpan(0, count))) log(line);
+            foreach (var line in lines.Flush()) log(line);
         }
         await Task.WhenAll(Pump(process.StandardOutput), Pump(process.StandardError), process.WaitForExitAsync());
         log($"{command}: exit code {process.ExitCode}." + (process.ExitCode == 3010 ? " Restart requested by Windows." : ""));

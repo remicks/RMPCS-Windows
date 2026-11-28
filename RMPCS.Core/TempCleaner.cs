@@ -35,13 +35,18 @@ public sealed class TempCleaner
             {
                 try
                 {
+                    // The directory and all of its ancestors are verified once here. Entries inside it only
+                    // need their own containment and reparse check, instead of re-walking every ancestor
+                    // per file (the preview's dominant cost in large temp folders). Clean() still re-runs the
+                    // full ancestor walk and handle-based final-path verification before any deletion.
                     if (!IsSafe(directory, root)) { skipped++; continue; }
                     foreach (var path in Directory.GetFileSystemEntries(directory))
                     {
                         try
                         {
-                            if (!IsSafe(path, root)) { skipped++; continue; }
+                            if (!IsInside(path, root)) { skipped++; continue; }
                             var attributes = File.GetAttributes(path);
+                            if ((attributes & FileAttributes.ReparsePoint) != 0) { skipped++; continue; }
                             if ((attributes & FileAttributes.Directory) != 0) { pending.Push(path); continue; }
                             var info = new FileInfo(path);
                             if (!include(path)) continue;

@@ -92,6 +92,7 @@ try
     MetricViewChecks.Run(Check);
     TemperatureWidgetChecks.Run(Check);
     FriendlyNamesChecks.Run(Check);
+    OutputLinesChecks.Run(Check);
     Check(DesktopPolicy.StartHidden(new[] { "--startup" }) && !DesktopPolicy.StartHidden(Array.Empty<string>()), "sign-in startup hides to tray; normal launches stay visible");
     Check(!DesktopPolicy.StartHidden(new[] { "--scheduled-light" }) && !DesktopPolicy.StartHidden(new[] { "--scheduled-repair" }), "maintenance profiles remain separate from desktop tray startup");
     Check(DesktopPolicy.HideOnClose(true, false, false) && !DesktopPolicy.HideOnClose(false, false, false), "close hides only when a tray icon is available");

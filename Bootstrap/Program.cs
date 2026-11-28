@@ -286,7 +286,8 @@ namespace RMPCS.Bootstrap
         }
         private async Task DownloadAsync(string path)
         {
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            // TLS 1.2 minimum; also allow TLS 1.3 where Windows supports it (Tls12 alone disabled 1.3).
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
             using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token))
             using (var handler = new HttpClientHandler { AllowAutoRedirect = false }) using (var client = new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(15) })
             {

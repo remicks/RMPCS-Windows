@@ -62,7 +62,7 @@ internal static class SensorComponents
         bool Trusted(IdentityReference? sid)=>sid is not null && (sid.Equals(Administrators)||sid.Equals(SystemSid)||sid.Value=="S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464");
         if (!Trusted(security.GetOwner(typeof(SecurityIdentifier)))) throw new IOException("Sensor component owner is not protected.");
         foreach (FileSystemAccessRule rule in security.GetAccessRules(true,true,typeof(SecurityIdentifier)))
-            if (rule.AccessControlType == AccessControlType.Allow && (rule.PropagationFlags&PropagationFlags.InheritOnly)==0 && (rule.FileSystemRights & (FileSystemRights.Write|FileSystemRights.Delete|FileSystemRights.ChangePermissions|FileSystemRights.TakeOwnership)) != 0 && !Trusted(rule.IdentityReference)) throw new IOException("Sensor component location permits non-administrator changes.");
+            if (rule.AccessControlType == AccessControlType.Allow && (rule.PropagationFlags&PropagationFlags.InheritOnly)==0 && (rule.FileSystemRights & (FileSystemRights.Write|FileSystemRights.Delete|FileSystemRights.DeleteSubdirectoriesAndFiles|FileSystemRights.ChangePermissions|FileSystemRights.TakeOwnership)) != 0 && !Trusted(rule.IdentityReference)) throw new IOException("Sensor component location permits non-administrator changes.");
     }
     internal static FileStream OpenLibrary(string name)
     {
