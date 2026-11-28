@@ -14,6 +14,19 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Length == 3 && e.Args[0] == "--sensor-package-check")
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            try
+            {
+                using var file = new System.IO.FileStream(e.Args[1],System.IO.FileMode.Open,System.IO.FileAccess.Read,System.IO.FileShare.Read);
+                SensorComponents.CheckHash(file,SensorComponents.DriverHash);
+                file.Position=0;SensorComponents.VerifyDriverSignature(e.Args[1],file.SafeFileHandle.DangerousGetHandle());
+                System.IO.File.WriteAllText(e.Args[2],"Pinned PawnIO setup SHA-256, Authenticode trust/revocation and verified leaf publisher checks passed. No executable launched, driver installed, hardware read or system setting changed.\n");Shutdown(0);
+            }
+            catch(Exception ex){System.IO.File.WriteAllText(e.Args[2],"Sensor package verification failed: "+ex.Message);Shutdown(1);}
+            return;
+        }
         if (e.Args.Length == 2 && e.Args[0] == "--monitor-read-check")
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;

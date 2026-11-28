@@ -1,12 +1,12 @@
 # RMPCS roadmap
 
-Current build: v0.13.6 adds independent, combinable per-metric overlay views: numbers, plain circles, circles with values, bars and graphs. The v0.13.5 monitoring safeguards, manual setup-guide preview, guarded drive optimization and previous fixes remain available.
+Current build: v0.13.7 adds selectable local temperature providers, reviewed opt-in sensor-driver setup, transparent backgrounds, independent metric widgets and categorized function trees. Independent numbers, circles, value circles, bars and graphs remain available. The v0.13.5 monitoring safeguards, manual setup-guide preview, guarded drive optimization and previous fixes remain available.
 
 ## v0.14.0 first-run guide
 
 The step catalogue, bounded Back/Next session and themed informational preview ship in v0.13.5. Next: versioned per-Windows-identity completion state; distinguish new installs from existing preferences; editable interface/overlay draft with a review screen and atomic save; Skip/Later and replay from Settings. Save failure must preserve previous preferences and must not mark setup complete. No automatic elevation, sign-in task registration, cleanup, driver downloads or drive optimization. Protected operations keep their existing explicit approvals. No automatic guide popup or completion marker is active in v0.13.5.
 
-Overlay follow-up validation: physical input pass-through, global-hotkey conflicts, monitor disconnect/DPI changes, long-session overhead and accessibility. Advanced GPU/temperature/FPS sensors require a separate supported-source and dependency security review.
+Overlay follow-up validation: physical input pass-through, global-hotkey conflicts, monitor disconnect/DPI changes, long-session overhead and accessibility. Driver-backed temperatures also need supervised disposable-machine installation/reboot/uninstall, representative hardware and anti-cheat compatibility checks. No automatic latest-driver downloads or Windows security bypasses. FPS and broader GPU metrics remain deferred.
 
 Existing diagnostics, verified restore-point requests, preference undo, guarded scheduling, reports, archives and update checks remain available. See README and release notes for scope and validation limits.
 

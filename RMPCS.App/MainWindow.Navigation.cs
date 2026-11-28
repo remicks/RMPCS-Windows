@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Controls;
 using RMPCS.Core;
 
 namespace RMPCS.App;
@@ -9,6 +10,29 @@ public partial class MainWindow
     private SectionHistory? sectionHistory;
     private bool goingBack;
     private bool navigationShortcutsWired;
+    private bool syncingFunctionTree;
+    private void FunctionNavigation_Loaded(object sender, RoutedEventArgs e) => RefreshFunctionTree();
+    private void FunctionNavigation_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        if (syncingFunctionTree || e.NewValue is not FunctionNode { Page: string page }) return;
+        int index = Array.IndexOf(AppPreferences.Pages, page); if (index >= 0) MainTabs.SelectedIndex = index;
+    }
+    private void RefreshFunctionTree()
+    {
+        if (sidebarVisual || MainTabs.Template.FindName("FunctionNavigation", MainTabs) is not TreeView tree) return;
+        syncingFunctionTree = true;
+        try
+        {
+            string key = AppPreferences.Pages[Math.Max(0, MainTabs.SelectedIndex)];
+            foreach (FunctionNode root in tree.Items)
+                if (tree.ItemContainerGenerator.ContainerFromItem(root) is TreeViewItem group)
+                {
+                    foreach (FunctionNode node in root.Children)
+                        if (group.ItemContainerGenerator.ContainerFromItem(node) is TreeViewItem item && node.Page == key) { item.IsSelected = true; item.BringIntoView(); }
+                }
+        }
+        finally { syncingFunctionTree = false; }
+    }
     private void InitializeNavigation()
     {
         sectionHistory = new(AppPreferences.Pages[Math.Max(0, MainTabs.SelectedIndex)]);
@@ -33,6 +57,7 @@ public partial class MainWindow
         BackButton.IsEnabled = SidebarBackButton.IsEnabled = sectionHistory?.CanGoBack == true;
         string key = sectionHistory?.Current ?? "Health";
         SectionTitle.Text = key == "Results" ? "Results & activity" : PageCatalog.All.FirstOrDefault(p => p.Key == key)?.Label ?? "Overview";
+        RefreshFunctionTree();
     }
     private void Back_Click(object sender, RoutedEventArgs e)
     {

@@ -55,7 +55,7 @@ internal static class Version06Checks
         check(AppPreferences.Parse(custom.ToJson()) == custom, "window, reading and cleanup preferences round-trip without task commands");
         var normalized = new AppPreferences { ActivityFontSize = 999, CleanupAgeDays = 0, StartPage = "https://evil.example" }.Normalize();
         check(normalized.ActivityFontSize == 12 && normalized.CleanupAgeDays == 7 && normalized.StartPage == "Health", "invalid preferences normalize to safe supported values");
-        invalid = false; try { AppPreferences.Parse(new string('a', 8193)); } catch (InvalidDataException) { invalid = true; } check(invalid, "preference input is size bounded");
+        invalid = false; try { AppPreferences.Parse(new string('a', 16385)); } catch (InvalidDataException) { invalid = true; } check(invalid, "preference input is size bounded");
         check(HelpCatalog.Search("DNS").Count > 0 && HelpCatalog.Search("GITHUB preview").Any(a => a.Title.Contains("GitHub")), "offline help search supports case-insensitive multiword matching");
         check(HelpCatalog.Search("nonsenseXYZ").Count == 0 && HelpCatalog.Search("").Count == HelpCatalog.Articles.Count, "help handles no-result and empty searches");
         check(ProductInfo.Name == "Rusty's PC Toolkit" && ProductInfo.LootDrop == "https://github.com/remicks/LootDrop-Windows" && HelpCatalog.Search("LootDrop").Count > 0, "Rusty branding and verified LootDrop project are included in help");

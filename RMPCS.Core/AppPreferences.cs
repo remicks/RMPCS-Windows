@@ -41,7 +41,7 @@ public sealed record AppPreferences
     };
     public static AppPreferences Parse(string json)
     {
-        if (json.Length > 8192) throw new InvalidDataException("Preference data exceeds the supported size.");
+        if (json.Length > 16384) throw new InvalidDataException("Preference data exceeds the supported size.");
         return (JsonSerializer.Deserialize<AppPreferences>(json, new JsonSerializerOptions { MaxDepth = 8 }) ?? new()).Normalize();
     }
     public string ToJson() => JsonSerializer.Serialize(Normalize());

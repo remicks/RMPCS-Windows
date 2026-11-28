@@ -15,6 +15,7 @@ internal partial class MonitoringOverlay : Window, IDisposable
 {
     private readonly Window main;
     private readonly bool testMode;
+    private readonly string? widgetKey;
     private readonly MonitorProbe probe = new();
     private readonly DispatcherTimer timer;
     private MonitorSample? previous;
@@ -24,7 +25,7 @@ internal partial class MonitoringOverlay : Window, IDisposable
     private long sampleStarted;
     private HwndSource? source;
     internal bool Sampling => timer.IsEnabled;
-    private MetricDisplay[] Displays => [CpuDisplay, MemoryDisplay, DownloadDisplay, UploadDisplay, DiskDisplay, UptimeDisplay];
+    private MetricDisplay[] Displays => new[]{CpuDisplay, MemoryDisplay, DownloadDisplay, UploadDisplay, DiskDisplay, UptimeDisplay}.Concat(temperatureDisplays.Values).ToArray();
     internal int HistoryCount => Displays.Max(d => d.HistoryCount);
     internal MetricDisplay[] DisplaysForChecks => Displays;
     internal string? Error { get; private set; }
@@ -40,9 +41,9 @@ internal partial class MonitoringOverlay : Window, IDisposable
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
         using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None); encoder.Save(stream);
     }
-    internal MonitoringOverlay(Window main, bool testMode)
+    internal MonitoringOverlay(Window main, bool testMode, string? widgetKey = null)
     {
-        this.main = main; this.testMode = testMode;
+        this.main = main; this.testMode = testMode; this.widgetKey = widgetKey;
         InitializeComponent();
         timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(2) };
         timer.Tick += Tick;
@@ -51,18 +52,19 @@ internal partial class MonitoringOverlay : Window, IDisposable
         IsVisibleChanged += (_, _) =>
         {
             generation++; previous = null; ClearReadings();
-            if (IsVisible && !disposed) { if (!testMode && options.HasVisibleMetrics()) timer.Start(); QueuePosition(); }
-            else timer.Stop();
+            if(widgetKey is null && !options.Widgets && !suppressVisibility){activeSession=IsVisible;SessionVisibilityChanged?.Invoke();}
+            if (IsVisible && !disposed) { SyncSampling(); QueuePosition(); }
+            else {timer.Stop();if(widgetKey is null && !suppressVisibility)temperaturePoller.Reset();}
         };
-        Closing += (_, e) => { if (!disposed) { e.Cancel = true; Hide(); } };
+        Closing += (_, e) => { if (!disposed) { e.Cancel = true; HideSession(); } };
         ThemeManager.Applied += ApplyVisuals;
     }
     internal void Configure(OverlayPreferences next)
     {
-        options = next.Normalize(); generation++; previous = null; ClearReadings();
+        options = next.Normalize(); generation++; previous = null; if(widgetKey is null)temperaturePoller.Reset(); ClearReadings();
         timer.Interval = TimeSpan.FromSeconds(options.IntervalSeconds);
         ApplyVisuals(); QueuePosition();
-        if (IsVisible && !testMode && options.HasVisibleMetrics()) timer.Start(); else timer.Stop();
+        SyncSampling();
     }
     private void ApplyVisuals()
     {
@@ -71,13 +73,20 @@ internal partial class MonitoringOverlay : Window, IDisposable
         FontSize = options.TextSize;
         if (options.Font == "App font") SetResourceReference(FontFamilyProperty, "UiFontFamily"); else FontFamily = FontManager.Family(options.Font);
         Topmost = options.Topmost; Width = options.Width;
-        CpuDisplay.Configure("CPU", "Usage · 0–100%", options.Cpu, options.CpuView!);
-        MemoryDisplay.Configure("RAM", "Used memory · 0–100%", options.Memory, options.MemoryView!);
+        bool transparent=options.TransparentBackground && !SystemParameters.HighContrast;
+        if(transparent){OverlayFrame.Background=Brushes.Transparent;OverlayFrame.BorderBrush=Brushes.Transparent;OverlayFrame.BorderThickness=new(0);}
+        else{OverlayFrame.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty,"SurfaceBrush");OverlayFrame.SetResourceReference(System.Windows.Controls.Border.BorderBrushProperty,"BorderBrush");OverlayFrame.BorderThickness=new(1);}
+        OverlayHeader.Visibility=transparent&&options.Locked?Visibility.Collapsed:Visibility.Visible;
+        WidgetLockButton.Content=options.Locked?"Unlock":"Lock";
+        HeaderCaption.Text=widgetKey is null?"RMPCS · SYSTEM":widgetKey.StartsWith("Temp:",StringComparison.Ordinal)?"TEMPERATURE":widgetKey.ToUpperInvariant();
+        CpuDisplay.Configure("CPU", "Usage · 0–100%", options.Cpu && Owns("CPU"), options.CpuView!);
+        MemoryDisplay.Configure("RAM", "Used memory · 0–100%", options.Memory && Owns("RAM"), options.MemoryView!);
         string networkScale = $"Reference {options.NetworkScaleMiB} MiB/s · not link capacity";
-        DownloadDisplay.Configure("NETWORK DOWNLOAD", networkScale, options.Network, options.NetworkView!);
-        UploadDisplay.Configure("NETWORK UPLOAD", networkScale, options.Network, options.NetworkView!);
-        DiskDisplay.Configure("SYSTEM DRIVE AVAILABLE", "Available space · % of total capacity", options.DiskSpace, options.DiskView!);
-        UptimeDisplay.Configure("WINDOWS UPTIME", "Current 24-hour uptime cycle", options.Uptime, options.UptimeView!);
+        DownloadDisplay.Configure("NETWORK DOWNLOAD", networkScale, options.Network && Owns("Download"), options.NetworkView!);
+        UploadDisplay.Configure("NETWORK UPLOAD", networkScale, options.Network && Owns("Upload"), options.NetworkView!);
+        DiskDisplay.Configure("SYSTEM DRIVE AVAILABLE", "Available space · % of total capacity", options.DiskSpace && Owns("Drive"), options.DiskView!);
+        UptimeDisplay.Configure("WINDOWS UPTIME", "Current 24-hour uptime cycle", options.Uptime && Owns("Uptime"), options.UptimeView!);
+        ConfigureTemperatures();
         NoViews.Visibility = options.HasVisibleMetrics() ? Visibility.Collapsed : Visibility.Visible;
         var hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
@@ -93,7 +102,7 @@ internal partial class MonitoringOverlay : Window, IDisposable
     }
     private async void Tick(object? sender, EventArgs e)
     {
-        if (disposed || !IsVisible || testMode || !options.HasVisibleMetrics()) return;
+        if (disposed || !activeSession || testMode || widgetKey is not null || !options.HasVisibleMetrics()) return;
         if (inFlight)
         {
             if (!Monitoring.Fresh(System.Diagnostics.Stopwatch.GetElapsedTime(sampleStarted).TotalSeconds, options.IntervalSeconds))
@@ -103,8 +112,9 @@ internal partial class MonitoringOverlay : Window, IDisposable
         inFlight = true; sampleStarted = System.Diagnostics.Stopwatch.GetTimestamp(); int ticket = generation; var selected = options;
         try
         {
-            var sample = await Task.Run(() => probe.Read(selected.SamplingChoices()));
-            if (disposed || !IsVisible || ticket != generation) return;
+            var sampling=EffectiveSampling();
+            var sample = await Task.Run(() => probe.Read(sampling));
+            if (disposed || !activeSession || ticket != generation) return;
             if (!Monitoring.Fresh(System.Diagnostics.Stopwatch.GetElapsedTime(sampleStarted).TotalSeconds, selected.IntervalSeconds))
             { previous = null; ClearReadings("Windows returned a stale sample; waiting for a fresh reading."); return; }
             Render(Monitoring.Read(previous, sample)); previous = sample;
@@ -117,9 +127,16 @@ internal partial class MonitoringOverlay : Window, IDisposable
     {
         foreach (var display in Displays) display.Clear();
         SampleStatus.Text = options.HasVisibleMetrics() ? text : "Sampling paused · no visible metric views";
+        if(widgetKey is null)foreach(var child in widgets)child.ClearReadings(text);
     }
     internal void Render(MonitorReading value)
     {
+        if(widgetKey is null && options.Widgets)
+        {
+            if(!testMode)temperatureValues=temperaturePoller.Snapshot(EffectiveSampling().Temperatures);
+            foreach(var child in widgets.Where(w=>w.IsVisible)){child.temperatureValues=temperatureValues;child.Render(value);}
+            return; // The hidden host owns sampling, not duplicate graph rendering.
+        }
         static string Percent(double? number) => number is double n && double.IsFinite(n) ? $"{n:F0}%" : "—";
         CpuDisplay.Update(Percent(value.Cpu), Percent(value.Cpu), value.Cpu);
         MemoryDisplay.Update(value.MemoryUsed is ulong used && value.MemoryTotal is ulong total ? $"{used / 1073741824d:F1} / {total / 1073741824d:F1} GiB ({value.MemoryPercent:F0}%)" : "—", Percent(value.MemoryPercent), value.MemoryPercent);
@@ -130,8 +147,10 @@ internal partial class MonitoringOverlay : Window, IDisposable
         var uptime = TimeSpan.FromMilliseconds(Math.Clamp(value.UptimeMilliseconds, 0, TimeSpan.MaxValue.Ticks / TimeSpan.TicksPerMillisecond));
         UptimeDisplay.Update($"{(int)uptime.TotalDays}d {uptime.Hours:00}:{uptime.Minutes:00}:{uptime.Seconds:00}", $"{(int)uptime.TotalDays}d\n{uptime.Hours:00}:{uptime.Minutes:00}", uptime.TotalMilliseconds % 86400000 / 86400000d * 100);
         SampleStatus.Text = $"Local · {options.IntervalSeconds}s updates · no data saved";
+        if(widgetKey is null && !testMode)temperatureValues=temperaturePoller.Snapshot(EffectiveSampling().Temperatures);
+        RenderTemperatures(temperatureValues);
     }
-    private void Hide_Click(object sender, RoutedEventArgs e) { e.Handled = true; Hide(); }
+    private void Hide_Click(object sender, RoutedEventArgs e) { e.Handled = true; HideSession(); }
     private void Frame_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (options.Locked || options.ClickThrough || e.OriginalSource is System.Windows.Controls.Button) return;
@@ -192,6 +211,7 @@ internal partial class MonitoringOverlay : Window, IDisposable
     public void Dispose()
     {
         if (disposed) return; disposed = true; generation++; timer.Stop(); timer.Tick -= Tick;
+        foreach(var child in widgets)child.Dispose();widgets.Clear();if(widgetKey is null)temperaturePoller.Reset();
         ThemeManager.Applied -= ApplyVisuals; source?.RemoveHook(Hook); Close(); previous = null; foreach (var display in Displays) display.Clear();
     }
     [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left, Top, Right, Bottom; }

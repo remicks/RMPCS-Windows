@@ -1,9 +1,9 @@
 <Window x:Class="RMPCS.App.MonitoringOverlay" x:ClassModifier="internal" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:RMPCS.App"
  Title="RMPCS system monitor" WindowStyle="None" ResizeMode="NoResize" SizeToContent="Height" Width="280" ShowInTaskbar="False" ShowActivated="False" Focusable="False" AllowsTransparency="True" Background="Transparent" Foreground="{DynamicResource TextBrush}" FontFamily="{DynamicResource UiFontFamily}" UseLayoutRounding="True">
- <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="14" MouseLeftButtonDown="Frame_MouseLeftButtonDown">
+ <Border x:Name="OverlayFrame" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="14" MouseLeftButtonDown="Frame_MouseLeftButtonDown">
   <Grid>
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-   <DockPanel Margin="0,0,0,10"><Button DockPanel.Dock="Right" Content="Hide" Click="Hide_Click" Focusable="False" Padding="7,3" FontSize="11" Margin="5,0,0,0" ToolTip="Hide monitoring overlay; reopen from the tray or Settings"/><TextBlock Text="RMPCS · SYSTEM" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/></DockPanel>
+   <DockPanel x:Name="OverlayHeader" Margin="0,0,0,10"><Button DockPanel.Dock="Right" Content="Hide" Click="Hide_Click" Focusable="False" Padding="7,3" FontSize="11" Margin="5,0,0,0" ToolTip="Hide this overlay or widget"/><Button x:Name="WidgetLockButton" DockPanel.Dock="Right" Content="Lock" Click="Lock_Click" Focusable="False" Padding="6,3" FontSize="11"/><TextBlock x:Name="HeaderCaption" Text="RMPCS · SYSTEM" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/></DockPanel>
    <ScrollViewer x:Name="MetricsScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel>
      <local:MetricDisplay x:Name="CpuDisplay"/>
@@ -12,6 +12,7 @@
      <local:MetricDisplay x:Name="UploadDisplay"/>
      <local:MetricDisplay x:Name="DiskDisplay"/>
      <local:MetricDisplay x:Name="UptimeDisplay"/>
+     <StackPanel x:Name="TemperaturePanel"/>
      <TextBlock x:Name="NoViews" Text="No metric views selected. Choose displays in Settings." TextWrapping="Wrap" Margin="0,6,0,10" Foreground="{DynamicResource MutedBrush}"/>
     </StackPanel>
    </ScrollViewer>

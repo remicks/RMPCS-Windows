@@ -13,6 +13,10 @@ public sealed record MetricViewPreferences
 public sealed record OverlayPreferences
 {
     public bool Enabled { get; init; }
+    public bool TransparentBackground { get; init; }
+    public bool Widgets { get; init; }
+    public string WidgetLayoutJson { get; init; } = "[]";
+    public TemperaturePreferences Temperatures { get; init; } = new();
     public bool Cpu { get; init; } = true;
     public bool Memory { get; init; } = true;
     public bool Network { get; init; } = true;
@@ -42,6 +46,7 @@ public sealed record OverlayPreferences
     public static readonly string[] Positions = ["Top left", "Top right", "Bottom left", "Bottom right", "Custom"];
     public OverlayPreferences Normalize() => this with
     {
+        Temperatures = (Temperatures ?? new()).Normalize(), WidgetLayoutJson = WidgetLayout.Save(WidgetLayout.Parse(WidgetLayoutJson)),
         CpuView = CpuView ?? new() { Graph = Graphs }, MemoryView = MemoryView ?? new() { Graph = Graphs },
         NetworkView = NetworkView ?? new(), DiskView = DiskView ?? new(), UptimeView = UptimeView ?? new(),
         NetworkScaleMiB = NetworkScaleMiB is 1 or 10 or 100 or 1000 ? NetworkScaleMiB : 10,
@@ -56,7 +61,7 @@ public sealed record OverlayPreferences
         Y = double.IsFinite(Y) ? Math.Clamp(Y, 0, 1) : .05
     };
     public bool HasVisibleMetrics() => Cpu && (CpuView?.Any() ?? true) || Memory && (MemoryView?.Any() ?? true) ||
-        Network && (NetworkView?.Any() ?? true) || DiskSpace && (DiskView?.Any() ?? true) || Uptime && (UptimeView?.Any() ?? true);
+        Network && (NetworkView?.Any() ?? true) || DiskSpace && (DiskView?.Any() ?? true) || Uptime && (UptimeView?.Any() ?? true) || Temperatures.Enabled && Temperatures.Views.Any() && Temperatures.Selected().Length > 0;
     public OverlayPreferences SamplingChoices() => this with { Cpu = Cpu && (CpuView?.Any() ?? true),
         Memory = Memory && (MemoryView?.Any() ?? true), Network = Network && (NetworkView?.Any() ?? true),
         DiskSpace = DiskSpace && (DiskView?.Any() ?? true), Uptime = Uptime && (UptimeView?.Any() ?? true) };

@@ -24,7 +24,8 @@ public partial class MainWindow
         OverlayOpacityChoice.ItemsSource = new[] { 50, 60, 70, 80, 90, 100 };
         OverlayFontChoice.ItemsSource = new[] { "App font" }.Concat(FontCatalog.Names).ToArray();
         OverlayPositionChoice.ItemsSource = OverlayPreferences.Positions;
-        OverlayViewMetricChoice.ItemsSource = new[] { "CPU", "RAM", "Network (download and upload)", "System drive available", "Windows uptime" };
+        OverlayViewMetricChoice.ItemsSource = new[] { "CPU", "RAM", "Network (download and upload)", "System drive available", "Windows uptime", "Temperature sensors" };
+        InitializeTemperatureControls();
         OverlayNetworkScaleChoice.ItemsSource = new[] { 1, 10, 100, 1000 };
         RefreshOverlayDisplays(preferences.Overlay.Monitor);
         SourceInitialized += (_, _) =>
@@ -53,6 +54,7 @@ public partial class MainWindow
     private void PutOverlayControls()
     {
         var options = preferences.Overlay.Normalize(); overlayX = options.X; overlayY = options.Y;
+        OverlayTransparentChoice.IsChecked=options.TransparentBackground;OverlayWidgetsChoice.IsChecked=options.Widgets;widgetLayoutDraft=options.WidgetLayoutJson;PutTemperatureControls();
         OverlayStartupChoice.IsChecked = options.Enabled; OverlayCpuChoice.IsChecked = options.Cpu;
         OverlayMemoryChoice.IsChecked = options.Memory; OverlayNetworkChoice.IsChecked = options.Network;
         OverlayDiskChoice.IsChecked = options.DiskSpace; OverlayUptimeChoice.IsChecked = options.Uptime;
@@ -66,7 +68,7 @@ public partial class MainWindow
         OverlayOpacityChoice.SelectedItem = options.OpacityPercent; OverlayFontChoice.SelectedItem = options.Font;
         OverlayPositionChoice.SelectedItem = options.Position; RefreshOverlayDisplays(options.Monitor);
     }
-    private MetricViewPreferences DraftViews() => overlayViewIndex switch { 1 => overlayViewDraft.MemoryView!, 2 => overlayViewDraft.NetworkView!, 3 => overlayViewDraft.DiskView!, 4 => overlayViewDraft.UptimeView!, _ => overlayViewDraft.CpuView! };
+    private MetricViewPreferences DraftViews() => overlayViewIndex switch { 1 => overlayViewDraft.MemoryView!, 2 => overlayViewDraft.NetworkView!, 3 => overlayViewDraft.DiskView!, 4 => overlayViewDraft.UptimeView!, 5 => overlayViewDraft.Temperatures.Views, _ => overlayViewDraft.CpuView! };
     private void LoadOverlayViews()
     {
         var views = DraftViews();
@@ -78,7 +80,7 @@ public partial class MainWindow
         var views = new MetricViewPreferences { Numbers = OverlayViewNumbers.IsChecked == true, Circle = OverlayViewCircle.IsChecked == true,
             CircleWithValue = OverlayViewCircleValue.IsChecked == true, Bar = OverlayViewBar.IsChecked == true, Graph = OverlayViewGraph.IsChecked == true };
         overlayViewDraft = overlayViewIndex switch { 1 => overlayViewDraft with { MemoryView = views }, 2 => overlayViewDraft with { NetworkView = views },
-            3 => overlayViewDraft with { DiskView = views }, 4 => overlayViewDraft with { UptimeView = views }, _ => overlayViewDraft with { CpuView = views } };
+            3 => overlayViewDraft with { DiskView = views }, 4 => overlayViewDraft with { UptimeView = views }, 5 => overlayViewDraft with { Temperatures=overlayViewDraft.Temperatures with {Views=views} }, _ => overlayViewDraft with { CpuView = views } };
     }
     private void OverlayViewMetric_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
@@ -90,6 +92,7 @@ public partial class MainWindow
         CaptureOverlayViews();
         return new OverlayPreferences
         {
+        TransparentBackground=OverlayTransparentChoice.IsChecked==true,Widgets=OverlayWidgetsChoice.IsChecked==true,WidgetLayoutJson=widgetLayoutDraft,Temperatures=TemperatureChoices(overlayViewDraft.Temperatures.Views),
         Enabled = OverlayStartupChoice.IsChecked == true, Cpu = OverlayCpuChoice.IsChecked == true,
         Memory = OverlayMemoryChoice.IsChecked == true, Network = OverlayNetworkChoice.IsChecked == true,
         DiskSpace = OverlayDiskChoice.IsChecked == true, Uptime = OverlayUptimeChoice.IsChecked == true,
@@ -106,10 +109,10 @@ public partial class MainWindow
     private void ApplyOverlayPreferences(bool startup = false)
     {
         if (!overlayReady || TestMode) return;
-        if (startup ? preferences.Overlay.Enabled : monitoringOverlay?.IsVisible == true) ShowOverlay(preferences.Overlay);
+        if (startup ? preferences.Overlay.Enabled : monitoringOverlay?.SessionVisible == true) ShowOverlay(preferences.Overlay);
         else SetOverlayHotkey(preferences.Overlay.Hotkey && overlayHotkeyRegistered);
     }
-    private void ResetOverlaySession() { monitoringOverlay?.Hide(); SetOverlayHotkey(false); }
+    private void ResetOverlaySession() { monitoringOverlay?.HideSession(); SetOverlayHotkey(false); }
     private void ShowOverlay(OverlayPreferences options)
     {
         if (TestMode) return;
@@ -119,10 +122,10 @@ public partial class MainWindow
             {
                 monitoringOverlay = new MonitoringOverlay(this, false);
                 monitoringOverlay.Issue += message => OverlayStatus.Text = message;
-                monitoringOverlay.IsVisibleChanged += (_, _) => { if (monitoringOverlay?.IsVisible == false) OverlayStatus.Text = "Overlay hidden; sampling stopped. Reopen from Settings, the tray or the registered shortcut."; };
+                monitoringOverlay.SessionVisibilityChanged += () => { if (monitoringOverlay?.SessionVisible == false) OverlayStatus.Text = "Overlay/widgets hidden; sampling stopped. Reopen from Settings, tray or shortcut."; };
             }
-            monitoringOverlay.Configure(options); monitoringOverlay.Show();
-            if (monitoringOverlay.Error is string error) { monitoringOverlay.Hide(); OverlayStatus.Text = error; return; }
+            monitoringOverlay.Configure(options); monitoringOverlay.ShowSession();
+            if (monitoringOverlay.Error is string error) { monitoringOverlay.HideSession(); OverlayStatus.Text = error; return; }
             SetOverlayHotkey(options.Hotkey);
             OverlayStatus.Text = "Overlay visible. Local counters only; no monitoring history is saved. " +
                 (options.Hotkey ? overlayHotkeyRegistered ? "Ctrl+Alt+O toggles visibility." : "Shortcut unavailable; use Settings or the tray." : "Shortcut off; use Settings or the tray.");
@@ -136,13 +139,13 @@ public partial class MainWindow
     internal void ToggleOverlayFromTray()
     {
         if (TestMode) return;
-        if (monitoringOverlay?.IsVisible == true) { monitoringOverlay.Hide(); OverlayStatus.Text = "Overlay hidden; sampling stopped. Use Settings, the tray or the registered shortcut to show it again."; }
+        if (monitoringOverlay?.SessionVisible == true) { monitoringOverlay.HideSession(); OverlayStatus.Text = "Overlay/widgets hidden; sampling stopped. Use Settings, tray or shortcut to show them again."; }
         else ShowOverlay(preferences.Overlay);
     }
     private void OverlayToggle_Click(object sender, RoutedEventArgs e)
     {
         if (TestMode) return;
-        if (monitoringOverlay?.IsVisible == true) ToggleOverlayFromTray(); else ShowOverlay(OverlayChoices());
+        if (monitoringOverlay?.SessionVisible == true) ToggleOverlayFromTray(); else ShowOverlay(OverlayChoices());
     }
     private void OverlayApply_Click(object sender, RoutedEventArgs e)
     {
@@ -151,18 +154,20 @@ public partial class MainWindow
         {
             var next = preferences with { Overlay = OverlayChoices() };
             SettingsStore.Save(next); preferences = next.Normalize(); PutOverlayControls();
-            if (next.Overlay.Enabled || monitoringOverlay?.IsVisible == true) ShowOverlay(preferences.Overlay);
+            if (next.Overlay.Enabled || monitoringOverlay?.SessionVisible == true) ShowOverlay(preferences.Overlay);
             else SetOverlayHotkey(preferences.Overlay.Hotkey && overlayHotkeyRegistered);
-            if (!next.Overlay.Enabled) OverlayStatus.Text = "Overlay settings saved. Automatic display is off. " + (monitoringOverlay?.IsVisible == true ? "The current overlay stays visible until hidden." : "Show / hide opens it for this session.");
+            if (!next.Overlay.Enabled) OverlayStatus.Text = "Overlay settings saved. Automatic display is off. " + (monitoringOverlay?.SessionVisible == true ? "The current overlay/widgets stay visible until hidden." : "Show / hide opens them for this session.");
         }
         catch { OverlayStatus.Text = "Overlay settings could not be saved. Previous saved choices remain active."; }
     }
     private void OverlayRemember_Click(object sender, RoutedEventArgs e)
     {
-        if (monitoringOverlay?.IsVisible != true) { OverlayStatus.Text = "Show the overlay and drag it into place first."; return; }
+        if (monitoringOverlay?.SessionVisible != true) { OverlayStatus.Text = "Show the overlay/widgets and drag them into place first."; return; }
         try
         {
+            if(OverlayWidgetsChoice.IsChecked==true){widgetLayoutDraft=monitoringOverlay.CaptureWidgetLayouts();OverlayStatus.Text="Widget positions and individual locks copied into the form. Apply overlay settings to keep them.";return;}
             var position = monitoringOverlay.CapturePosition(); overlayX = position.X; overlayY = position.Y;
+            OverlayLockedChoice.IsChecked=position.Locked;
             RefreshOverlayDisplays(position.Monitor); OverlayPositionChoice.SelectedItem = "Custom";
             OverlayStatus.Text = "Current position copied into the form. Apply overlay settings to keep it.";
         }

@@ -62,9 +62,28 @@ public partial class MainWindow
                 }
                 overlay.Configure(new() { Monitor = @"\\.\DISPLAY999999" }); await Task.Delay(100);
                 Check(overlay.IsVisible && overlay.Error is null && !overlay.Sampling, "disconnected monitor falls back without starting test sampling");
+                overlay.Configure(new(){TransparentBackground=true,Locked=true});
+                Check(overlay.TransparentForChecks==!SystemParameters.HighContrast && overlay.HeaderVisibleForChecks==SystemParameters.HighContrast,"fully transparent background hides chrome while High Contrast retains readable surfaces");
+                overlay.Configure(new(){TransparentBackground=true,Locked=false});
+                Check(overlay.HeaderVisibleForChecks,"unlocked transparent overlay retains drag and lock controls");
+                overlay.HideSession();
+                var sensor=new TemperatureSource("Windows firmware","Firmware",TemperaturePolicy.Key("Windows firmware","test-zone"),"Test thermal zone");
+                var sensors=new TemperaturePreferences{Enabled=true,SelectionJson=System.Text.Json.JsonSerializer.Serialize(new[]{sensor}),Views=new(){CircleWithValue=true}};
+                overlay.Configure(new(){Widgets=true,Network=false,DiskSpace=false,Uptime=false,Temperatures=sensors});overlay.ShowSession();await Task.Delay(60);
+                Check(overlay.SessionVisible && !overlay.IsVisible && overlay.WidgetCountForChecks==3 && !overlay.Sampling && !overlay.ChildSamplingForChecks,"CPU RAM and synthetic temperature widgets are passive children of one hidden test host");
+                Check(overlay.WidgetsForChecks.All(w=>w.DisplaysForChecks.Count(d=>d.Visibility==Visibility.Visible)==1),"each detached widget contains only its own metric");
+                overlay.Render(new(50,40,4,10,1000,500,1000,10000));
+                Check(overlay.HistoryCount==0 && overlay.WidgetsForChecks.Any(w=>w.HistoryCount==1),"hidden shared host does not duplicate widget graph rendering");
+                Check(WidgetLayout.Parse(overlay.CaptureWidgetLayouts()).Length==3,"all widget positions and individual locks can be captured");
+                overlay.UnlockWidgets();Check(WidgetLayout.Parse(overlay.CaptureWidgetLayouts()).All(p=>!p.Locked),"recovery control unlocks all widgets");
+                foreach(var child in overlay.WidgetsForChecks)child.HideSession();
+                Check(!overlay.SessionVisible && !overlay.Sampling,"hiding every widget ends the shared session");
+                overlay.Configure(new(){Widgets=true,Network=false,DiskSpace=false,Uptime=false,Cpu=false});overlay.ShowSession();
+                Check(overlay.WidgetCountForChecks==1,"changing selected metrics removes obsolete widget windows");overlay.HideSession();
                 ThemeManager.Apply(initial with { ThemeMode = "Dark" });
                 var previewViews = new MetricViewPreferences { Numbers = true, CircleWithValue = true, Bar = true, Graph = true };
                 overlay.Configure(new() { Width = 340, CpuView = previewViews, MemoryView = previewViews, Network = false, DiskSpace = false, Uptime = false });
+                overlay.ShowSession();
                 for (int i = 0; i < 60; i++)
                 {
                     double percent = 38 + i % 12; ulong total = 32UL * 1073741824;
@@ -80,6 +99,9 @@ public partial class MainWindow
                 var none = new MetricViewPreferences { Numbers = false };
                 liveLifecycle.Configure(new() { CpuView = none, MemoryView = none, NetworkView = none, DiskView = none, UptimeView = none });
                 liveLifecycle.Show(); Check(!liveLifecycle.Sampling, "all view types off pauses sampling while metric switches remain independent"); liveLifecycle.Hide();
+                liveLifecycle.Configure(new(){Widgets=true,Network=false,DiskSpace=false,Uptime=false});liveLifecycle.ShowSession();
+                Check(liveLifecycle.Sampling && !liveLifecycle.ChildSamplingForChecks && liveLifecycle.WidgetCountForChecks==2,"detached live widgets use exactly one host timer");
+                liveLifecycle.HideSession();Check(!liveLifecycle.Sampling && !liveLifecycle.ChildSamplingForChecks,"hide-all stops host and child timers before any sample runs");
             }
             OverlayViewMetricChoice.SelectedIndex = 0;
             OverlayViewNumbers.IsChecked = true; OverlayViewCircle.IsChecked = false; OverlayViewCircleValue.IsChecked = true; OverlayViewBar.IsChecked = true;
@@ -88,6 +110,32 @@ public partial class MainWindow
             var combined = OverlayChoices();
             Check(combined.CpuView is { Numbers: true, CircleWithValue: true, Bar: true } && combined.MemoryView is { Numbers: false, Circle: true } && combined.Cpu && combined.Memory, "view editor preserves combinations across metric selection without changing metric switches");
             PutPreferenceControls();
+            var firmware=new TemperatureSource("Windows firmware","Firmware",TemperaturePolicy.Key("Windows firmware","fixture"),"Fixture zone");
+            var storage=new TemperatureSource("Windows storage","Storage",TemperaturePolicy.Key("Windows storage","fixture"),"Fixture drive");
+            sensorCatalog[firmware.Key]=firmware;sensorCatalog[storage.Key]=storage;
+            TemperatureProviderChoice.SelectedItem=firmware.Provider;RefreshSensorRows();TemperatureSourcesList.SelectedItems.Add(firmware);
+            TemperatureProviderChoice.SelectedItem=storage.Provider;TemperatureSourcesList.SelectedItems.Add(storage);
+            TemperatureCategoryChoice.SelectedItem="CPU";Check(TemperatureSourcesList.Items.Count==0 && selectedSensors.Count==2,"category filters retain cross-provider selections without inventing sensor categories");
+            TemperatureCategoryChoice.SelectedIndex=0;TemperatureEnabledChoice.IsChecked=true;
+            OverlayViewMetricChoice.SelectedIndex=5;OverlayViewNumbers.IsChecked=false;OverlayViewCircleValue.IsChecked=true;
+            var tempDraft=OverlayChoices().Temperatures;
+            Check(tempDraft.Enabled && tempDraft.Selected().Length==2 && tempDraft.Views is{Numbers:false,CircleWithValue:true},"temperature selection and independent styles are captured without installing or querying hardware");
+            PutPreferenceControls();
+            MainTabs.ApplyTemplate();UpdateLayout();
+            var tree=MainTabs.Template.FindName("FunctionNavigation",MainTabs) as System.Windows.Controls.TreeView;
+            Check(tree is not null && tree.Items.Count==FunctionTree.Roots.Count,"desktop navigation presents categorized functions");
+            foreach(var root in FunctionTree.Roots)
+            {
+                var group=(System.Windows.Controls.TreeViewItem)tree!.ItemContainerGenerator.ContainerFromItem(root);group.IsExpanded=true;UpdateLayout();
+                foreach(var node in root.Children)
+                {
+                    var item=(System.Windows.Controls.TreeViewItem)group.ItemContainerGenerator.ContainerFromItem(node);item.IsSelected=true;
+                    Check(MainTabs.SelectedIndex==Array.IndexOf(AppPreferences.Pages,node.Page),"each tree leaf navigates to the retained page without running an action");
+                }
+            }
+            Back_Click(this,new RoutedEventArgs());
+            Check(tree!.SelectedItem is FunctionNode selected && selected.Page==AppPreferences.Pages[MainTabs.SelectedIndex],"dedicated Back navigation synchronizes the categorized tree");
+            MainTabs.SelectedIndex=0;
             var guide = new SetupGuidePreview(this);
             try { checks += guide.VerifyNavigationForChecks(); }
             finally { guide.Close(); }

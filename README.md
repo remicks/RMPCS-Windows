@@ -1,4 +1,14 @@
-# RMPCS 0.13.6 - Rusty's PC Toolkit
+# RMPCS 0.13.7 - Rusty's PC Toolkit
+
+## Temperatures, transparent widgets and categorized navigation v0.13.7
+
+Main-screen sections now appear in categorized navigation trees; selecting a category never starts a maintenance action. Settings > Realtime system overlay adds a fully transparent background and separate metric widgets. Each widget can be dragged and locked independently; **Remember positions & locks**, then **Apply overlay settings** persists its monitor and position. **Unlock widgets / disable click-through** provides recovery from locked transparent windows. Tray, Settings and the optional shortcut hide/show the whole session. Widgets share one sampler; hidden metrics are excluded and hiding every widget stops polling. High Contrast keeps solid readable surfaces. Desktop overlays cannot guarantee visibility over exclusive full-screen games.
+
+Under **Temperature sources**, choose a local provider, discover its sensors, filter CPU/GPU/Storage/Motherboard/Firmware/Other, and select up to eight sources across providers. Windows firmware zones are explicitly labeled firmware rather than CPU cores. Windows storage, existing LibreHardwareMonitor/OpenHardwareMonitor WMI providers, and optional in-app hardware reads are separate choices. Temperature views support the same independent numbers/circle/value-circle/bar/graph combinations. The 0–120 °C gauge is a display reference, never a safety threshold. Missing, blocked, zero-sentinel or stale readings remain unavailable. Queries are bounded and serialized, run at most every five seconds, and save no readings. A provider can still report inaccurate or internally stale data.
+
+**Review / install optional sensor components** is an explicit administrator-only option for Windows 11 x64. It downloads pinned official LibreHardwareMonitor 0.9.6 libraries and the PawnIO 2.2.0 setup. Downloads require fixed SHA-256 hashes; the setup also requires Windows Authenticode trust/revocation verification and the pinned namazso.eu signer. Components are staged under protected Program Files ACLs; unapproved dependencies and writable/linked component paths are rejected. Only the visible official setup is launched. Keep its administrator-only access defaults. No silent driver setup, automatic low-level enablement, fan/voltage controls or Windows security changes are performed. Secure Boot, Memory Integrity and the vulnerable-driver blocklist stay enabled as configured; if Windows blocks the driver, use the other providers.
+
+Installation and driver-backed reads are separate opt-ins, both off by default. Signed kernel code can still have defects or firmware/anti-cheat incompatibilities; RMPCS does not guarantee universal sensor support. Stop in-app reads before gaming if required. Remove the shared PawnIO package separately through Windows Installed apps only after checking other software does not need it; RMPCS uninstall leaves it and the protected optional library directory intact. Future component updates require a reviewed RMPCS update rather than trusting a changing latest-download URL. See [SENSOR-SECURITY.md](SENSOR-SECURITY.md) and [third-party notices](THIRD-PARTY-NOTICES.md).
 
 ## Independent overlay metric views v0.13.6
 
@@ -82,9 +92,9 @@ Validation includes geometry/preference tests, WPF page routing, real positionin
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.6/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.6/RMPCS-Setup-0.13.6-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.6/RMPCS-v0.13.6-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.7/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.7/RMPCS-Setup-0.13.7-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.7/RMPCS-v0.13.7-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -240,9 +250,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.13.6-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.13.6-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.13.6-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.13.7-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.13.7-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.13.7-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.
