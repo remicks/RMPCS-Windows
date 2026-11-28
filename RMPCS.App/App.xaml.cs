@@ -14,6 +14,19 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Length == 2 && e.Args[0] == "--drive-read-check")
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            try
+            {
+                var drives = await Task.Run(DriveOptimizationService.Discover);
+                string reasons = string.Join("\n", drives.GroupBy(d => d.Note).Select(g => $"{g.Count()} volume(s): {g.Key}"));
+                System.IO.File.WriteAllText(e.Args[1], $"Read-only native drive discovery completed: {drives.Count} fixed volumes, {drives.Count(d => DriveOptimization.Availability(d).Analyze)} eligible. Device identities and paths not saved. No optimizer, repair, filesystem write, preferences or maintenance invoked.\n{reasons}\n");
+                Shutdown(0);
+            }
+            catch { System.IO.File.WriteAllText(e.Args[1], "Read-only native drive discovery failed. No optimizer invoked."); Shutdown(1); }
+            return;
+        }
         if (e.Args.Length == 2 && e.Args[0] == "--diagnostic-read-check")
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -89,13 +102,14 @@ public partial class App : Application
         bool themeCheck = e.Args.Length==2 && e.Args[0]=="--theme-ui-check";
         bool sidebarCheck = e.Args.Length == 2 && e.Args[0] == "--sidebar-ui-check";
         bool presentationCheck = e.Args.Length == 2 && e.Args[0] == "--presentation-ui-check";
+        bool driveCheck = e.Args.Length == 2 && e.Args[0] == "--drive-ui-check";
         bool earlyDialogVerified=false;
         if(themeCheck)
         {
             try {earlyDialogVerified=Dialogs.VerifyEarlyDialog();if(!earlyDialogVerified)throw new InvalidOperationException("Startup dialog state was not restored.");}
             catch(Exception ex){System.IO.File.WriteAllText(e.Args[1],"Startup dialog check failed: "+ex.Message);Shutdown(1);return;}
         }
-        bool test = smoke || preview || traySmoke || themeCheck || sidebarCheck || presentationCheck;
+        bool test = smoke || preview || traySmoke || themeCheck || sidebarCheck || presentationCheck || driveCheck;
         if (!test)
         {
             try { if (LaunchPreference.RelaunchIfRequested(e.Args)) { Shutdown(); return; } }
@@ -111,7 +125,7 @@ public partial class App : Application
         var window = new MainWindow(test); MainWindow = window;
         if (preview && e.Args.Length >= 3 && int.TryParse(e.Args[2], out int tab) && tab >= 0 && tab < window.MainTabs.Items.Count) window.MainTabs.SelectedIndex = tab;
         if(preview)window.PreviewAppearance(e.Args.Length>=4?e.Args[3]:"Light",e.Args.Length>=5?e.Args[4]:"Crimson Red",e.Args.Length>=6&&e.Args[5]=="compact",e.Args.Length>=6&&e.Args[5]=="sidebar",e.Args.Length==7?e.Args[6]:"Barlow");
-        if (!smoke && !preview && !themeCheck && !sidebarCheck && !presentationCheck)
+        if (!smoke && !preview && !themeCheck && !sidebarCheck && !presentationCheck && !driveCheck)
         {
             try { tray = new TrayService(window.ShowFromTray, window.RequestExit, window.NotifyCompletion); window.AttachTray(tray); }
             catch (Exception ex) { window.TrayUnavailable(); if (traySmoke && e.Args.Length == 2) System.IO.File.WriteAllText(e.Args[1], "Tray creation failed: " + ex); }
@@ -130,7 +144,12 @@ public partial class App : Application
         {
             if (contentHandled) return;
             contentHandled = true;
-            if (presentationCheck)
+            if (driveCheck)
+            {
+                try { window.VerifyDriveUi(e.Args[1]); window.Close(); }
+                catch (Exception ex) { System.IO.File.WriteAllText(e.Args[1], "Drive UI check failed: " + ex.Message); Shutdown(1); }
+            }
+            else if (presentationCheck)
             {
                 try { window.VerifyPresentationUi(e.Args[1]); window.Close(); }
                 catch (Exception ex) { System.IO.File.WriteAllText(e.Args[1], "Presentation UI check failed: " + ex.Message); Shutdown(1); }

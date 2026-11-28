@@ -96,6 +96,7 @@ public partial class MainWindow : Window
         StopButton.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
         Progress.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
         Progress.IsIndeterminate = value;
+        UpdateDriveControls();
     }
     private bool Confirm(string text) => Dialogs.Show(this, text, "RMPCS", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
     private MaintenancePlan SelectedPlan() => new()

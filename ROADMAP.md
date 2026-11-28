@@ -1,12 +1,13 @@
 # RMPCS roadmap
 
-Current build: v0.12.2, keeping automation switches usable when a saved schedule was edited outside RMPCS and correcting stale log/core version labels. The v0.12.1 installer version, upgrade and Repair/Remove fixes, v0.12.0 themes/fonts, Back navigation, sidebar and visible installer progress remain available.
+Current build: v0.13.0 adds guarded, on-demand HDD analysis/defragmentation and SSD ReTRIM through Windows. Unknown storage is blocked. Previous schedule-switch, versioning, installer, theme/font and sidebar fixes remain available.
 
 Existing diagnostics, verified restore-point requests, preference undo, guarded scheduling, reports, archives and update checks remain available. See README and release notes for scope and validation limits.
 
 ## Next priorities
 
 1. Supervised clean-machine, runtime, upgrade and uninstall testing.
+   Drive optimization also needs supervised real HDD/SSD, error, concurrent Windows optimizer and power-transition tests on disposable storage. Do not broaden storage support without native topology validation.
 2. Native startup/task switch behavior, system-theme and High Contrast transitions, keyboard/assistive-technology use and multi-monitor/DPI validation.
 3. Restore-point availability/frequency-limit testing and real workload/scheduling scenarios.
 4. Broader native integration coverage for recovery, reports and scheduled notifications.

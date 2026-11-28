@@ -1,13 +1,17 @@
-RMPCS v0.12.2 - Schedule recovery and version labels
+RMPCS v0.13.0 - Guarded drive optimization
 
-Keeps automatic-maintenance controls usable when a saved schedule was changed outside RMPCS, and corrects stale version labels in logs and the core library.
+Adds an in-app Drives section for optional, on-demand HDD analysis/defragmentation and SSD ReTRIM through Windows' built-in optimizer.
 
-- A maintenance task edited in Windows Task Scheduler (for example an added trigger or changed arguments) no longer disables both the sign-in and maintenance switches. The known on/off state stays usable, so the schedule can still be turned off or replaced, and Schedules explains that its saved settings could not be shown.
-- Saved session logs now record the running app version instead of a fixed 0.9.2 label.
-- RMPCS.Core takes its version from release-version.txt. Its file version continues the existing 1.0.x numbering and only increases (now 1.0.12.2).
+- Analyze hard drives and request defragmentation only after a recent successful analysis. HDD defragmentation also requires at least 15% free space. Review Windows' report before proceeding.
+- Verified SSDs offer ReTRIM only, never traditional defragmentation. Unknown or contradictory storage evidence and unsupported controllers/layouts stay blocked rather than guessed.
+- Drive identity, filesystem, layout, media type and free space are checked again immediately before starting. Operations require administrator rights, optimization requires confirmed AC power, and the RMPCS maintenance lock prevents overlapping RMPCS sessions.
+- Progress output and exit status stay inside the app and are saved in History. Work runs on one stable volume GUID at Windows' default low priority, without a shell, downloaded tools, forced termination or fallback operation after failure.
+- The new page supports existing themes, fonts, sidebar navigation, Back and saved start-page preferences. Windows' optimization schedule, automatic maintenance profiles and feature defaults are unchanged.
 
-Validation: core, installer version/upgrade/regression, bootstrap, theme and presentation checks passed. Schedule parsing was checked against the app's own task XML and edited/malformed variants. No live elevated installation, upgrade, removal or maintenance was performed. A known intermittent sidebar disposal self-check failure on multi-monitor desktops predates this release and is unchanged.
+Supported initially: accessible local NTFS volumes on a single basic ATA/SATA/NVMe data partition with consistent native descriptors. RAID, USB, virtual/dynamic/recovery/hidden layouts, dirty/read-only volumes and unknown media are excluded. Some valid hardware may be unavailable under this conservative policy. Windows/controller reporting is trusted; this is not a drive-health diagnosis or hardware-repair tool.
 
-Installer EXE, standalone MSI, portable ZIP, source bundle, icons, official runtime links and SHA256SUMS.txt are included. Exit RMPCS using Quit RMPCS before upgrading. App features, themes, fonts and the v0.12.1 installer fixes are retained.
+Validation includes storage policy and malformed-buffer fixtures, command and authorization guards, synthetic UI checks, read-only native discovery and existing core/UI/installer/bootstrap suites. These checks never perform real defragmentation, ReTRIM, live elevated install/upgrade/removal or runtime installation. Supervised lifecycle tests on disposable HDD/SSD storage, competing Windows optimizer work, errors and power transitions remain necessary. Keep backups and keep the PC powered during work. Avoid repeated manual optimization; Windows normally maintains drives. No performance improvement is guaranteed.
+
+Installer EXE, standalone MSI, portable ZIP, source bundle, icons, official runtime links and SHA256SUMS.txt are included. Quit RMPCS before upgrading. Previous schedule, versioning, installer, theme/font and sidebar fixes are retained.
 
 Unsigned development prerelease.

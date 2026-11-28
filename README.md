@@ -1,4 +1,14 @@
-# RMPCS 0.12.2 - Rusty's PC Toolkit
+# RMPCS 0.13.0 - Rusty's PC Toolkit
+
+## Drive optimization v0.13.0
+
+The new **Drives** section uses Windows' built-in `defrag.exe` for one explicitly selected volume. Refresh reads native storage descriptors. **Analyze drive** reports Windows' findings; **Defragment HDD** requires a successful analysis within 15 minutes and at least 15% free space. Verified SSDs offer **ReTRIM SSD** only (`/L`, the Windows equivalent of fstrim), never traditional defragmentation. Nothing runs on app launch or joins the cleanup queue.
+
+This conservative first version supports accessible local NTFS volumes on a single basic ATA/SATA/NVMe data partition. Unknown or contradictory descriptors, removable media, RAID, USB, virtual/dynamic/recovery layouts, dirty and read-only volumes are blocked. Some otherwise usable hardware will be unavailable rather than guessed. Filesystem dirty-state checking is not a full drive-health diagnosis. Native descriptors depend on truthful Windows/controller reporting.
+
+Administrator access is required. Optimization also requires confirmed AC power. RMPCS repeats identity/layout/media/space checks immediately before launching, passes a canonical volume GUID using structured arguments to the System32 executable without a shell, runs at Windows' default low priority, and uses the existing cross-session RMPCS maintenance lock. A failed operation never triggers another action. Progress output appears in Results & activity, with exit status saved in History. RMPCS waits for completion instead of forcibly killing disk work; keep the PC powered on. Windows' own optimization schedule is unchanged, and repeated manual runs are usually unnecessary.
+
+Core policy/command tests, synthetic drive UI checks, read-only native discovery and the existing packaging/UI suites run during release builds. These checks never run a real defragmentation or ReTRIM. Supervised HDD/SSD completion, error, competing-Windows-operation, power-transition and hot-plug scenarios still need validation on disposable test storage. Keep backups; no performance gain or hardware repair is promised.
 
 A Windows 11 x64 desktop maintenance app based on WMPCS 0.3b, with optional prerequisite setup, read-only health checks, cleanup previews, reversible Run-entry management, and scheduled care.
 
@@ -50,9 +60,9 @@ Validation includes geometry/preference tests, WPF page routing, real positionin
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.12.2/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.12.2/RMPCS-Setup-0.12.2-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.12.2/RMPCS-v0.12.2-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.0/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.0/RMPCS-Setup-0.13.0-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.0/RMPCS-v0.13.0-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -208,9 +218,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.12.2-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.12.2-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.12.2-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.13.0-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.13.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.13.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.
