@@ -1,16 +1,13 @@
-RMPCS v0.13.9 - Simpler names and expandable details
+RMPCS v0.13.10 - Reliability and hardening
 
-- Show drive labels and letters, such as Games (D:) · SSD, with a clear fallback for unlabelled drives. Letters distinguish duplicate labels; unknown media remains unverified. Labels are display-only and never enter optimization commands. Free-space figures use accurate decimal GB, with GiB available in technical details.
-- Simplify navigation and everyday controls: Clean up & repair, Troubleshooting, Drive care, Refresh website address cache, Check drive, Optimize hard drive and Optimize SSD. Cleanup previews and confirmations use matching names. SSDs still receive only ReTRIM; HDDs still require a recent successful check. Safety warnings and blocked-operation reasons remain visible.
-- Add Settings > Names & information with independent options to show technical names and automatically expand related technical details. Both default off, save with general preferences and support undo. Details can also be opened manually for cleanup, schedules, startup apps, monitoring, troubleshooting and drives. Full Windows reports/logs remain available without rewriting their output.
-- Update Help for the new names and settings, correct the monitoring description to include optional temperature sources, and use versioned setup EXE filenames across downloads, checksums and Discord announcements.
+- Log DISM, SFC and ipconfig output as whole lines. Long lines were split wherever an internal 1 KiB read buffer ended; output is now reassembled, UTF-16 padding is removed, the final partial line is kept and very long lines stay bounded.
+- Report "another maintenance session is running" when a different Windows account or session holds the maintenance lock with permissions this session cannot open, instead of failing with a generic error.
+- Allow TLS 1.3 for the setup EXE's Microsoft runtime download, keeping TLS 1.2 as the minimum. The pinned SHA-512, Authenticode and Microsoft publisher checks are unchanged.
+- Reject optional sensor-component folders where a non-administrator could delete files, in addition to the existing write, permission and ownership checks.
+- Speed up cleanup previews of large folders by checking each folder once instead of re-checking every parent folder for each file (about 7.7x on a 20,000-file test). Deletion still re-verifies every parent folder, links, hard links and the final file path before removing anything.
 
-- Fix themed dropdowns that showed raw technical records instead of display labels, and keep the chosen manual cleanup age when only display settings change.
+Validation: core checks (including new output-line regression checks), installer version/upgrade/regression, bootstrap, drive, monitoring, sidebar, theme and presentation suites passed. The runtime download host was confirmed reachable with the new TLS setting. No live elevated installation, upgrade, maintenance, drive optimization or sensor setup was performed. Supervised physical drive/hot-plug, accessibility and complete installation/upgrade testing remain necessary.
 
-These changes affect display and information only. Drive identity/media checks, permissions, commands, repair order, selections and scheduling safeguards remain in place. Drive labels may be duplicated or renamed and are never trusted as proof of media type or eligibility.
-
-Validation includes label sanitation/fallbacks, duplicate-label identification, unchanged command targets, simple/technical mode switching without changing selections or guard states, preference migration/undo, read-only label discovery, native UI checks and the existing core/installer suites. No real drive optimization, cleanup, privileged setup or driver installation is performed. Supervised physical drive/hot-plug, accessibility and complete installation/upgrade testing remain necessary.
-
-Includes RMPCS-Setup-0.13.9-x64.exe, standalone MSI, portable ZIP, source bundle, icons, runtime links and SHA256SUMS.txt. Quit RMPCS before upgrading.
+Includes RMPCS-Setup-0.13.10-x64.exe, standalone MSI, portable ZIP, source bundle, icons, runtime links and SHA256SUMS.txt. Quit RMPCS before upgrading. App features from v0.13.9 are retained.
 
 Unsigned development prerelease.

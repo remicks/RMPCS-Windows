@@ -1,4 +1,8 @@
-# RMPCS 0.13.9 - Rusty's PC Toolkit
+# RMPCS 0.13.10 - Rusty's PC Toolkit
+
+## Reliability and hardening v0.13.10
+
+Windows repair and network tool output (DISM, SFC, ipconfig) is logged as whole lines; long lines were previously split wherever an internal read buffer ended. When another Windows account or session holds the maintenance lock, RMPCS now reports that another session is running instead of a generic failure. The setup EXE's Microsoft runtime download allows TLS 1.3 with a TLS 1.2 minimum. Optional sensor-component folders are rejected if a non-administrator could delete files inside them. Cleanup previews of large folders are faster; deletion keeps every existing link, hard-link and final-path safety check.
 
 ## Simple names and expandable information v0.13.9
 
@@ -112,9 +116,9 @@ Validation includes geometry/preference tests, WPF page routing, real positionin
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.9/RMPCS-Setup-0.13.9-x64.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.9/RMPCS-Setup-0.13.9-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.9/RMPCS-v0.13.9-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.10/RMPCS-Setup-0.13.10-x64.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.10/RMPCS-Setup-0.13.10-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.10/RMPCS-v0.13.10-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installer filenames:** releases from v0.13.9 use `RMPCS-Setup-<version>-x64.exe`, matching the versioned MSI. Published v0.13.8 and earlier retain `RMPCS.Setup.exe` and their existing download links.

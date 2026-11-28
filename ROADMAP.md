@@ -1,6 +1,6 @@
 # RMPCS roadmap
 
-Current build: v0.13.9 adds labeled drive names, beginner-friendly controls and opt-in technical names/details. v0.13.8 added shared optional sensor setup from EXE/MSI/Settings and expanded offline setup/troubleshooting Help, on top of v0.13.7: selectable local temperature providers, reviewed opt-in sensor-driver setup, transparent backgrounds, independent metric widgets and categorized function trees. Independent numbers, circles, value circles, bars and graphs remain available. The v0.13.5 monitoring safeguards, manual setup-guide preview, guarded drive optimization and previous fixes remain available.
+Current build: v0.13.10 fixes split repair-tool log lines and hardens the maintenance lock, runtime download TLS and sensor-component folder checks, with faster cleanup previews. v0.13.9 added labeled drive names, beginner-friendly controls and opt-in technical names/details. v0.13.8 added shared optional sensor setup from EXE/MSI/Settings and expanded offline setup/troubleshooting Help, on top of v0.13.7: selectable local temperature providers, reviewed opt-in sensor-driver setup, transparent backgrounds, independent metric widgets and categorized function trees. Independent numbers, circles, value circles, bars and graphs remain available. The v0.13.5 monitoring safeguards, manual setup-guide preview, guarded drive optimization and previous fixes remain available.
 
 ## v0.14.0 first-run guide
 
