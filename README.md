@@ -107,7 +107,9 @@ Validation includes geometry/preference tests, WPF page routing, real positionin
 - [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.8/RMPCS-v0.13.8-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
-**Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
+**Installer filenames:** future releases use `RMPCS-Setup-<version>-x64.exe`, matching the versioned MSI. Published v0.13.8 and earlier retain `RMPCS.Setup.exe` and their existing download links.
+
+**Installed edition:** run the setup EXE for your downloaded version. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
 
 **Portable edition:** extract every file and open `Launch-RMPCS.exe`. When a compatible runtime is present, it verifies its companion app files and launches RMPCS. Otherwise it offers the prerequisite setup screen. Use `Launch-RMPCS.exe --setup` to open that screen explicitly. Keep the EXE, DLL and JSON files together. A portable app can still require installing a shared system runtime.
 

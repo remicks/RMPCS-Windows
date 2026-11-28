@@ -2,7 +2,7 @@
 
 ## Easiest path
 
-- **Installed edition:** open `RMPCS.Setup.exe`. If the required runtime is missing, leave the clearly labelled prerequisite option enabled and continue. Follow Microsoft's installer/license/UAC prompts, then the RMPCS MSI setup.
+- **Installed edition:** open the versioned `RMPCS-Setup-<version>-x64.exe` (v0.13.8 and earlier: `RMPCS.Setup.exe`). If the required runtime is missing, leave the clearly labelled prerequisite option enabled and continue. Follow Microsoft's installer/license/UAC prompts, then the RMPCS MSI setup.
 - **Portable edition:** extract every file, then open `Launch-RMPCS.exe`. It launches the app directly when a compatible runtime exists; otherwise it presents first-run prerequisite setup. `--setup` opens setup explicitly.
 - **Standalone MSI:** install the runtime manually first if missing. Direct MSI use does not provide the bootstrap's runtime download screen.
 

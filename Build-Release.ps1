@@ -20,7 +20,7 @@ Run-Dotnet @($builder,$app,'Installer\TaskCleanup.ps1',$msi)
 Run-Dotnet @($builder,'--verify',$msi,$app,'Installer\TaskCleanup.ps1',$version)
 Run-Dotnet @($builder,'--regression-check',$msi,$app,'Installer\TaskCleanup.ps1',$version)
 & (Join-Path $PSScriptRoot 'Bootstrap\Build.ps1') -AppPath $app -MsiPath $msi -OutputPath (Join-Path $release 'Bootstrap') -ExpectedVersion $version
-$setup=Join-Path $release 'Bootstrap\RMPCS.Setup.exe'
+$setup=Join-Path $release ('Bootstrap\RMPCS-Setup-'+$version+'-x64.exe')
 $portable=Join-Path $release 'Bootstrap\Portable'
 foreach($launcher in @($setup,(Join-Path $portable 'Launch-RMPCS.exe'))){
     $launcherInfo=[Diagnostics.FileVersionInfo]::GetVersionInfo($launcher)

@@ -25,6 +25,21 @@ test('stable announcement label and bounded notes', () => {
   const prepared = prepareRelease(value, 'v0.9.2'); assert.ok(!prepared.name.includes('Preview')); assert.ok(prepared.body.length < 3800);
 });
 
+test('future releases link the matching versioned EXE and reject a legacy or wrong-version filename', () => {
+  const value=JSON.parse(JSON.stringify(release()).replaceAll('0.9.2','0.13.9'));
+  assert.throws(()=>prepareRelease(value,'v0.13.9'));
+  value.assets[0].name='RMPCS-Setup-0.13.9-x64.exe';
+  value.assets[0].browser_download_url=`${base}/releases/download/v0.13.9/${value.assets[0].name}`;
+  assert.ok(prepareRelease(value,'v0.13.9').body.includes('/RMPCS-Setup-0.13.9-x64.exe)'));
+  value.assets[0].name='RMPCS-Setup-0.13.8-x64.exe';
+  assert.throws(()=>prepareRelease(value,'v0.13.9'));
+});
+
+test('published v0.13.8 download links remain compatible with the original filename', () => {
+  const value=JSON.parse(JSON.stringify(release()).replaceAll('0.9.2','0.13.8'));
+  assert.ok(prepareRelease(value,'v0.13.8').body.includes('/RMPCS.Setup.exe)'));
+});
+
 test('changelog summary keeps three short highlights and omits later details', () => {
   const notes = '# Changes\n- Fixed installer upgrades. Additional implementation details.\n- Improved runtime checks. More details.\n- Restart handling ' + 'improved '.repeat(100) + '\n- Fourth change should remain on GitHub.';
   const summary = summarizeNotes(notes);

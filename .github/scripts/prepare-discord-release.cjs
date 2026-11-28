@@ -37,14 +37,18 @@ function summarizeNotes(body) {
 function prepareRelease(release, tag) {
   const version = versionTag(tag);
   if (!release || release.draft !== false || release.tag_name !== tag || release.html_url !== `${BASE}/releases/tag/${tag}` || typeof release.body !== 'string' || release.body.length > 65536 || typeof release.prerelease !== 'boolean') throw new Error('The requested release is not a valid published RMPCS release.');
-  const names = ['RMPCS.Setup.exe', `RMPCS-Setup-${version}-x64.msi`, `RMPCS-v${version}-win-x64-portable.zip`, `RMPCS-v${version}-icons.zip`, `RMPCS-v${version}.zip`, 'RUNTIMES.md', 'SHA256SUMS.txt'];
+  const versionedSetup = `RMPCS-Setup-${version}-x64.exe`;
+  const [major, minor, patch] = version.split('.').map(Number);
+  const legacyRelease = major === 0 && (minor < 13 || minor === 13 && patch <= 8);
+  const setupName = legacyRelease && !release.assets?.some(a => a.name === versionedSetup) ? 'RMPCS.Setup.exe' : versionedSetup;
+  const names = [setupName, `RMPCS-Setup-${version}-x64.msi`, `RMPCS-v${version}-win-x64-portable.zip`, `RMPCS-v${version}-icons.zip`, `RMPCS-v${version}.zip`, 'RUNTIMES.md', 'SHA256SUMS.txt'];
   if (!Array.isArray(release.assets) || !names.every(name => release.assets.filter(a => a.name === name && a.state === 'uploaded' && Number.isSafeInteger(a.size) && a.size > 0 && a.browser_download_url === `${BASE}/releases/download/${tag}/${name}`).length === 1)) throw new Error('Release files are missing or still uploading. No announcement prepared.');
   const download = `${BASE}/releases/download/${tag}`;
   const notes = summarizeNotes(release.body);
   return {
     name: `RMPCS ${tag} - Rusty's PC Toolkit${release.prerelease ? ' (Preview)' : ''}`,
     url: release.html_url,
-    body: `${release.prerelease ? '**Preview release**' : '**New release**'}\n\n[Install RMPCS](${download}/RMPCS.Setup.exe) | [Portable ZIP](${download}/RMPCS-v${version}-win-x64-portable.zip)\n[Runtime requirements](${download}/RUNTIMES.md) | [Checksums](${download}/SHA256SUMS.txt)\n\n${notes}\n\n[Full release notes and all downloads](${release.html_url})`
+    body: `${release.prerelease ? '**Preview release**' : '**New release**'}\n\n[Install RMPCS](${download}/${setupName}) | [Portable ZIP](${download}/RMPCS-v${version}-win-x64-portable.zip)\n[Runtime requirements](${download}/RUNTIMES.md) | [Checksums](${download}/SHA256SUMS.txt)\n\n${notes}\n\n[Full release notes and all downloads](${release.html_url})`
   };
 }
 function testMessage(prepared, enabled) {

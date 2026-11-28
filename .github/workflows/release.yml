@@ -45,7 +45,7 @@ jobs:
           $tag='v'+$version
           gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
           if($LASTEXITCODE -eq 0){throw 'Release already exists; bump release-version.txt instead of replacing published files'}
-          $files=@("artifacts/v$version/Bootstrap/RMPCS.Setup.exe","artifacts/v$version/RMPCS-Setup-$version-x64.msi","artifacts/RMPCS-v$version-win-x64-portable.zip","artifacts/RMPCS-v$version-icons.zip","artifacts/RMPCS-v$version.zip",'RUNTIMES.md',"artifacts/v$version/SHA256SUMS.txt")
+          $files=@("artifacts/v$version/Bootstrap/RMPCS-Setup-$version-x64.exe","artifacts/v$version/RMPCS-Setup-$version-x64.msi","artifacts/RMPCS-v$version-win-x64-portable.zip","artifacts/RMPCS-v$version-icons.zip","artifacts/RMPCS-v$version.zip",'RUNTIMES.md',"artifacts/v$version/SHA256SUMS.txt")
           gh release create $tag @files --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --prerelease --title "RMPCS v$version - Rusty's PC Toolkit" --notes-file RELEASE-NOTES.md
           if($LASTEXITCODE -ne 0){throw 'Release publication failed'}
           Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value ("tag="+$tag)
