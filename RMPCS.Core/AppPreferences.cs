@@ -4,6 +4,8 @@ namespace RMPCS.Core;
 
 public sealed record AppPreferences
 {
+    public bool ShowTechnicalNames { get; init; }
+    public bool ExpandTechnicalDetails { get; init; }
     public bool CloseToTray { get; init; } = true;
     public bool MinimizeToTray { get; init; } = true;
     public bool TrayNotifications { get; init; } = true;

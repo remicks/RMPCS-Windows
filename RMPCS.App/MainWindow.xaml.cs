@@ -130,7 +130,7 @@ public partial class MainWindow : Window
     {
         if (!admin || busy) return;
         if (plan.IsEmpty) { Status.Text = "Select at least one task."; return; }
-        string notice = "Run these tasks?\n\n" + plan.Describe() + "\n\nFile deletion is permanent. Locked/protected files and links are skipped.";
+        string notice = "Run these tasks?\n\n" + plan.Describe(preferences.ShowTechnicalNames) + "\n\nFile deletion is permanent. Locked/protected files and links are skipped.";
         if (plan.Prefetch) notice += "\nPrefetch removal may temporarily slow application launches.";
         if (plan.WindowsLogs) notice += "\nWindows Logs cleanup removes troubleshooting history.";
         if (plan.ErrorArchives || plan.CrashDumps) notice += "\nSelected diagnostic reports/dumps will be permanently removed and may be needed to investigate crashes.";
@@ -147,7 +147,7 @@ public partial class MainWindow : Window
             if (lease is null) { Status.Text = "Another maintenance session is running. Try again later."; return; }
             using var session = new SessionLog("Manual run");
             void Output(string text) { session.Write(text); Log(text); }
-            Output(plan.Describe());
+            Output(plan.Describe(preferences.ShowTechnicalNames));
             if (preferences.RestoreBeforeRepair && (plan.RepairImage || plan.ScanFiles || plan.ResetSearch))
             {
                 Status.Text = "Requesting and verifying a restore point...";
@@ -186,7 +186,7 @@ public partial class MainWindow : Window
             foreach (var area in plan.CleanupAreas())
             {
                 if (stopRequested) break;
-                var preview = await Task.Run(() => CleanupPreviewService.Scan(area, plan.MinimumAgeDays));
+                var preview = await Task.Run(() => CleanupPreviewService.Scan(area, plan.MinimumAgeDays,preferences.ShowTechnicalNames));
                 rows.Add(preview); PreviewRows.ItemsSource = rows.ToArray();
                 bytes += preview.Bytes; count += (int)Math.Min(int.MaxValue - count, preview.Files);
                 Log($"Preview {area}: {preview.Files:N0} eligible entries; {preview.Bytes:N0} bytes; {preview.Skipped} skipped entries. {preview.Note}");

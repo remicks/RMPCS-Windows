@@ -1,4 +1,14 @@
-# RMPCS 0.13.8 - Rusty's PC Toolkit
+# RMPCS 0.13.9 - Rusty's PC Toolkit
+
+## Simple names and expandable information v0.13.9
+
+Drive choices now use volume labels and letters, such as **Games (D:) · SSD**, with **Local drive (D:)** as the unlabelled fallback. The letter remains visible for duplicate labels, and unverified media stays clearly marked. Labels are bounded display text only; validated volume identities still determine operation targets. Main free-space values use decimal GB; technical drive details retain GiB and the stable volume path.
+
+Everyday wording is simpler: **Clean up & repair**, **Troubleshooting**, **Drive care**, **Refresh website address cache**, **Repair Windows components**, **Check drive**, **Optimize hard drive** and **Optimize SSD**. SSD optimization remains ReTRIM only, and HDD optimization still requires a recent successful check. Confirmations, cleanup previews and monitoring choices use matching plain-language names. Permanent deletion, disconnection, restart and other safety warnings remain visible.
+
+In **Settings > Names & information**, independently enable **Show technical names next to simple names** and **Expand technical information automatically**, then **Save preferences**. Details are available beside the related cleanup, scheduling, startup, monitoring, troubleshooting and drive controls; they can also be opened manually. Both settings default off and support preference undo. They change presentation only; selections, permissions, commands, schedules and safety gates are preserved. Native reports/logs retain full technical output. Help explains the new names and their earlier equivalents.
+
+Installer EXEs now include their version: `RMPCS-Setup-0.13.9-x64.exe`. Release uploads, checksums and Discord links use the matching name; earlier published downloads retain their original filenames.
 
 ## Optional sensor setup and practical Help v0.13.8
 
@@ -102,12 +112,12 @@ Validation includes geometry/preference tests, WPF page routing, real positionin
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.8/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.8/RMPCS-Setup-0.13.8-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.8/RMPCS-v0.13.8-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.9/RMPCS-Setup-0.13.9-x64.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.9/RMPCS-Setup-0.13.9-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.9/RMPCS-v0.13.9-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
-**Installer filenames:** future releases use `RMPCS-Setup-<version>-x64.exe`, matching the versioned MSI. Published v0.13.8 and earlier retain `RMPCS.Setup.exe` and their existing download links.
+**Installer filenames:** releases from v0.13.9 use `RMPCS-Setup-<version>-x64.exe`, matching the versioned MSI. Published v0.13.8 and earlier retain `RMPCS.Setup.exe` and their existing download links.
 
 **Installed edition:** run the setup EXE for your downloaded version. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
 

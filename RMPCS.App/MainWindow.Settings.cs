@@ -11,6 +11,7 @@ namespace RMPCS.App;
 public partial class MainWindow
 {
     private AppPreferences preferences = new();
+    private int? appliedCleanupAge;
     private readonly CancellationTokenSource windowLifetime = new();
     private ReleaseOffer? updateOffer;
     private bool checkingUpdates;
@@ -44,6 +45,8 @@ public partial class MainWindow
         TrayNotificationsChoice.IsChecked = preferences.TrayNotifications;
         CompletionNotificationsChoice.IsChecked = preferences.CompletionNotifications;
         RestoreBeforeRepairChoice.IsChecked = preferences.RestoreBeforeRepair;
+        TechnicalNamesChoice.IsChecked=preferences.ShowTechnicalNames;
+        ExpandDetailsChoice.IsChecked=preferences.ExpandTechnicalDetails;
         AutoUpdatesChoice.IsChecked = preferences.CheckUpdatesOnLaunch;
         PreviewUpdatesChoice.IsChecked = preferences.IncludePrereleases;
         StartPageChoice.SelectedValue = preferences.StartPage;
@@ -53,8 +56,10 @@ public partial class MainWindow
     private void ApplyPreferences()
     {
         ThemeManager.Apply(preferences);
+        ApplyInformationPreferences();
         Activity.FontSize = preferences.ActivityFontSize;
-        Age.SelectedIndex = preferences.CleanupAgeDays switch { 1 => 1, 30 => 3, _ => 2 };
+        if(appliedCleanupAge!=preferences.CleanupAgeDays)Age.SelectedIndex = preferences.CleanupAgeDays switch { 1 => 1, 30 => 3, _ => 2 };
+        appliedCleanupAge=preferences.CleanupAgeDays;
         RefreshTrayHint();
         ApplySidebarPreferences();
         ApplyOverlayPreferences();
@@ -67,6 +72,7 @@ public partial class MainWindow
         {
             ThemeMode = AppearancePreview().ThemeMode, AccentName = AppearancePreview().AccentName, CustomAccent = AppearancePreview().CustomAccent,
             UiFont = AppearancePreview().UiFont,
+            ShowTechnicalNames=TechnicalNamesChoice.IsChecked==true,ExpandTechnicalDetails=ExpandDetailsChoice.IsChecked==true,
             CloseToTray = CloseToTrayChoice.IsChecked == true, MinimizeToTray = MinimizeToTrayChoice.IsChecked == true,
             TrayNotifications = TrayNotificationsChoice.IsChecked == true, CheckUpdatesOnLaunch = AutoUpdatesChoice.IsChecked == true,
             CompletionNotifications = CompletionNotificationsChoice.IsChecked == true,

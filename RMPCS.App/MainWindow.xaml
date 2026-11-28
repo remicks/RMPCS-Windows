@@ -51,9 +51,9 @@
      </StackPanel></Border>
      <TextBlock x:Name="ResultsHint" Text="Help explains each tool. Results appear on the right." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,14,0,0"/>
     </StackPanel></ScrollViewer></TabItem>
-    <TabItem Header="Maintenance"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
+    <TabItem Header="Clean up &amp; repair"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
      <StackPanel x:Name="TaskPanel">
-      <WrapPanel Margin="0,0,0,12"><Button Content="Recommended care" Click="SelectCare_Click" Padding="12,9"/><Button Content="Select all original tools" Click="SelectBatch_Click" Padding="12,9"/></WrapPanel>
+      <WrapPanel Margin="0,0,0,12"><Button Content="Recommended care" Click="SelectCare_Click" Padding="12,9"/><Button Content="Select all tools (includes restart)" Click="SelectBatch_Click" Padding="12,9"/></WrapPanel>
       <CheckBox x:Name="UserTemp" Content="Clean my temporary files" IsChecked="True"/>
       <CheckBox x:Name="SystemTemp" Content="Clean Windows temporary files (all users)"/>
       <TextBlock Text="Cleanup age (applies to selected file cleanup tasks)" Foreground="{DynamicResource MutedBrush}" FontSize="12"/>
@@ -66,6 +66,7 @@
       <TextBlock Text="Error reports and dumps can help diagnose crashes. Recycle Bin emptying is permanent and ignores the age filter. New categories are excluded from presets and schedules." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,10"/>
       </StackPanel></Expander>
       <CheckBox x:Name="Dns" Content="Flush DNS cache"/><CheckBox x:Name="Dism" Content="Repair Windows components (DISM)"/><CheckBox x:Name="Sfc" Content="Check Windows system files (SFC)"/>
+      <Expander x:Name="MaintenanceDetails" Header="How these tools work"><TextBlock Text="DNS clears saved website address lookups. DISM repairs the Windows component store; SFC checks protected system files. Repairs may use Windows Update and can take time. App startup cache means Prefetch; file preview cache means thumbnails. The exact selected tasks appear in the confirmation before anything runs." TextWrapping="Wrap" Margin="0,8,0,12"/></Expander>
       <Expander x:Name="AdvancedOptions" Header="Advanced tools - review before use" Foreground="{DynamicResource AccentTextBrush}" Margin="0,12,0,6"><StackPanel>
       <CheckBox x:Name="Prefetch" Content="Clear Prefetch application cache (.pf)"/>
       <TextBlock Text="Windows recreates this cache. App launches may be slower afterward. Layout metadata is preserved." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="22,0,0,4"/>
@@ -84,7 +85,7 @@
      <DataGrid x:Name="PreviewRows" Visibility="Collapsed" Height="155" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" Foreground="{DynamicResource TextBrush}" Background="{DynamicResource SurfaceBrush}" Margin="0,0,0,10">
       <DataGrid.Columns><DataGridTextColumn Header="Category" Binding="{Binding Area}" Width="*"/><DataGridTextColumn Header="Files" Binding="{Binding Files}" Width="55"/><DataGridTextColumn Header="MB" Binding="{Binding Megabytes}" Width="65"/><DataGridTextColumn Header="Skipped" Binding="{Binding Skipped}" Width="60"/></DataGrid.Columns>
      </DataGrid>
-     <TextBlock Text="Files bypass the Recycle Bin. Locked files, protected files, links and hard-linked files are skipped. No folder deletion or ACL changes." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"/>
+     <TextBlock Text="Files bypass the Recycle Bin. Locked files, protected files, links and hard-linked files are skipped. Folders and access permissions are left in place." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"/>
     </StackPanel></ScrollViewer></TabItem>
     <TabItem Header="Schedules"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
      <TextBlock Text="START AT SIGN-IN" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}"/>
@@ -101,7 +102,7 @@
       <TextBlock Text="Profile"/><ComboBox x:Name="ScheduleProfile" SelectedIndex="0"><ComboBoxItem Content="Light: 7-day temp cleanup + DNS"/><ComboBoxItem Content="Repair: light care + DISM + SFC"/></ComboBox>
       <TextBlock Text="Allowed start window"/><ComboBox x:Name="StartWindowChoice" SelectedIndex="0"><ComboBoxItem Content="Off - allow late starts"/><ComboBoxItem Content="1 hour after scheduled time"/><ComboBoxItem Content="2 hours after scheduled time"/><ComboBoxItem Content="4 hours after scheduled time"/></ComboBox>
       <TextBlock Text="Defer while busy (best-effort signals)"/><ComboBox x:Name="WorkloadDeferChoice" SelectedIndex="0"><ComboBoxItem Content="Off - existing idle/AC rules only"/><ComboBoxItem Content="Wait up to 15 minutes, then skip"/><ComboBoxItem Content="Wait up to 30 minutes, then skip"/><ComboBoxItem Content="Wait up to 60 minutes, then skip"/></ComboBox>
-      <TextBlock Text="Checks full-screen/presentation, active microphone sessions, CPU, RAM and network traffic. Unknown signals defer. These guards only decide when to start; active repairs finish normally." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,10"/>
+      <TextBlock Text="Optional waiting rules postpone a start while the PC is busy. Unavailable signals also postpone it. Running repairs are allowed to finish." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,10"/><Expander x:Name="ScheduleDetails" Header="Technical details"><TextBlock Text="Checks full-screen/presentation, active microphone sessions, CPU, RAM and network traffic. Unknown signals defer. These guards only decide when to start; active repairs finish normally." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,10"/></Expander>
       <CheckBox Style="{StaticResource SettingSwitch}" x:Name="IdleOnly" Content="Start only when idle for 10 minutes" IsChecked="True"/><CheckBox Style="{StaticResource SettingSwitch}" x:Name="AcOnly" Content="Start only on AC power" IsChecked="True"/>
       <TextBlock Text="Runs while this Windows user is signed in. Missed runs may start later. Does not wake the PC. An active repair is allowed to finish if you resume work or unplug power." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,14"/>
       <WrapPanel><Button Content="Save &amp; enable schedule" Click="SaveSchedule_Click" Padding="12,10"/></WrapPanel>
@@ -113,7 +114,7 @@
     <TabItem Header="Startup apps"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="StartupAppsPanel">
      <TextBlock Text="STARTUP APP MANAGER" Foreground="{DynamicResource AccentTextBrush}" FontWeight="Bold"/>
      <TextBlock Text="Turn common Windows startup entries on or off. Turning one off keeps a protected backup. Changes affect the next sign-in; currently running apps are left alone." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,12"/>
-     <Button Content="Refresh startup entries" Click="StartupAppsRefresh_Click" Margin="0,0,0,10"/>
+     <Button Content="Refresh startup apps" Click="StartupAppsRefresh_Click" Margin="0,0,0,10"/>
      <TextBlock x:Name="StartupListStatus" Text="Refresh to see startup entries. Switch changes ask for confirmation." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12"/>
      <DataGrid x:Name="StartupEntries" Height="260" RowHeight="60" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single" SelectionChanged="StartupSelection_Changed">
       <DataGrid.Columns>
@@ -121,8 +122,8 @@
        <DataGridTemplateColumn Header="Startup entry" Width="120"><DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox Style="{StaticResource SettingSwitch}" Content="{Binding SwitchLabel}" IsEnabled="{Binding CanChangeStartup,RelativeSource={RelativeSource AncestorType=Window}}" IsChecked="{Binding Enabled,Mode=OneWay}" Click="StartupToggle_Click" AutomationProperties.Name="{Binding AccessibleName}" ToolTip="{Binding State}" Foreground="{Binding Foreground,RelativeSource={RelativeSource AncestorType=DataGridCell}}" Margin="3"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
       </DataGrid.Columns>
      </DataGrid>
-     <Expander Header="Selected entry details" Margin="0,12,0,12"><TextBox x:Name="StartupCommand" IsReadOnly="True" TextWrapping="Wrap" Height="130" VerticalScrollBarVisibility="Auto"/></Expander>
-     <Expander Header="How startup switches work"><TextBlock Text="Administrator rights are required for changes. Existing live values are never overwritten on restore. Task Manager approvals, startup folders, services, scheduled tasks and packaged startup tasks are outside this manager's scope. A present Run entry may still be blocked by Windows or the app. Use Automation for RMPCS's own sign-in startup." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,14,0,0"/></Expander>
+     <Expander x:Name="StartupDetails" Header="Selected app details" Margin="0,12,0,12"><TextBox x:Name="StartupCommand" IsReadOnly="True" TextWrapping="Wrap" Height="130" VerticalScrollBarVisibility="Auto"/></Expander>
+     <Expander Header="How startup switches work"><TextBlock Text="Administrator rights are required for changes. Existing live values are never overwritten on restore. Task Manager approvals, startup folders, services, scheduled tasks and packaged startup tasks are outside this manager's scope. A present Run entry may still be blocked by Windows or the app. Use Schedules for RMPCS's own sign-in startup." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,14,0,0"/></Expander>
     </StackPanel></ScrollViewer></TabItem>
     <TabItem Header="History"><ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0"><StackPanel x:Name="HistoryPanel">
      <TextBlock Text="SAVED RUNS" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}"/><TextBlock Text="Manual and scheduled runs save local activity logs. The list shows the latest 30; files older than 30 days are eligible for log retention cleanup." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,10"/>
@@ -150,6 +151,13 @@
      </StackPanel></Expander>
      <WrapPanel Margin="0,0,0,10"><Button Content="Save appearance" Style="{StaticResource PrimaryButton}" Click="SaveAppearance_Click"/><Button Content="Discard preview" Click="DiscardTheme_Click"/></WrapPanel>
      <TextBlock x:Name="ThemeStatus" Text="Windows High Contrast takes priority over custom colors." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,20"/>
+     </StackPanel></Expander>
+     <Expander Header="Names &amp; information"><StackPanel>
+      <TextBlock Text="Simple names are used by default. Use Save preferences to apply these choices. Safety warnings and confirmation prompts are always shown." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,10"/>
+      <CheckBox x:Name="TechnicalNamesChoice" Style="{StaticResource SettingSwitch}" Content="Show technical names next to simple names"/>
+      <TextBlock Text="Adds names such as DNS, DISM, SFC and ReTRIM to the related controls." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8"/>
+      <CheckBox x:Name="ExpandDetailsChoice" Style="{StaticResource SettingSwitch}" Content="Expand technical information automatically"/>
+      <TextBlock Text="Opens details for cleanup, schedules, startup apps, monitoring, troubleshooting and drives. You can also expand each area yourself at any time." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,10"/>
      </StackPanel></Expander>
      <Expander x:Name="OverlaySection" Header="Realtime system overlay"><StackPanel>
      <TextBlock Text="Optional local monitoring, off by default. Show / hide previews the choices below. Apply overlay settings saves them separately from other preferences." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,12"/>
@@ -203,7 +211,7 @@
       <Button Content="Review / install optional sensor components" Click="TemperatureSetup_Click"/>
       <TextBlock x:Name="TemperatureStatus" Text="Temperature monitoring and low-level reads are off by default. WMI readers only use already available local providers." TextWrapping="Wrap" Margin="0,10,0,12"/>
      </StackPanel></Expander>
-     <TextBlock Text="No sensor drivers, game injection, administrator rights or internet requests are needed. No GPU, temperatures, FPS or disk-activity measurements in this version. Network rates aggregate active non-loopback/non-tunnel adapters; virtual/VPN adapters may overlap. Missing counters show —. Exclusive full-screen apps can cover the overlay. High Contrast forces full opacity." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,14"/>
+     <TextBlock Text="Basic monitoring needs no driver. Missing readings stay unavailable. Full-screen games may cover the overlay; High Contrast keeps a solid background." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,10"/><Expander x:Name="OverlayDetails" Header="Monitoring details"><TextBlock Text="Processor, memory, network, system-drive space and uptime use local Windows counters. Temperature sources are enabled separately; optional in-app sensors can use the reviewed driver package. No FPS, disk-activity sensor or game injection is used. Network totals may overlap with virtual/VPN adapters. Sampling is shared and stops when hidden; readings are not saved or uploaded." TextWrapping="Wrap" Margin="0,8,0,12"/></Expander>
      </StackPanel></Expander>
      <Expander Header="Getting started guide (v0.14.0 groundwork)"><StackPanel>
       <TextBlock Text="Preview the planned guide for appearance, window behavior, monitoring and safety. This informational preview applies no choices and does not appear automatically on first run." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,10"/>
@@ -235,17 +243,17 @@
      <TextBlock Text="Default age for manual file cleanup"/><ComboBox x:Name="DefaultAgeChoice"><ComboBoxItem Content="Older than 1 day"/><ComboBoxItem Content="Older than 7 days"/><ComboBoxItem Content="Older than 30 days"/></ComboBox>
      <TextBlock Text="Scheduled profiles keep their fixed seven-day cutoff. Saved preferences never start maintenance." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,18"/>
      <CheckBox Style="{StaticResource SettingSwitch}" x:Name="RestoreBeforeRepairChoice" Content="Request a restore point before manual Windows repairs"/>
-     <TextBlock Text="Applies to DISM, SFC and Search resets. If verification fails, you decide whether to continue. Excludes unattended runs and cleanup-only runs. System Restore is not a backup of deleted files." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,16"/>
+     <TextBlock Text="Applies to Windows repairs and Search rebuilds. If the restore point cannot be verified, you decide whether to continue. Excludes unattended runs and cleanup-only runs. System Restore is not a backup of deleted files." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,16"/>
      </StackPanel></Expander>
      <Expander x:Name="UpdatesSection" Header="GitHub updates"><StackPanel>
 <TextBlock x:Name="UpdatesHeading" Text="Review available releases" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}"/>
      <CheckBox Style="{StaticResource SettingSwitch}" x:Name="AutoUpdatesChoice" Content="Check for updates when RMPCS starts"/>
-     <CheckBox Style="{StaticResource SettingSwitch}" x:Name="PreviewUpdatesChoice" Content="Include preview / prerelease builds"/>
+     <CheckBox Style="{StaticResource SettingSwitch}" x:Name="PreviewUpdatesChoice" Content="Include preview releases"/>
      <TextBlock Text="Automatic checks are off by default and run at most once every 24 hours. Current RMPCS releases are previews. Checks contact api.github.com without credentials; no PC reports or logs are sent. Updates are never downloaded or installed automatically." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,12"/>
      <WrapPanel><Button x:Name="CheckUpdatesButton" Content="Check for updates" Click="CheckUpdates_Click"/><Button Content="All releases" Click="Releases_Click"/></WrapPanel>
      <TextBlock x:Name="UpdateStatus" Text="Not checked this session." TextWrapping="Wrap" Margin="0,12,0,10"/>
      <Button x:Name="OpenUpdateButton" Content="Open matching release" IsEnabled="False" Click="OpenUpdate_Click" Margin="0,0,0,10"/>
-     <Expander Header="Release notes (plain text)" Foreground="{DynamicResource MutedBrush}"><TextBox x:Name="UpdateNotes" IsReadOnly="True" TextWrapping="Wrap" Height="200" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0"/></Expander>
+     <Expander Header="What changed in this release" Foreground="{DynamicResource MutedBrush}"><TextBox x:Name="UpdateNotes" IsReadOnly="True" TextWrapping="Wrap" Height="200" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0"/></Expander>
      </StackPanel></Expander>
      <Expander x:Name="InstallationSection" Header="Installation &amp; automation"><StackPanel>
 
@@ -277,15 +285,15 @@
      <Button Content="Copy support summary" Click="CopySupport_Click" Margin="0,10,0,10"/>
      <TextBlock Text="An unsigned Degenerates Inc. development app, based on the original WMPCS script. Review command output; maintenance cannot guarantee higher FPS or resolve hardware faults." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"/>
     </StackPanel></ScrollViewer></TabItem>
-    <TabItem Header="Diagnostics"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="DiagnosticsPanel">
-     <TextBlock Text="CRASH &amp; STABILITY REPORT" Foreground="{DynamicResource AccentTextBrush}" FontWeight="Bold"/>
+    <TabItem Header="Troubleshooting"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="DiagnosticsPanel">
+     <TextBlock Text="RECENT CRASHES &amp; ERRORS" Foreground="{DynamicResource AccentTextBrush}" FontWeight="Bold"/>
      <TextBlock Text="Summarize recent crashes, unexpected shutdowns and recurring System/Application errors. Metadata only: times, sources and event IDs. No event messages are collected." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,10"/>
      <ComboBox x:Name="StabilityPeriod" SelectedIndex="1"><ComboBoxItem Content="Last 24 hours"/><ComboBoxItem Content="Last 7 days"/><ComboBoxItem Content="Last 30 days"/></ComboBox>
-     <Button Content="Read stability report" Click="StabilityReport_Click"/>
-     <TextBlock Text="NETWORK DIAGNOSTICS" Foreground="{DynamicResource MutedBrush}" FontWeight="Bold" Margin="0,20,0,8"/>
-     <TextBlock Text="Check DNS and HTTPS to a fixed public host, plus five gateway pings for latency/loss. Contacts the selected host only when you click Run. No network settings are changed." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,10"/>
+     <Button Content="Check recent crashes" Click="StabilityReport_Click"/>
+     <TextBlock Text="CONNECTION CHECK" Foreground="{DynamicResource MutedBrush}" FontWeight="Bold" Margin="0,20,0,8"/>
+     <TextBlock Text="Check your connection to Microsoft or GitHub when you choose Run. Your network settings are not changed." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,10"/><Expander x:Name="DiagnosticDetails" Header="Technical details"><TextBlock Text="Check DNS and HTTPS to a fixed public host, plus five gateway pings for latency/loss. Contacts the selected host only when you click Run. No network settings are changed." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,10"/></Expander>
      <ComboBox x:Name="NetworkTarget" SelectedIndex="0"><ComboBoxItem Content="Microsoft (www.microsoft.com)"/><ComboBoxItem Content="GitHub (github.com)"/></ComboBox>
-     <WrapPanel><Button Content="Run network tests" Click="NetworkReport_Click"/><Button Content="Use result as baseline" Click="NetworkBaseline_Click"/></WrapPanel>
+     <WrapPanel><Button Content="Run network tests" Click="NetworkReport_Click"/><Button Content="Keep result for comparison" Click="NetworkBaseline_Click"/></WrapPanel>
      <TextBlock x:Name="DiagnosticStatus" Text="Reports appear in Activity. Baselines and the last report stay in memory until you close RMPCS." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,10"/>
 
      <Button Content="Export last diagnostic report" Click="DiagnosticExport_Click" Margin="0,10,0,0"/>
@@ -294,7 +302,7 @@
     <TabItem Header="Recovery"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="ProtectionPanel">
      <TextBlock Text="RESTORE POINTS" Foreground="{DynamicResource AccentTextBrush}" FontWeight="Bold"/>
      <TextBlock Text="Ask Windows to create a restore point and verify that a new matching entry exists. Administrator access and available System Protection are required." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,12"/>
-     <Button x:Name="CreateRestoreButton" Content="Create &amp; verify restore point" Click="CreateRestore_Click"/>
+     <Button x:Name="CreateRestoreButton" Content="Create a restore point" Click="CreateRestore_Click"/>
      <TextBlock Text="Windows may limit creation frequency. RMPCS reports a skipped/unavailable request and never enables protection, changes its frequency or restores Windows automatically. Restore points do not recover permanently deleted personal files. You can opt in to pre-repair creation in Settings." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,18"/>
      <TextBlock Text="UNDO RMPCS PREFERENCES" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}"/>
      <TextBlock Text="Undo the most recent saved interface/tray/update/repair preference change for this Windows identity. Later conflicting changes prevent undo. This does not undo file deletion, repairs, schedules or third-party settings." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,12"/>
@@ -303,14 +311,15 @@
      <TextBlock Text="Administrator-preference undo requires the installed copy, administrator rights and the same Windows identity that made the change. Startup entries disabled by RMPCS have their own Restore action in Startup." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,14"/>
      <TextBlock x:Name="ProtectionStatus" Text="No protection action requested this session." TextWrapping="Wrap"/>
     </StackPanel></ScrollViewer></TabItem>
-    <TabItem Header="Drives"><ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0"><StackPanel>
-     <TextBlock Text="DRIVE OPTIMIZATION" FontWeight="Bold" Foreground="{DynamicResource AccentTextBrush}"/>
-     <TextBlock Text="Analyze a hard drive before defragmenting it, or request ReTRIM for a verified SSD. Windows performs the work at its default low priority. No driver downloads or third-party disk tools are used." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,14"/>
+    <TabItem Header="Drive care"><ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0"><StackPanel>
+     <TextBlock Text="DRIVE CARE" FontWeight="Bold" Foreground="{DynamicResource AccentTextBrush}"/>
+     <TextBlock Text="Check a hard drive before deciding whether to optimize it. SSDs use their own safe space-refresh operation. Windows does the work; nothing runs automatically." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,14"/>
      <Button x:Name="DriveRefreshButton" Content="Refresh drives" Click="DriveRefresh_Click" HorizontalAlignment="Left"/>
      <TextBlock Text="Choose a drive" Margin="0,12,0,6"/>
-     <ComboBox x:Name="DriveChoice" DisplayMemberPath="Display" SelectionChanged="DriveSelection_Changed" AutomationProperties.Name="Drive to analyze or optimize"/>
+     <ComboBox x:Name="DriveChoice" DisplayMemberPath="Display" SelectionChanged="DriveSelection_Changed" AutomationProperties.Name="Drive to check or optimize"/>
      <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,10,0,14"><TextBlock x:Name="DriveDetails" TextWrapping="Wrap"/></Border>
-     <WrapPanel><Button x:Name="DriveAnalyzeButton" Content="Analyze drive" Click="DriveAnalyze_Click"/><Button x:Name="DriveOptimizeButton" Content="Optimize selected drive" Style="{StaticResource PrimaryButton}" Click="DriveOptimize_Click"/></WrapPanel>
+     <Expander x:Name="DriveTechnicalDetails" Header="Drive details &amp; technical information"><TextBox x:Name="DriveTechnicalText" IsReadOnly="True" TextWrapping="Wrap" Height="160" VerticalScrollBarVisibility="Auto" Margin="0,8,0,12"/></Expander>
+     <WrapPanel><Button x:Name="DriveAnalyzeButton" Content="Check drive" Click="DriveAnalyze_Click"/><Button x:Name="DriveOptimizeButton" Content="Optimize selected drive" Style="{StaticResource PrimaryButton}" Click="DriveOptimize_Click"/></WrapPanel>
      <TextBlock x:Name="DriveStatus" Text="No drive operation has run. Administrator rights are required for analysis and optimization." TextWrapping="Wrap" Margin="0,12,0,14"/>
      <Expander Header="Safety and supported drives"><StackPanel>
       <TextBlock Text="Supported: local NTFS volumes on one basic ATA/SATA/NVMe data partition with consistent native media descriptors. SSDs receive ReTRIM only. Unknown media, contradictory descriptors, RAID, USB, virtual, dynamic, recovery, read-only and dirty volumes stay disabled. Some valid drives may be unavailable under this conservative policy." TextWrapping="Wrap" Margin="0,6,0,12"/>

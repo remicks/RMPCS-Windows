@@ -20,6 +20,7 @@ internal static class DriveOptimizationService
     internal static DriveCandidate Probe(string root)
     {
         if (!DriveOptimization.ValidRoot(root)) throw new ArgumentException("Only a local drive-letter root is permitted.");
+        string label="";
         try
         {
             if (GetDriveTypeW(root) != 3) throw new IOException("Only fixed local drives are supported.");
@@ -27,6 +28,7 @@ internal static class DriveOptimizationService
             if (!GetVolumeNameForVolumeMountPointW(root, path, path.Capacity) || !DriveOptimization.ValidVolume(path.ToString()))
                 throw new IOException("A stable volume identity could not be established.");
             string volume = path.ToString();
+            label=ReadLabel(volume); // Bind the displayed label to this verified volume, not a drive letter that can be remapped.
             using var handle = Open(volume.TrimEnd('\\'));
             var filesystem = new StringBuilder(32);
             if (!GetVolumeInformationW(volume, IntPtr.Zero, 0, out uint serial, out _, out uint flags, filesystem, filesystem.Capacity) || filesystem.ToString() != "NTFS")
@@ -50,10 +52,16 @@ internal static class DriveOptimizationService
             if (!GetDiskFreeSpaceExW(volume, out _, out ulong capacity, out ulong free)) throw new IOException("Space information is unavailable.");
             string identity = $"{volume}|{serial:X8}|{disk}|{layout.Offset}|{layout.Length}|{bus}|{seek}|{trim}";
             return new(root, volume, medium, trim == true, true, capacity, free, identity,
-                medium == DriveMedium.Unknown ? "Windows could not establish consistent direct HDD/SSD evidence. RAID, USB, virtual and unknown controllers are excluded." : "NTFS basic partition and native storage descriptors verified.");
+                medium == DriveMedium.Unknown ? "Windows could not establish consistent direct HDD/SSD evidence. RAID, USB, virtual and unknown controllers are excluded." : "NTFS basic partition and native storage descriptors verified."){Label=label};
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
-        { return new(root, "", DriveMedium.Unknown, false, false, 0, 0, "", ex.Message); }
+        { return new(root, "", DriveMedium.Unknown, false, false, 0, 0, "", ex.Message){Label=label}; }
+    }
+    private static string ReadLabel(string root)
+    {
+        // Cosmetic only: labels never identify an operation target or grant eligibility.
+        try {var label=new StringBuilder(261);var filesystem=new StringBuilder(32);return GetVolumeLabelW(root,label,label.Capacity,out _,out _,out _,filesystem,filesystem.Capacity)?FriendlyNames.CleanLabel(label.ToString()):"";}
+        catch(Exception ex)when(ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception){return "";}
     }
 
     internal static async Task<int> RunAsync(DriveCandidate expected, DriveAction action, DriveAnalysis? analysis, Action<string> log)
@@ -129,6 +137,7 @@ internal static class DriveOptimizationService
     [DllImport("kernel32.dll", ExactSpelling = true, CharSet = CharSet.Unicode)] private static extern uint GetDriveTypeW(string root);
     [DllImport("kernel32.dll", ExactSpelling = true, SetLastError = true, CharSet = CharSet.Unicode)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetVolumeNameForVolumeMountPointW(string root, StringBuilder name, int size);
     [DllImport("kernel32.dll", ExactSpelling = true, SetLastError = true, CharSet = CharSet.Unicode)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetVolumeInformationW(string root, IntPtr label, int labelSize, out uint serial, out uint maxComponent, out uint flags, StringBuilder filesystem, int size);
+    [DllImport("kernel32.dll",EntryPoint="GetVolumeInformationW",ExactSpelling=true,SetLastError=true,CharSet=CharSet.Unicode)] [return:MarshalAs(UnmanagedType.Bool)] private static extern bool GetVolumeLabelW(string root,StringBuilder label,int labelSize,out uint serial,out uint maxComponent,out uint flags,StringBuilder filesystem,int size);
     [DllImport("kernel32.dll", ExactSpelling = true, SetLastError = true, CharSet = CharSet.Unicode)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetDiskFreeSpaceExW(string path, out ulong available, out ulong capacity, out ulong free);
     [DllImport("kernel32.dll", ExactSpelling = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetSystemPowerStatus(out PowerStatus power);
 }

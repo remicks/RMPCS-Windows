@@ -5,7 +5,8 @@ public enum DriveAction { Analyze, Defragment, ReTrim }
 public sealed record DriveCandidate(string Root, string VolumePath, DriveMedium Medium, bool TrimSupported,
     bool Eligible, ulong Capacity, ulong Free, string Identity, string Note)
 {
-    public string Display => $"{Root}  •  {Medium switch { DriveMedium.HardDisk => "Hard drive", DriveMedium.SolidState => "SSD", _ => "Unverified" }}";
+    public string Label { get; init; } = "";
+    public string Display => FriendlyNames.Drive(this);
 }
 public sealed record DriveAnalysis(string Identity, DateTimeOffset Time);
 public sealed record DriveAvailability(bool Analyze, bool Optimize, string Label, string Reason);

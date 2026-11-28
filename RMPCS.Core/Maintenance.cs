@@ -41,11 +41,11 @@ public sealed record MaintenancePlan
         if (MinimumAgeDays is not (0 or 1 or 7 or 30)) throw new ArgumentException("Unsupported cleanup age.");
         if (RestartSeconds is not (10 or 60 or 300)) throw new ArgumentException("Unsupported restart countdown.");
     }
-    public string Describe() => string.Join(Environment.NewLine,
-        CleanupAreas().Select(x => x == CleanupArea.RecycleBin ? "• Permanently empty this user's Recycle Bins (all ages)" : $"• {x}: files older than {MinimumAgeDays} day(s)")
-        .Concat(new[] { ResetSearch ? "• Reset and rebuild Windows Search index" : null, FlushDns ? "• Flush DNS cache" : null,
-            RepairImage ? "• DISM image repair" : null, ScanFiles ? "• SFC system-file check" : null,
-            RenewDhcp ? "• Disconnect DHCP adapters, then renew leases" : null, Restart ? $"• Restart after successful completion ({RestartSeconds}-second countdown)" : null }.OfType<string>()));
+    public string Describe(bool technical=false) => string.Join(Environment.NewLine,
+        CleanupAreas().Select(x => x == CleanupArea.RecycleBin ? "• Permanently empty this user's Recycle Bins (all ages)" : $"• {FriendlyNames.Cleanup(x,technical)}: {(MinimumAgeDays==0?"all eligible ages":$"files older than {MinimumAgeDays} day(s)")}")
+        .Concat(new[] { ResetSearch ? "• Rebuild Windows Search results" : null, FlushDns ? technical?"• Refresh website address cache (DNS)":"• Refresh website address cache" : null,
+            RepairImage ? technical?"• Repair Windows components (DISM)":"• Repair Windows components" : null, ScanFiles ? technical?"• Check Windows system files (SFC)":"• Check Windows system files" : null,
+            RenewDhcp ? "• Disconnect network adapters, then try to reconnect (DHCP release/renew)" : null, Restart ? $"• Restart after successful completion ({RestartSeconds}-second countdown)" : null }.OfType<string>()));
 }
 
 public interface IMaintenanceOperations

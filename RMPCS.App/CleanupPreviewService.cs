@@ -7,14 +7,14 @@ internal sealed record CleanupPreviewRow(string Area, long Files, long Bytes, in
 { public string Megabytes => (Bytes / 1048576d).ToString("N2"); }
 internal static class CleanupPreviewService
 {
-    public static CleanupPreviewRow Scan(CleanupArea area, int days)
+    public static CleanupPreviewRow Scan(CleanupArea area, int days,bool technical=false)
     {
         if (area == CleanupArea.RecycleBin)
         {
-            var bin = QueryBin(); return new(area.ToString(), bin.Items, bin.Bytes, 0, "All ages; all drives for this Windows identity. Permanent if emptied.", []);
+            var bin = QueryBin(); return new(FriendlyNames.Cleanup(area,technical), bin.Items, bin.Bytes, 0, "All ages; all drives for this Windows identity. Permanent if emptied.", []);
         }
         var preview = WindowsOperations.Cleaner(area, days).Scan(DateTime.UtcNow);
-        return new(area.ToString(), preview.Files.Count, preview.Bytes, preview.Skipped,
+        return new(FriendlyNames.Cleanup(area,technical), preview.Files.Count, preview.Bytes, preview.Skipped,
             area is CleanupArea.ErrorArchives or CleanupArea.CrashDumps ? "Diagnostic evidence will be removed. Active queues are preserved." : "Locked/protected entries may be skipped when run.", preview.Files);
     }
     public static (long Items, long Bytes) QueryBin()
