@@ -37,6 +37,8 @@ Check-Exe (Join-Path $app 'RMPCS.exe') @('--sidebar-ui-check',('"'+(Join-Path $r
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--presentation-ui-check',('"'+(Join-Path $release 'presentation-ui-check.txt')+'"'))
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--drive-ui-check',('"'+(Join-Path $release 'drive-ui-check.txt')+'"'))
 Check-Exe (Join-Path $app 'RMPCS.exe') @('--drive-read-check',('"'+(Join-Path $release 'drive-read-check.txt')+'"'))
+Check-Exe (Join-Path $app 'RMPCS.exe') @('--monitor-ui-check',('"'+(Join-Path $release 'monitor-ui-check.txt')+'"'))
+Check-Exe (Join-Path $app 'RMPCS.exe') @('--monitor-read-check',('"'+(Join-Path $release 'monitor-read-check.txt')+'"'))
 if($DesktopChecks) {
     Check-Exe (Join-Path $app 'RMPCS.exe') @('--smoke-test')
     Check-Exe $setup @('--smoke-test')

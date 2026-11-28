@@ -1,0 +1,16 @@
+<Window x:Class="RMPCS.App.MonitoringOverlay" x:ClassModifier="internal" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="RMPCS system monitor" WindowStyle="None" ResizeMode="NoResize" SizeToContent="Height" Width="280" ShowInTaskbar="False" ShowActivated="False" Focusable="False" AllowsTransparency="True" Background="Transparent" Foreground="{DynamicResource TextBrush}" FontFamily="{DynamicResource UiFontFamily}" UseLayoutRounding="True">
+ <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="14" MouseLeftButtonDown="Frame_MouseLeftButtonDown">
+  <StackPanel>
+   <DockPanel Margin="0,0,0,10"><Button DockPanel.Dock="Right" Content="Hide" Click="Hide_Click" Focusable="False" Padding="7,3" FontSize="11" Margin="5,0,0,0" ToolTip="Hide monitoring overlay; reopen from the tray or Settings"/><TextBlock Text="RMPCS · SYSTEM" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/></DockPanel>
+   <TextBlock x:Name="CpuValue" Text="CPU —" TextWrapping="Wrap" Margin="0,0,0,5"/>
+   <Polyline x:Name="CpuGraph" Height="24" Stretch="None" Stroke="{DynamicResource AccentTextBrush}" StrokeThickness="1.5" Margin="0,0,0,8" IsHitTestVisible="False"/>
+   <TextBlock x:Name="MemoryValue" Text="RAM —" TextWrapping="Wrap" Margin="0,0,0,5"/>
+   <Polyline x:Name="MemoryGraph" Height="24" Stretch="None" Stroke="{DynamicResource AccentTextBrush}" StrokeThickness="1.5" Margin="0,0,0,8" IsHitTestVisible="False"/>
+   <TextBlock x:Name="NetworkValue" Text="Network —" TextWrapping="Wrap" Margin="0,0,0,7"/>
+   <TextBlock x:Name="DiskValue" Text="System drive free —" TextWrapping="Wrap" Margin="0,0,0,7"/>
+   <TextBlock x:Name="UptimeValue" Text="Uptime —" TextWrapping="Wrap" Margin="0,0,0,7"/>
+   <TextBlock x:Name="SampleStatus" Text="Collecting local counters…" Foreground="{DynamicResource MutedBrush}" FontSize="11" TextWrapping="Wrap"/>
+  </StackPanel>
+ </Border>
+</Window>

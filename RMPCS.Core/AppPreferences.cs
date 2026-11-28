@@ -23,11 +23,13 @@ public sealed record AppPreferences
     public string SidebarEdge { get; init; } = "Right";
     public string SidebarMonitor { get; init; } = "Current";
     public int SidebarWidth { get; init; } = 400;
+    public OverlayPreferences Overlay { get; init; } = new();
     public static readonly string[] Pages = ["Health", "Maintenance", "Automation", "Startup", "History", "Settings", "Help", "Diagnostics", "Protection", "Drives"];
     public AppPreferences Normalize() => this with
     {
         ThemeMode = ThemeCatalog.Modes.Contains(ThemeMode, StringComparer.Ordinal) ? ThemeMode : "System",
         UiFont = FontCatalog.Normalize(UiFont),
+        Overlay = (Overlay ?? new()).Normalize(),
         AccentName = AccentName == "Custom" || ThemeCatalog.Presets.Any(x=>x.Name==AccentName) ? AccentName : "Crimson Red",
         CustomAccent = ThemeCatalog.NormalizeHex(CustomAccent),
         ActivityFontSize = ActivityFontSize is >= 11 and <= 18 ? ActivityFontSize : 12,

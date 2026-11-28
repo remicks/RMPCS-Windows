@@ -21,7 +21,7 @@ public partial class MainWindow
         preferences = TestMode ? new() : SettingsStore.Load(out warning);
         StartPageChoice.ItemsSource = PageCatalog.All;StartPageChoice.DisplayMemberPath="Label";StartPageChoice.SelectedValuePath="Key";
         ActivitySizeChoice.ItemsSource = Enumerable.Range(11, 8).ToArray();
-        InitializeAppearance(); InitializeSidebar();
+        InitializeAppearance(); InitializeSidebar(); InitializeOverlay();
         PutPreferenceControls(); ApplyPreferences();
         MainTabs.SelectedIndex = Array.IndexOf(AppPreferences.Pages, preferences.StartPage);
         InitializeNavigation();
@@ -38,7 +38,7 @@ public partial class MainWindow
     }
     private void PutPreferenceControls()
     {
-        PutAppearanceControls(); PutSidebarControls();
+        PutAppearanceControls(); PutSidebarControls(); PutOverlayControls();
         CloseToTrayChoice.IsChecked = preferences.CloseToTray;
         MinimizeToTrayChoice.IsChecked = preferences.MinimizeToTray;
         TrayNotificationsChoice.IsChecked = preferences.TrayNotifications;
@@ -57,12 +57,13 @@ public partial class MainWindow
         Age.SelectedIndex = preferences.CleanupAgeDays switch { 1 => 1, 30 => 3, _ => 2 };
         RefreshTrayHint();
         ApplySidebarPreferences();
+        ApplyOverlayPreferences();
     }
     private void SavePreferences_Click(object sender, RoutedEventArgs e)
     {
         if (busy) return;
         if(AccentChoice.SelectedItem as string=="Custom"&&!ValidCustomControls()){PreferencesStatus.Text="Custom accent is invalid. Enter a six-digit HEX color or RGB values from 0 to 255 before saving.";return;}
-        var next = SidebarChoices(new AppPreferences
+        var next = SidebarChoices(preferences with
         {
             ThemeMode = AppearancePreview().ThemeMode, AccentName = AppearancePreview().AccentName, CustomAccent = AppearancePreview().CustomAccent,
             UiFont = AppearancePreview().UiFont,
@@ -88,7 +89,7 @@ public partial class MainWindow
         try
         {
             var defaults = new AppPreferences(); if (!TestMode) SettingsStore.Save(defaults);
-            preferences = defaults; PutPreferenceControls(); ApplyPreferences(); PreferencesStatus.Text = "Interface preferences reset. Automatic update checks are off.";
+            ResetOverlaySession(); preferences = defaults; PutPreferenceControls(); ApplyPreferences(); PreferencesStatus.Text = "Interface preferences reset. Overlay and automatic update checks are off.";
         }
         catch { PreferencesStatus.Text = "Preferences could not be reset."; }
     }

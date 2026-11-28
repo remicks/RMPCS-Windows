@@ -148,6 +148,37 @@
      <WrapPanel Margin="0,0,0,10"><Button Content="Save appearance" Style="{StaticResource PrimaryButton}" Click="SaveAppearance_Click"/><Button Content="Discard preview" Click="DiscardTheme_Click"/></WrapPanel>
      <TextBlock x:Name="ThemeStatus" Text="Windows High Contrast takes priority over custom colors." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,20"/>
      </StackPanel></Expander>
+     <Expander x:Name="OverlaySection" Header="Realtime system overlay"><StackPanel>
+     <TextBlock Text="Optional local monitoring, off by default. Show / hide previews the choices below. Apply overlay settings saves them separately from other preferences." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,12"/>
+     <CheckBox x:Name="OverlayStartupChoice" Style="{StaticResource SettingSwitch}" Content="Show overlay when RMPCS opens"/>
+     <TextBlock Text="Metrics" FontWeight="SemiBold" Margin="0,8,0,6"/>
+     <CheckBox x:Name="OverlayCpuChoice" Style="{StaticResource SettingSwitch}" Content="CPU usage"/>
+     <CheckBox x:Name="OverlayMemoryChoice" Style="{StaticResource SettingSwitch}" Content="RAM usage"/>
+     <CheckBox x:Name="OverlayNetworkChoice" Style="{StaticResource SettingSwitch}" Content="Network download / upload rates"/>
+     <CheckBox x:Name="OverlayDiskChoice" Style="{StaticResource SettingSwitch}" Content="System-drive available space (every 30 seconds)"/>
+     <CheckBox x:Name="OverlayUptimeChoice" Style="{StaticResource SettingSwitch}" Content="Windows uptime"/>
+     <CheckBox x:Name="OverlayGraphChoice" Style="{StaticResource SettingSwitch}" Content="Small CPU / RAM graphs (last 60 samples)"/>
+     <TextBlock Text="Update interval (seconds)"/><ComboBox x:Name="OverlayIntervalChoice" AutomationProperties.Name="Overlay update interval in seconds"/>
+     <TextBlock Text="Text size"/><ComboBox x:Name="OverlayTextChoice" AutomationProperties.Name="Overlay text size"/>
+     <TextBlock Text="Font"/><ComboBox x:Name="OverlayFontChoice" AutomationProperties.Name="Overlay font"/>
+     <TextBlock Text="Width (scaled with Windows)"/><ComboBox x:Name="OverlayWidthChoice" AutomationProperties.Name="Overlay width"/>
+     <TextBlock Text="Opacity (%)"/><ComboBox x:Name="OverlayOpacityChoice" AutomationProperties.Name="Overlay opacity percent"/>
+     <TextBlock Text="Monitor"/><ComboBox x:Name="OverlayMonitorChoice" DisplayMemberPath="Label" SelectedValuePath="Key" AutomationProperties.Name="Overlay monitor"/>
+     <Button Content="Refresh overlay displays" Click="OverlayDisplays_Click" HorizontalAlignment="Left"/>
+     <TextBlock Text="Position"/><ComboBox x:Name="OverlayPositionChoice" AutomationProperties.Name="Overlay position"/>
+     <CheckBox x:Name="OverlayTopmostChoice" Style="{StaticResource SettingSwitch}" Content="Keep above ordinary windows"/>
+     <CheckBox x:Name="OverlayLockedChoice" Style="{StaticResource SettingSwitch}" Content="Lock position (disable dragging)"/>
+     <CheckBox x:Name="OverlayClickThroughChoice" Style="{StaticResource SettingSwitch}" Content="Click through to apps underneath"/>
+     <CheckBox x:Name="OverlayHotkeyChoice" Style="{StaticResource SettingSwitch}" Content="Enable Ctrl+Alt+O to show / hide"/>
+     <TextBlock Text="Drag the frame when unlocked. Use current position copies its location into this form; Apply saves it. The tray and Settings remain available when click-through is on. A shortcut already used by another app may be unavailable." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,10"/>
+     <WrapPanel><Button Content="Show / hide overlay" Click="OverlayToggle_Click"/><Button Content="Use current position" Click="OverlayRemember_Click"/><Button Content="Apply overlay settings" Click="OverlayApply_Click"/></WrapPanel>
+     <TextBlock x:Name="OverlayStatus" Text="Overlay is off by default. Monitoring never starts maintenance." TextWrapping="Wrap" Margin="0,8,0,10"/>
+     <TextBlock Text="No sensor drivers, game injection, administrator rights or internet requests are needed. No GPU, temperatures, FPS or disk-activity measurements in this version. Network rates aggregate active non-loopback/non-tunnel adapters; virtual/VPN adapters may overlap. Missing counters show —. Exclusive full-screen apps can cover the overlay. High Contrast forces full opacity." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,14"/>
+     </StackPanel></Expander>
+     <Expander Header="Getting started guide (v0.14.0 groundwork)"><StackPanel>
+      <TextBlock Text="Preview the planned guide for appearance, window behavior, monitoring and safety. This informational preview applies no choices and does not appear automatically on first run." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,10"/>
+      <Button Content="Preview setup guide" Click="SetupGuide_Click" HorizontalAlignment="Left"/>
+     </StackPanel></Expander>
      <Expander x:Name="SidebarSection" Header="Sidebar &amp; displays"><StackPanel>
 
      <CheckBox x:Name="SidebarEnabledChoice" Style="{StaticResource SettingSwitch}" Content="Use the compact sidebar layout"/>

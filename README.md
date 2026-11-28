@@ -1,4 +1,18 @@
-# RMPCS 0.13.0 - Rusty's PC Toolkit
+# RMPCS 0.13.5 - Rusty's PC Toolkit
+
+## Realtime system overlay v0.13.5
+
+**Settings > Realtime system overlay** offers an optional desktop overlay for CPU usage, physical RAM, network download/upload rates, system-drive available space and Windows uptime. It is off by default. **Show / hide overlay** previews the form without saving; **Apply overlay settings** saves only overlay choices. **Show overlay when RMPCS opens** displays it with the desktop app, including tray startup if that is separately enabled; it does not register Windows sign-in startup. The tray menu and optional **Ctrl+Alt+O** shortcut toggle visibility. Shortcut conflicts leave Settings and the tray available.
+
+Choose metrics, 1/2/5-second updates (default 2), bounded CPU/RAM graphs, bundled/app font, text size, width, opacity, monitor and corner. Drag the unlocked frame, then **Use current position** and Apply to remember it. Position locking and click-through are independent options. The overlay does not activate itself, reserve desktop space or install hooks into other applications. It remains independent of the main window when that window hides to the tray, and exits with RMPCS. High Contrast overrides translucency. Missing/disconnected displays fall back to an available work area.
+
+Sampling is sequential and runs off the UI thread. Hiding stops the timer and clears the in-memory baseline/graphs; a late sample cannot repopulate a hidden or reconfigured overlay. Graphs retain at most 60 samples, system-drive space refreshes at most every 30 seconds, and no monitoring values are saved or uploaded. CPU/rates need an initial baseline. Missing/reset counters, changed adapter sets, sleep/long sampling gaps and stalled reads show unavailable rather than invented zeros or spikes. Network rates sum active non-loopback/non-tunnel adapters; VPN/virtual adapters may overlap. CPU on systems with more than 64 logical processors is unavailable. Windows Fast Startup can preserve uptime.
+
+No GPU/temperature/FPS/disk-activity metrics, sensor drivers, process injection, external tools, internet requests or additional administrator privileges are used. Exclusive full-screen applications and other topmost windows may cover the overlay. Automated fixtures and native-window checks cover controls, bounds, input styles, lifecycle and theme behavior; live read checks save availability counts only. Physical click-through, shortcut conflicts, display hot-plug/DPI transitions, extended-session overhead and accessibility still need supervised desktop validation.
+
+## First-run guide groundwork for v0.14.0
+
+Settings includes a manual **Preview setup guide** with six steps and Back/Next navigation for appearance, window behavior, monitoring and safety. The reusable `SetupGuide` catalogue/session is bounded and side-effect-free. This informational preview never applies settings, elevates, enables startup, contacts services or runs maintenance. It does not appear automatically and does not mark existing users as onboarded. Automatic first-run detection, a versioned per-user completion marker, editable draft choices with a final review/apply step, Skip/Later and replay from Settings are planned for v0.14.0. Protected startup/scheduling and maintenance will continue to require their own explicit review.
 
 ## Drive optimization v0.13.0
 
@@ -60,9 +74,9 @@ Validation includes geometry/preference tests, WPF page routing, real positionin
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.0/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.0/RMPCS-Setup-0.13.0-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.0/RMPCS-v0.13.0-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.5/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.5/RMPCS-Setup-0.13.5-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.5/RMPCS-v0.13.5-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -218,9 +232,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.13.0-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.13.0-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.13.0-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.13.5-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.13.5-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.13.5-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.

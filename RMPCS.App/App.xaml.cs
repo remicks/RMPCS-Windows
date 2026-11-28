@@ -14,6 +14,21 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Length == 2 && e.Args[0] == "--monitor-read-check")
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            try
+            {
+                var probe = new MonitorProbe(); var options = new OverlayPreferences();
+                var first = await Task.Run(() => probe.Read(options)); await Task.Delay(1100);
+                var sample = await Task.Run(() => probe.Read(options)); var reading = Monitoring.Read(first, sample);
+                int available = new[] { reading.Cpu is not null, reading.MemoryPercent is not null, reading.DownloadBytes is not null, reading.DiskFree is not null, reading.UptimeMilliseconds >= 0 }.Count(value => value);
+                System.IO.File.WriteAllText(e.Args[1], $"Local monitoring read check completed: {available}/5 metric groups available. Values, adapter identities and paths were not saved. No network requests, settings, privileged actions or maintenance invoked.\n");
+                Shutdown(0);
+            }
+            catch { System.IO.File.WriteAllText(e.Args[1], "Local monitoring read check failed. No maintenance invoked."); Shutdown(1); }
+            return;
+        }
         if (e.Args.Length == 2 && e.Args[0] == "--drive-read-check")
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -103,13 +118,14 @@ public partial class App : Application
         bool sidebarCheck = e.Args.Length == 2 && e.Args[0] == "--sidebar-ui-check";
         bool presentationCheck = e.Args.Length == 2 && e.Args[0] == "--presentation-ui-check";
         bool driveCheck = e.Args.Length == 2 && e.Args[0] == "--drive-ui-check";
+        bool monitoringCheck = e.Args.Length == 2 && e.Args[0] == "--monitor-ui-check";
         bool earlyDialogVerified=false;
         if(themeCheck)
         {
             try {earlyDialogVerified=Dialogs.VerifyEarlyDialog();if(!earlyDialogVerified)throw new InvalidOperationException("Startup dialog state was not restored.");}
             catch(Exception ex){System.IO.File.WriteAllText(e.Args[1],"Startup dialog check failed: "+ex.Message);Shutdown(1);return;}
         }
-        bool test = smoke || preview || traySmoke || themeCheck || sidebarCheck || presentationCheck || driveCheck;
+        bool test = smoke || preview || traySmoke || themeCheck || sidebarCheck || presentationCheck || driveCheck || monitoringCheck;
         if (!test)
         {
             try { if (LaunchPreference.RelaunchIfRequested(e.Args)) { Shutdown(); return; } }
@@ -125,9 +141,9 @@ public partial class App : Application
         var window = new MainWindow(test); MainWindow = window;
         if (preview && e.Args.Length >= 3 && int.TryParse(e.Args[2], out int tab) && tab >= 0 && tab < window.MainTabs.Items.Count) window.MainTabs.SelectedIndex = tab;
         if(preview)window.PreviewAppearance(e.Args.Length>=4?e.Args[3]:"Light",e.Args.Length>=5?e.Args[4]:"Crimson Red",e.Args.Length>=6&&e.Args[5]=="compact",e.Args.Length>=6&&e.Args[5]=="sidebar",e.Args.Length==7?e.Args[6]:"Barlow");
-        if (!smoke && !preview && !themeCheck && !sidebarCheck && !presentationCheck && !driveCheck)
+        if (!smoke && !preview && !themeCheck && !sidebarCheck && !presentationCheck && !driveCheck && !monitoringCheck)
         {
-            try { tray = new TrayService(window.ShowFromTray, window.RequestExit, window.NotifyCompletion); window.AttachTray(tray); }
+            try { tray = new TrayService(window.ShowFromTray, window.RequestExit, window.NotifyCompletion, window.ToggleOverlayFromTray); window.AttachTray(tray); }
             catch (Exception ex) { window.TrayUnavailable(); if (traySmoke && e.Args.Length == 2) System.IO.File.WriteAllText(e.Args[1], "Tray creation failed: " + ex); }
         }
         desktop?.Listen(() => Dispatcher.BeginInvoke(window.ShowFromTray));
@@ -144,7 +160,12 @@ public partial class App : Application
         {
             if (contentHandled) return;
             contentHandled = true;
-            if (driveCheck)
+            if (monitoringCheck)
+            {
+                try { await window.VerifyMonitoringUiAsync(e.Args[1]); window.Close(); }
+                catch (Exception ex) { System.IO.File.WriteAllText(e.Args[1], "Monitoring UI check failed: " + ex.Message); Shutdown(1); }
+            }
+            else if (driveCheck)
             {
                 try { window.VerifyDriveUi(e.Args[1]); window.Close(); }
                 catch (Exception ex) { System.IO.File.WriteAllText(e.Args[1], "Drive UI check failed: " + ex.Message); Shutdown(1); }

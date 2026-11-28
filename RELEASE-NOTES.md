@@ -1,17 +1,15 @@
-RMPCS v0.13.0 - Guarded drive optimization
+RMPCS v0.13.5 - Realtime system overlay and setup-guide groundwork
 
-Adds an in-app Drives section for optional, on-demand HDD analysis/defragmentation and SSD ReTRIM through Windows' built-in optimizer.
+Adds an opt-in desktop system monitor and the reusable guide structure planned for v0.14.0.
 
-- Analyze hard drives and request defragmentation only after a recent successful analysis. HDD defragmentation also requires at least 15% free space. Review Windows' report before proceeding.
-- Verified SSDs offer ReTRIM only, never traditional defragmentation. Unknown or contradictory storage evidence and unsupported controllers/layouts stay blocked rather than guessed.
-- Drive identity, filesystem, layout, media type and free space are checked again immediately before starting. Operations require administrator rights, optimization requires confirmed AC power, and the RMPCS maintenance lock prevents overlapping RMPCS sessions.
-- Progress output and exit status stay inside the app and are saved in History. Work runs on one stable volume GUID at Windows' default low priority, without a shell, downloaded tools, forced termination or fallback operation after failure.
-- The new page supports existing themes, fonts, sidebar navigation, Back and saved start-page preferences. Windows' optimization schedule, automatic maintenance profiles and feature defaults are unchanged.
+- New realtime overlay shows CPU, RAM, network download/upload rates, system-drive available space and Windows uptime. Sampling is sequential and local, stops when hidden, keeps only 60 in-memory graph samples, and never runs maintenance or saves/uploads monitoring data.
+- Customize metrics, update interval, fonts, text size, opacity, width, monitor, corner, topmost, position locking and click-through. Settings, a tray action and optional Ctrl+Alt+O provide show/hide and recovery controls. High Contrast takes priority and unavailable counters show a dash instead of false readings.
+- First-run guide groundwork includes a six-step catalogue, bounded Back/Next navigation and a themed informational preview in Settings. Automatic onboarding and reviewed preference application are reserved for v0.14.0; this preview changes no settings or permissions and starts no tasks.
 
-Supported initially: accessible local NTFS volumes on a single basic ATA/SATA/NVMe data partition with consistent native descriptors. RAID, USB, virtual/dynamic/recovery/hidden layouts, dirty/read-only volumes and unknown media are excluded. Some valid hardware may be unavailable under this conservative policy. Windows/controller reporting is trusted; this is not a drive-health diagnosis or hardware-repair tool.
+The overlay is off by default. Showing it with RMPCS does not enable Windows sign-in startup. Network totals may overlap on VPN/virtual adapters; system-drive free space refreshes at most every 30 seconds. CPU/rates need a baseline and long gaps/counter changes reset it. CPU on systems with more than 64 logical processors is unavailable. No GPU, temperature, FPS or disk-activity sensors, sensor drivers or game injection are included. Exclusive fullscreen/other topmost apps may cover it.
 
-Validation includes storage policy and malformed-buffer fixtures, command and authorization guards, synthetic UI checks, read-only native discovery and existing core/UI/installer/bootstrap suites. These checks never perform real defragmentation, ReTRIM, live elevated install/upgrade/removal or runtime installation. Supervised lifecycle tests on disposable HDD/SSD storage, competing Windows optimizer work, errors and power transitions remain necessary. Keep backups and keep the PC powered during work. Avoid repeated manual optimization; Windows normally maintains drives. No performance improvement is guaranteed.
+Validation: core preference/rate/placement/guide fixtures, synthetic overlay/guide native-window UI checks, local counter availability checks and the existing drive/theme/sidebar/installer/bootstrap suites. Physical click-through, shortcut conflicts, display hot-plug/DPI transitions, accessibility and extended-session overhead still need supervised testing. No live drive optimization, elevated install/upgrade/removal, runtime installation or maintenance is performed by these checks.
 
-Installer EXE, standalone MSI, portable ZIP, source bundle, icons, official runtime links and SHA256SUMS.txt are included. Quit RMPCS before upgrading. Previous schedule, versioning, installer, theme/font and sidebar fixes are retained.
+Installer EXE, standalone MSI, portable ZIP, source bundle, icons, official runtime links and SHA256SUMS.txt are included. Quit RMPCS before upgrading. Previous features and safeguards remain available.
 
 Unsigned development prerelease.

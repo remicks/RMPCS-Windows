@@ -10,6 +10,7 @@ internal static class ThemeManager
 {
     private static AppPreferences current = new();
     private static bool listening;
+    internal static event Action? Applied;
     public static bool Dark { get; private set; }
     public static void Initialize()
     {
@@ -51,6 +52,7 @@ internal static class ThemeManager
             System("OnAccentBrush",SystemColors.HighlightTextColor);System("SelectedTextBrush",SystemColors.HighlightTextColor);System("SwitchThumbBrush",SystemColors.WindowColor);
         }
         foreach(Window window in Application.Current.Windows) ApplyTitleBar(window);
+        Applied?.Invoke();
     }
     public static void ApplyTitleBar(Window window)
     {

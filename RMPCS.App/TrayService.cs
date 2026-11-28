@@ -10,6 +10,7 @@ internal sealed class TrayService : IDisposable
 {
     private readonly HwndSource source;
     private readonly Action show, exit;
+    private readonly Action? toggleOverlay;
     private readonly Action<RMPCS.Core.CompletionNotice>? completion;
     private readonly uint taskbarCreated;
     private IntPtr icon;
@@ -17,9 +18,10 @@ internal sealed class TrayService : IDisposable
     private const int Callback = 0x8001;
     public bool Available => added && !disposed;
     public string Diagnostic { get; private set; } = "Not initialized";
-    public TrayService(Action show, Action exit, Action<RMPCS.Core.CompletionNotice>? completion = null)
+    public TrayService(Action show, Action exit, Action<RMPCS.Core.CompletionNotice>? completion = null, Action? toggleOverlay = null)
     {
         this.show = show; this.exit = exit;
+        this.toggleOverlay = toggleOverlay;
         this.completion = completion;
         source = new HwndSource(new HwndSourceParameters(CompletionRelay.CurrentCaption) { Width = 0, Height = 0, WindowStyle = 0 });
         source.AddHook(Message);
@@ -61,7 +63,9 @@ internal sealed class TrayService : IDisposable
                 var menu = new ContextMenu();
                 var open = new MenuItem { Header = "Open RMPCS" }; open.Click += (_, _) => show();
                 var quit = new MenuItem { Header = "Exit RMPCS" }; quit.Click += (_, _) => exit();
-                menu.Items.Add(open); menu.Items.Add(new Separator()); menu.Items.Add(quit);
+                menu.Items.Add(open);
+                if (toggleOverlay is not null) { var overlay = new MenuItem { Header = "Show / hide system overlay" }; overlay.Click += (_, _) => toggleOverlay(); menu.Items.Add(overlay); }
+                menu.Items.Add(new Separator()); menu.Items.Add(quit);
                 SetForegroundWindow(source.Handle);
                 menu.Closed += (_, _) => PostMessage(source.Handle, 0, IntPtr.Zero, IntPtr.Zero);
                 menu.IsOpen = true;
