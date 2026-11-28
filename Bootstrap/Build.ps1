@@ -46,7 +46,7 @@ $payloadFiles | ForEach-Object { $_.Name+'|'+(Get-FileHash -LiteralPath $_.FullN
 if ($LASTEXITCODE -ne 0) { throw 'Portable bootstrap compilation failed.' }
 $installerManifest=Join-Path $outputRoot 'installer-manifest.txt'
 ('RMPCS.msi|'+(Get-FileHash -LiteralPath $msiFile -Algorithm SHA256).Hash.ToLowerInvariant()) | Set-Content -LiteralPath $installerManifest -Encoding ascii
-& $compiler @common '/define:INSTALLER' ('/out:'+(Join-Path $outputRoot 'RMPCS.Setup.exe')) ('/resource:'+$installerManifest+',PayloadManifest') ('/resource:'+$msiFile+',InstallerPayload') @sources
+& $compiler @common '/define:INSTALLER' ('/out:'+(Join-Path $outputRoot 'RMPCS.Setup.exe')) ('/resource:'+$installerManifest+',PayloadManifest') ('/resource:'+$portableManifest+',InstalledSensorManifest') ('/resource:'+$msiFile+',InstallerPayload') @sources
 if ($LASTEXITCODE -ne 0) { throw 'Installer bootstrap compilation failed.' }
 Write-Output ('Created '+(Join-Path $outputRoot 'RMPCS.Setup.exe'))
 Write-Output ('Created '+(Join-Path $portableRoot 'Launch-RMPCS.exe'))

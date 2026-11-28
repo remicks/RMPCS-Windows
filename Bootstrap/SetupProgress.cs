@@ -47,6 +47,8 @@ namespace RMPCS.Bootstrap
         {
             int count=0;Action<bool> check=delegate(bool ok){if(!ok)throw new InvalidOperationException("Progress UI check "+(count+1)+" failed.");count++;};
             bool versionFooter=false;foreach(Control parent in Controls)foreach(Control child in parent.Controls)if(child is Label&&child.Text=="DEGENERATES INC.\nVersion "+Program.VersionLabel)versionFooter=true;
+            check(!sensorChoice.Checked&&optionsPage.Controls.Contains(sensorChoice));
+            check(sensorChoice.Bottom<optionsPage.Height&&sensorChoice.Top>adminChoice.Bottom);
             check(Text.EndsWith(Program.VersionLabel)&&versionFooter);
             ShowPage(1);Stage("Preparing setup","Checking fixture status...");
             check(operationPage.Visible&&!optionsPage.Visible&&!finishPage.Visible);

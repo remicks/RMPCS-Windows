@@ -155,6 +155,8 @@ public partial class MainWindow
         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() => UpdatesHeading.BringIntoView()));
     }
     private void HelpSearch_Changed(object sender, TextChangedEventArgs e) => RefreshHelp();
+    private void HelpTopic_Click(object sender,RoutedEventArgs e)
+    {if(sender is Button{Tag:string topic}){HelpSearch.Text=topic;RefreshHelp();var article=HelpCatalog.Search(topic).FirstOrDefault(a=>a.Title.StartsWith(topic,StringComparison.OrdinalIgnoreCase));if(article is not null)HelpResults.SelectedItem=article;HelpBody.Focus();}}
     private void RefreshHelp()
     {
         if (HelpResults is null || HelpBody is null || HelpSearch is null) return;

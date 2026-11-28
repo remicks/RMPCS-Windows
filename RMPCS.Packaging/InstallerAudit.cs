@@ -39,10 +39,11 @@ static class InstallerAudit
         check(execute["CleanupTasks"][1] == "REMOVE~=\"ALL\" AND NOT UPGRADINGPRODUCTCODE", "only explicit uninstall removes RMPCS tasks; major upgrades preserve them");
         check(ui["FinishDlg"][1] == "NOT Installed AND NOT REMOVE" && ui["FinishDlg"][2] == "-1" && ui["RemovedDlg"][2] == "-1" && ui["CancelledDlg"][2] == "-2" && ui["FailedDlg"][2] == "-3", "install, repair, remove, cancel and failure have distinct outcome routing");
         var events = db.Query("SELECT `Dialog_`,`Control_`,`Event`,`Argument`,`Condition` FROM `ControlEvent` WHERE `Event`='DoAction'");
-        check(events.Count == 1 && events[0].SequenceEqual(new[] { "FinishDlg", "Finish", "DoAction", "LaunchInstalledApp", "RUN_AFTER = \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending" }) && !execute.ContainsKey("LaunchInstalledApp"), "only checked Finish without pending restart flags can launch the app; unattended and other outcomes cannot");
+        var expectedLaunches=new Dictionary<string,string>{["LaunchInstalledApp"]="RUN_AFTER = \"1\" AND SENSOR_SETUP <> \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending",["LaunchSensorSetup"]="SENSOR_SETUP = \"1\" AND RUN_AFTER <> \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending",["LaunchSensorSetupAndApp"]="SENSOR_SETUP = \"1\" AND RUN_AFTER = \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending"};
+        check(events.Count==3&&expectedLaunches.All(pair=>events.Count(e=>e.SequenceEqual(new[]{"FinishDlg","Finish","DoAction",pair.Key,pair.Value}))==1&&!execute.ContainsKey(pair.Key)),"only explicitly selected success-Finish actions can launch app/sensor workflows; unattended execution and pending restart are blocked");
         // This ordering follows Microsoft's documented ExitDialog/Launch sample.
         var finish = db.Query("SELECT `Event`,`Ordering` FROM `ControlEvent` WHERE `Dialog_`='FinishDlg' AND `Control_`='Finish'");
-        check(int.Parse(finish.Single(r => r[0] == "EndDialog")[1]) < int.Parse(finish.Single(r => r[0] == "DoAction")[1]), "post-install launch follows the documented EndDialog then DoAction ordering");
+        check(finish.Where(r=>r[0]=="DoAction").All(r=>int.Parse(finish.Single(e=>e[0]=="EndDialog")[1])<int.Parse(r[1])), "post-install launches follow the documented EndDialog then DoAction ordering");
     }
 
     internal static void Run(string package, string app, string cleanup, string version)
@@ -77,6 +78,8 @@ static class InstallerAudit
         Directory.CreateDirectory(folder);
         var mutations = new[]
         {
+            ("sensor-without-opt-in", "DELETE FROM `ControlEvent` WHERE `Argument`='LaunchSensorSetup'"),
+            ("sensor-unattended-execution", "INSERT INTO `InstallExecuteSequence` (`Action`,`Condition`,`Sequence`) VALUES ('LaunchSensorSetup','1',6700)"),
             ("stale-product-version", "UPDATE `Property` SET `Value`='0.9.2' WHERE `Property`='ProductVersion'"),
             ("stale-old-product-boundary", "DELETE FROM `Upgrade` WHERE `ActionProperty`='OLDPRODUCTS'"),
             ("stale-newer-boundary", "DELETE FROM `Upgrade` WHERE `ActionProperty`='NEWERFOUND'"),
@@ -94,6 +97,7 @@ static class InstallerAudit
                 using (var edited = new MsiDatabase(file, update: true))
                 {
                     edited.Sql(sql);
+                    if(name=="sensor-without-opt-in")edited.Row("ControlEvent","FinishDlg","Finish","DoAction","LaunchSensorSetup","1",3);
                     if (name == "stale-old-product-boundary") edited.Row("Upgrade", PackageVersion.UpgradeCode, "0.0.0", "0.9.2", "1033", 257, null, "OLDPRODUCTS");
                     if (name == "stale-newer-boundary") edited.Row("Upgrade", PackageVersion.UpgradeCode, "0.9.2", null, "1033", 258, null, "NEWERFOUND");
                     if (name == "partial-runtime-bypass") edited.Row("LaunchCondition", "Installed OR DOTNETDESKTOP10", "Broken prerequisite fixture");
@@ -132,7 +136,7 @@ static class InstallerAudit
                 check(title.ToString() == "RMPCS " + version + " Setup", "Windows Installer resolves the welcome title to the actual product version");
             }
             finally { MsiNative.MsiCloseHandle(titleRecord); }
-            string[] fields = ["Installed", "OLDPRODUCTS", "NEWERFOUND", "REMOVE", "REINSTALL", "UPGRADINGPRODUCTCODE", "DOTNETDESKTOP10", "DOTNETCORE10", "DOTNETHOST10", "RUN_AFTER", "ReplacedInUseFiles", "MsiSystemRebootPending", "CREATE_DESKTOP", "CREATE_STARTMENU", "ALWAYS_ADMIN", "PREVIOUS_CREATE_DESKTOP", "PREVIOUS_CREATE_STARTMENU", "PREVIOUS_ALWAYS_ADMIN"];
+            string[] fields = ["Installed", "OLDPRODUCTS", "NEWERFOUND", "REMOVE", "REINSTALL", "UPGRADINGPRODUCTCODE", "DOTNETDESKTOP10", "DOTNETCORE10", "DOTNETHOST10", "RUN_AFTER", "SENSOR_SETUP", "ReplacedInUseFiles", "MsiSystemRebootPending", "CREATE_DESKTOP", "CREATE_STARTMENU", "ALWAYS_ADMIN", "PREVIOUS_CREATE_DESKTOP", "PREVIOUS_CREATE_STARTMENU", "PREVIOUS_ALWAYS_ADMIN"];
             var ui = db.Query("SELECT `Action`,`Condition` FROM `InstallUISequence`").ToDictionary(r => r[0], r => r[1]);
             var runtime = db.Query("SELECT `Condition` FROM `LaunchCondition`").Single(r=>r[0].Contains("DOTNETDESKTOP10"))[0];
             var downgrade = db.Query("SELECT `Condition` FROM `LaunchCondition` WHERE `Condition`='Installed OR NOT NEWERFOUND'").Single()[0];
@@ -161,6 +165,13 @@ static class InstallerAudit
             Reset(); Set("RUN_AFTER", "0"); check(!Eval(launch), "unchecked Finish never selects app launch"); Set("RUN_AFTER", "1"); check(Eval(launch), "checked Finish selects app launch only on its success dialog");
             Set("ReplacedInUseFiles", "1"); check(!Eval(launch), "in-use replacement postpones post-install launch until restart");
             Set("ReplacedInUseFiles", null); Set("MsiSystemRebootPending", "1"); check(!Eval(launch), "pending system restart suppresses post-install launch");
+            string sensorOnly=db.Query("SELECT `Condition` FROM `ControlEvent` WHERE `Argument`='LaunchSensorSetup'").Single()[0],sensorAndApp=db.Query("SELECT `Condition` FROM `ControlEvent` WHERE `Argument`='LaunchSensorSetupAndApp'").Single()[0];
+            foreach(bool sensors in new[]{false,true})foreach(bool run in new[]{false,true})foreach(bool restart in new[]{false,true})
+            {
+                Reset();Set("SENSOR_SETUP",sensors?"1":null);Set("RUN_AFTER",run?"1":null);Set("MsiSystemRebootPending",restart?"1":null);
+                check(Eval(launch)==(run&&!sensors&&!restart)&&Eval(sensorOnly)==(sensors&&!run&&!restart)&&Eval(sensorAndApp)==(sensors&&run&&!restart),"native Finish routes exactly one requested workflow and suppresses all launches for pending restarts");
+            }
+            Reset();Set("SENSOR_SETUP","1");Set("ReplacedInUseFiles","1");check(!Eval(sensorOnly)&&!Eval(sensorAndApp),"in-use file replacement suppresses optional sensor helpers");
             foreach (int mask in Enumerable.Range(0, 8))
             {
                 Set("CREATE_DESKTOP", (mask & 1) != 0 ? "1" : "0"); Set("CREATE_STARTMENU", (mask & 2) != 0 ? "1" : "0"); Set("ALWAYS_ADMIN", (mask & 4) != 0 ? "1" : "0");

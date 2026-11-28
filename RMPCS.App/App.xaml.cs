@@ -14,6 +14,18 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if(e.Args.Length==1 && e.Args[0] is "--sensor-setup" or "--sensor-setup-and-open")
+        {
+            ShutdownMode=ShutdownMode.OnExplicitShutdown;ThemeManager.Initialize();ThemeManager.Apply(new());int code=1;
+            try
+            {
+                code=await SensorSetupWindow.OpenAsync();
+                if(e.Args[0]=="--sensor-setup-and-open" && code!=3010)
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!){UseShellExecute=true,WorkingDirectory=AppContext.BaseDirectory});
+            }
+            catch(Exception ex){Dialogs.Show("Optional sensor setup could not complete. RMPCS remains installed. Open Settings > Realtime system overlay > Temperature sources to retry.\n\n"+ex.Message,"RMPCS sensor setup");}
+            Shutdown(code);return;
+        }
         if (e.Args.Length == 3 && e.Args[0] == "--sensor-package-check")
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;

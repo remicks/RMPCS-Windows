@@ -14,6 +14,12 @@ public partial class MainWindow
         var initial = preferences;
         try
         {
+            var sensorReview=new SensorSetupWindow(this);
+            try{sensorReview.Show();await Task.Delay(60);sensorReview.UpdateLayout();sensorReview.VerifyIdleForChecks();Check(sensorReview.ResultCode==2,"shared installer/Settings sensor review starts without downloads, installation or monitoring");
+                var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)sensorReview.ActualWidth,(int)sensorReview.ActualHeight,96,96,System.Windows.Media.PixelFormats.Pbgra32);bitmap.Render(sensorReview);var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));using var preview=File.Create(Path.ChangeExtension(output,".sensors.png"));encoder.Save(preview);}
+            finally{sensorReview.Close();}
+            HelpTopic_Click(new System.Windows.Controls.Button{Tag="Sensor setup troubleshooting"},new RoutedEventArgs());
+            Check(HelpResults.SelectedItem is HelpArticle{Title:"Sensor setup troubleshooting"} && HelpBody.Text.Contains("UAC cancelled"),"Help quick link opens the sensor recovery instructions without invoking setup");HelpSearch.Text="";
             Check(monitoringOverlay is null && !overlayHotkeyRegistered && !preferences.Overlay.Enabled, "default/test startup creates no overlay or global shortcut");
             preferences = initial with { Overlay = new() { Enabled = true, TextSize = 18, ClickThrough = true, Locked = true, IntervalSeconds = 5 } };
             PutPreferenceControls(); var retained = preferences.Overlay.Normalize();

@@ -262,8 +262,9 @@
      <TextBlock Text="HELP &amp; ABOUT" FontWeight="Bold" Foreground="{DynamicResource AccentTextBrush}"/>
      <TextBlock Text="Rusty's PC Toolkit" FontSize="19" FontWeight="SemiBold" Margin="0,10,0,6"/>
      <TextBlock Text="Search practical guidance, task explanations and troubleshooting. Help works offline. F1 opens Help; Ctrl+, opens Settings." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12"/>
+     <WrapPanel Margin="0,0,0,10"><Button Content="Install sensors" Tag="Install optional temperature sensors" Click="HelpTopic_Click"/><Button Content="Sensor troubleshooting" Tag="Sensor setup troubleshooting" Click="HelpTopic_Click"/><Button Content="Overlay &amp; widgets" Tag="Arrange transparent metric widgets" Click="HelpTopic_Click"/><Button Content="Drive guide" Tag="Drive optimization walkthrough" Click="HelpTopic_Click"/></WrapPanel>
      <TextBlock Text="Search help" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,5"/>
-     <TextBox x:Name="HelpSearch" MaxLength="200" AutomationProperties.Name="Search help" ToolTip="Search topics, such as updates, DNS or tray" TextChanged="HelpSearch_Changed" Margin="0,0,0,10"/>
+     <TextBox x:Name="HelpSearch" MaxLength="200" AutomationProperties.Name="Search help" ToolTip="Search topics, such as sensors, widgets, ReTRIM, updates or tray" TextChanged="HelpSearch_Changed" Margin="0,0,0,10"/>
      <ListBox x:Name="HelpResults" DisplayMemberPath="Title" SelectionChanged="HelpSelection_Changed" Height="135" BorderBrush="{DynamicResource BorderBrush}" Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource TextBrush}" Padding="6"/>
      <TextBox x:Name="HelpBody" IsReadOnly="True" TextWrapping="Wrap" Height="220" VerticalScrollBarVisibility="Auto" Margin="0,10,0,16"/>
      <WrapPanel><Button Content="RMPCS on GitHub" Click="Project_Click"/><Button Content="Report an issue" Click="Issues_Click"/><Button Content="Discord support" Click="Discord_Click"/></WrapPanel>

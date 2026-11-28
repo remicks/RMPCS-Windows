@@ -12,7 +12,8 @@ namespace RMPCS.Bootstrap
     {
         private readonly Panel requirementsPage=new Panel(), optionsPage=new Panel(), operationPage=new Panel(), finishPage=new Panel();
         private readonly Label heading=new Label(), caption=new Label(), summary=new Label();
-        private readonly CheckBox desktopChoice=new CheckBox(), menuChoice=new CheckBox(), adminChoice=new CheckBox(), runAfter=new CheckBox();
+        private readonly CheckBox desktopChoice=new CheckBox(), menuChoice=new CheckBox(), adminChoice=new CheckBox(), runAfter=new CheckBox(), sensorChoice=new CheckBox();
+        private string sensorSummary="Optional sensors: not selected; available later in Settings.";
         private readonly Button back=new Button();
         private readonly Label[] steps=new Label[4];
         private int page;
@@ -71,13 +72,14 @@ namespace RMPCS.Bootstrap
             requirementsPage.Controls.Add(offline);
             var help=new LinkLabel {Left=22,Top=275,Width=546,Height=30,Text="Official Microsoft runtime downloads",LinkColor=Accent};
             help.LinkClicked+=delegate {Process.Start(new ProcessStartInfo("https://dotnet.microsoft.com/en-us/download/dotnet/10.0"){UseShellExecute=true});};requirementsPage.Controls.Add(help);
-            Choice(optionsPage,desktopChoice,"Create a desktop shortcut","Keep RMPCS within easy reach on your desktop.",20,ReadChoice("Desktop"));
-            Choice(optionsPage,menuChoice,"Add RMPCS to the Start Menu","Find the toolkit through Start and Windows Search.",110,ReadChoice("StartMenu"));
-            Choice(optionsPage,adminChoice,"Always request administrator access","Windows will show its normal permission prompt when needed.",200,ReadChoice("AlwaysAdmin"));
+            Choice(optionsPage,desktopChoice,"Create a desktop shortcut","Keep RMPCS within easy reach on your desktop.",8,ReadChoice("Desktop"));
+            Choice(optionsPage,menuChoice,"Add RMPCS to the Start Menu","Find the toolkit through Start and Windows Search.",76,ReadChoice("StartMenu"));
+            Choice(optionsPage,adminChoice,"Always request administrator access","Windows will show its normal permission prompt when needed.",144,ReadChoice("AlwaysAdmin"));
+            Choice(optionsPage,sensorChoice,"Review / install optional temperature sensor package","After RMPCS installs: separate admin review, verified downloads and visible vendor setup. Low-level reads stay off.",212,false);
             optionsPage.Controls.Add(TextLabel("Installs to Program Files. Startup and schedules remain off by default.",22,294,546,26,9,Muted));
             finishPage.Controls.Add(TextLabel("\u2713",22,20,62,58,34,Color.FromArgb(24,132,89)));
             finishPage.Controls.Add(TextLabel("Your toolkit is ready",95,34,455,38,18,Ink));
-            summary.SetBounds(22,108,546,92); summary.ForeColor=Muted;finishPage.Controls.Add(summary);
+            summary.SetBounds(22,100,546,114); summary.ForeColor=Muted;finishPage.Controls.Add(summary);
             Choice(finishPage,runAfter,"Run RMPCS after installation","Opens the app only. No maintenance starts automatically.",221,true);
             BuildOperationPage();
             back.SetBounds(270,538,100,40);back.Text="Back";back.Click+=delegate {ShowPage(0);};
@@ -99,7 +101,7 @@ namespace RMPCS.Bootstrap
         {
             page=next;requirementsPage.Visible=next==0;optionsPage.Visible=next==1;operationPage.Visible=next==2;finishPage.Visible=next==3;
             heading.Text=next==0?"Welcome to RMPCS":next==1?"Make it yours":next==2?"Working on it":"You're all set";
-            caption.Text=next==0?"A clean start for your Windows maintenance toolkit.":next==1?"Choose your shortcuts and how the app requests permissions.":next==2?"Keep setup open while Windows completes this operation.":"Installation is complete. Choose what happens next.";
+            caption.Text=next==0?"A clean start for your Windows maintenance toolkit.":next==1?"Choose shortcuts, permissions and optional temperature components.":next==2?"Keep setup open while Windows completes this operation.":"Installation is complete. Choose what happens next.";
             back.Visible=Program.Installer && next==1 && !busy;
             proceed.Text=next==3?"Finish":next==2?(busy?"Working...":"Retry"):next==1?"Install":Program.Installer?"Continue":"Open RMPCS";
             for(int i=0;i<steps.Length;i++){steps[i].ForeColor=i==next?Accent:Muted;steps[i].Font=new Font("Segoe UI",11,i==next?FontStyle.Bold:FontStyle.Regular);}
@@ -112,7 +114,7 @@ namespace RMPCS.Bootstrap
             completed=true;
             runAfter.Enabled=code==0;
             if(code==3010)runAfter.Checked=false;
-            summary.Text="Desktop shortcut: "+(desktopChoice.Checked?"Yes":"No")+"\nStart Menu entry: "+(menuChoice.Checked?"Yes":"No")+"\nAdministrator prompt: "+(adminChoice.Checked?"Always request when needed":"Request manually")+(code==3010?"\nRestart Windows before opening RMPCS. Automatic launch is disabled.":"");
+            summary.Text="Desktop shortcut: "+(desktopChoice.Checked?"Yes":"No")+"\nStart Menu entry: "+(menuChoice.Checked?"Yes":"No")+"\nAdministrator prompt: "+(adminChoice.Checked?"Always request when needed":"Request manually")+"\n"+sensorSummary+(code==3010?"\nRestart Windows before opening RMPCS. Automatic launch is disabled.":"");
             ShowPage(3);cancel.Text="Close";
         }
     }

@@ -1,4 +1,14 @@
-# RMPCS 0.13.7 - Rusty's PC Toolkit
+# RMPCS 0.13.8 - Rusty's PC Toolkit
+
+## Optional sensor setup and practical Help v0.13.8
+
+The setup EXE offers an unchecked **Review / install optional temperature sensor package** choice on Your preferences. It opens the shared review window only after RMPCS installs successfully; the installer stays visible while that window runs. The standalone MSI offers the same opt-in on its successful Finished page. Silent/basic MSI execution never downloads or installs sensors. If Windows reports a pending restart, complete the restart and use the in-app route instead.
+
+To install later, including from a portable copy, open **Settings > Realtime system overlay > Temperature sources > Review / install optional sensor components**. Standard sessions request Windows administrator approval for this separate setup. Opening the review does not download anything; **Download & open official setup** begins verification and visible vendor setup. Cancelling or failing this optional stage keeps RMPCS installed. Installation does not enable temperature monitoring or low-level reads. Restart whenever the vendor requests it, then enable in-app reads, discover/select sources, choose their display styles, and Apply overlay settings.
+
+Both routes use the existing pinned hashes/publisher trust checks and protected component storage. Signature verification runs off the UI thread, setup windows show activity without inventing percentage progress, and a protected cross-process lease prevents simultaneous RMPCS component setup. The EXE additionally validates the installed helper files against an embedded manifest and holds them against write/delete while the helper runs. Windows security protections are never weakened; signed kernel code still has compatibility/security risks. Existing newer PawnIO registrations are retained rather than downgraded.
+
+Help has quick links and numbered setup instructions for optional sensors, source selection, transparent widgets, overlay recovery, categorized navigation and drive optimization. Troubleshooting covers UAC, downloads/signatures, restarts, busy providers, unavailable readings, game/anti-cheat restrictions, off-screen/click-through recovery, hotkey conflicts and unsupported drives. Help is offline and searchable. Optional sensor license texts now accompany EXE/MSI/portable payloads at the app root as well as the source bundle.
 
 ## Temperatures, transparent widgets and categorized navigation v0.13.7
 
@@ -92,9 +102,9 @@ Validation includes geometry/preference tests, WPF page routing, real positionin
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.7/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.7/RMPCS-Setup-0.13.7-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.7/RMPCS-v0.13.7-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.8/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.8/RMPCS-Setup-0.13.8-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.8/RMPCS-v0.13.8-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -250,9 +260,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.13.7-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.13.7-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.13.7-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.13.8-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.13.8-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.13.8-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.

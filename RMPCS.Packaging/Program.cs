@@ -150,7 +150,7 @@ db.Sql("CREATE TABLE `EventMapping` (`Dialog_` CHAR(72) NOT NULL, `Control_` CHA
 db.Sql("CREATE TABLE `ActionText` (`Action` CHAR(72) NOT NULL, `Description` CHAR(0) LOCALIZABLE, `Template` CHAR(0) LOCALIZABLE PRIMARY KEY `Action`)");
 db.Sql("CREATE TABLE `TextStyle` (`TextStyle` CHAR(72) NOT NULL, `FaceName` CHAR(32) NOT NULL, `Size` SHORT NOT NULL, `Color` LONG, `StyleBits` SHORT PRIMARY KEY `TextStyle`)");
 db.Sql("CREATE TABLE `CheckBox` (`Property` CHAR(72) NOT NULL, `Value` CHAR(64) LOCALIZABLE PRIMARY KEY `Property`)");
-foreach (string property in new[] { "CREATE_DESKTOP", "CREATE_STARTMENU", "ALWAYS_ADMIN", "RUN_AFTER" }) db.Row("CheckBox", property, "1");
+foreach (string property in new[] { "CREATE_DESKTOP", "CREATE_STARTMENU", "ALWAYS_ADMIN", "RUN_AFTER", "SENSOR_SETUP" }) db.Row("CheckBox", property, "1");
 db.Row("TextStyle", "Normal", "Segoe UI", 9, 0, 0); db.Row("Property", "DefaultUIFont", "Normal");
 db.Row("TextStyle", "Heading", "Segoe UI", 18, 5649863, 1);
 db.Row("TextStyle", "Muted", "Segoe UI", 9, 7366232, 0);
@@ -247,13 +247,19 @@ db.Row("Dialog", "FinishDlg", 50, 50, 420, 285, 3, "RMPCS is ready", "LaunchChoi
 db.Row("Control", "FinishDlg", "Brand", "Icon", 20, 24, 36, 36, 3, null, "BrandIcon", null, null);
 db.Row("Control", "FinishDlg", "Heading", "Text", 70, 26, 325, 32, 3, null, "{\\Heading}You're all set", null, null);
 db.Row("Control", "FinishDlg", "Body", "Text", 24, 96, 372, 70, 3, null, "RMPCS was installed successfully.\nStartup to tray and maintenance schedules stay opt-in.\nNo cleanup runs when you open the app.\nIf Windows needs a restart, restart before opening RMPCS; automatic launch is postponed.", null, null);
-db.Row("Control", "FinishDlg", "LaunchChoice", "CheckBox", 24, 180, 372, 22, 3, "RUN_AFTER", "Run RMPCS after installation", "Finish", null);
+db.Row("Control", "FinishDlg", "LaunchChoice", "CheckBox", 24, 167, 372, 22, 3, "RUN_AFTER", "Run RMPCS after installation", "SensorChoice", null);
+db.Row("Control", "FinishDlg", "SensorChoice", "CheckBox", 24, 193, 372, 22, 3, "SENSOR_SETUP", "Review / install optional temperature sensor package", "Finish", null);
+db.Row("Control", "FinishDlg", "SensorNote", "Text", 24, 219, 372, 20, 3, null, "Optional download; restarts defer setup to app Settings.", null, null);
 db.Row("Control", "FinishDlg", "Finish", "PushButton", 308, 244, 90, 24, 3, null, "Finish", "Close", null);
 db.Row("Control", "FinishDlg", "Close", "PushButton", 212, 244, 84, 24, 3, null, "Close", "LaunchChoice", null);
 db.Row("ControlEvent", "FinishDlg", "Close", "EndDialog", "Return", "1", 1);
 db.Row("CustomAction", "LaunchInstalledApp", 210, $"F{exeIndex:0000}", null);
+db.Row("CustomAction", "LaunchSensorSetup", 210, $"F{exeIndex:0000}", "--sensor-setup");
+db.Row("CustomAction", "LaunchSensorSetupAndApp", 210, $"F{exeIndex:0000}", "--sensor-setup-and-open");
 db.Row("ControlEvent", "FinishDlg", "Finish", "EndDialog", "Return", "1", 1);
-db.Row("ControlEvent", "FinishDlg", "Finish", "DoAction", "LaunchInstalledApp", "RUN_AFTER = \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending", 2);
+db.Row("ControlEvent", "FinishDlg", "Finish", "DoAction", "LaunchInstalledApp", "RUN_AFTER = \"1\" AND SENSOR_SETUP <> \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending", 2);
+db.Row("ControlEvent", "FinishDlg", "Finish", "DoAction", "LaunchSensorSetup", "SENSOR_SETUP = \"1\" AND RUN_AFTER <> \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending", 3);
+db.Row("ControlEvent", "FinishDlg", "Finish", "DoAction", "LaunchSensorSetupAndApp", "SENSOR_SETUP = \"1\" AND RUN_AFTER = \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending", 4);
 db.Row("InstallUISequence", "FinishDlg", "NOT Installed AND NOT REMOVE", -1);
 db.Stream("RMPCS.cab", Path.Combine(media, "RMPCS.cab"));
 db.Summary(2, "RMPCS " + packageVersion + " Installation"); db.Summary(3, "Rusty's PC maintenance toolkit"); db.Summary(4, "Degenerates Inc.");
@@ -412,6 +418,7 @@ static class MsiVerification
         var components = db.Query("SELECT `Component`,`ComponentId`,`Attributes`,`KeyPath` FROM `Component`");
         Check(components.All(c => (int.Parse(c[2]) & 256) != 0 && Guid.TryParse(c[1], out _)), "all installed components are x64 and have valid identities");
         var fileRows = db.Query("SELECT `File`,`Component_`,`FileName`,`FileSize` FROM `File`");
+        Check(new[]{"LibreHardwareMonitor-MPL-2.0.txt","LibreHardwareMonitor-THIRD-PARTY-NOTICES.txt","PawnIO-GPL-2.0.txt","PawnIO-license-and-exception.txt","SENSOR-SECURITY.md"}.All(name=>fileRows.Any(r=>r[2].Split('|').Last()==name)),"MSI includes optional sensor sources/licenses and security guidance as flat payload files");
         Check(fileRows.Count + 2 == components.Count && fileRows.All(f => components.Any(c => c[0] == f[1] && c[3] == f[0])), "files and optional shortcuts have separate keyed components");
         var sequence = db.Query("SELECT `Action`,`Condition`,`Sequence` FROM `InstallExecuteSequence`");
         Check(sequence.Single(r => r[0] == "CleanupTasks")[1] == "REMOVE~=\"ALL\" AND NOT UPGRADINGPRODUCTCODE", "uninstall removes automation without removing it during upgrades");
@@ -428,7 +435,14 @@ static class MsiVerification
         Check(db.Query("SELECT `Name`,`Value` FROM `Registry` WHERE `Registry`='OptionAlwaysAdmin'").Single()[1] == "[ALWAYS_ADMIN]", "administrator preference is installed and removed by MSI");
         var ui = db.Query("SELECT `Action`,`Sequence` FROM `InstallUISequence`");
         Check(int.Parse(ui.Single(r => r[0] == "WelcomeDlg")[1]) < 800 && ui.Single(r => r[0] == "FinishDlg")[1] == "-1", "choices precede costing and completion page runs only after success");
-        Check(db.Query("SELECT `Control_`,`Condition` FROM `ControlEvent` WHERE `Argument`='LaunchInstalledApp'").Single()[1] == "RUN_AFTER = \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending", "post-install launch requires the checkbox and no pending MSI restart flags");
+        Check(db.Query("SELECT `Control_`,`Condition` FROM `ControlEvent` WHERE `Argument`='LaunchInstalledApp'").Single()[1] == "RUN_AFTER = \"1\" AND SENSOR_SETUP <> \"1\" AND NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending", "post-install app launch requires its checkbox, no sensor workflow and no pending MSI restart flags");
+        Check(!properties.ContainsKey("SENSOR_SETUP")&&db.Query("SELECT `Property` FROM `CheckBox` WHERE `Property`='SENSOR_SETUP'").Count==1,"sensor setup is offered as an unchecked nonpersistent option");
+        foreach(string id in new[]{"LaunchSensorSetup","LaunchSensorSetupAndApp"})
+        {
+            var action=db.Query($"SELECT `Type`,`Source`,`Target` FROM `CustomAction` WHERE `Action`='{id}'").Single();
+            var condition=db.Query($"SELECT `Condition` FROM `ControlEvent` WHERE `Argument`='{id}'").Single()[0];
+            Check(action[0]=="210"&&action[1]==fileRows.Single(f=>f[2].Split('|').Last()=="RMPCS.exe")[0]&&action[2]==(id=="LaunchSensorSetup"?"--sensor-setup":"--sensor-setup-and-open")&&!sequence.Any(r=>r[0]==id)&&condition.Contains("SENSOR_SETUP = \"1\"")&&condition.Contains("NOT ReplacedInUseFiles AND NOT MsiSystemRebootPending"),"optional sensor helper is interactive-only, installed-file based and restart guarded");
+        }
         Check(!sequence.Any(r => r[0] == "LaunchInstalledApp") && db.Query("SELECT `Type`,`Source` FROM `CustomAction` WHERE `Action`='LaunchInstalledApp'").Single()[0] == "210", "post-install launch is asynchronous and absent from unattended execution");
         var progressDialog=db.Query("SELECT `Attributes`,`Control_Default`,`Control_Cancel` FROM `Dialog` WHERE `Dialog`='ProgressDlg'").Single();
         Check((int.Parse(progressDialog[0])&1)!=0&&(int.Parse(progressDialog[0])&2)==0&&progressDialog[1]=="Cancel"&&progressDialog[2]=="Cancel", "progress dialog is visible and modeless while Windows Installer executes");

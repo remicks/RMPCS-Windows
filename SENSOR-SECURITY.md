@@ -1,8 +1,8 @@
-# Optional temperature components — v0.13.7
+# Optional temperature components — v0.13.8
 
 ## Scope and consent
 
-No driver or hardware library ships in RMPCS or runs automatically. Basic counters and Windows/existing local WMI temperature sources remain separate. The Settings action reviews risks, requires an administrator session on Windows 11 x64, downloads fixed official packages, validates them, and opens visible vendor setup. A second saved option enables in-app CPU/GPU/motherboard reads. Selected temperature sources must also be enabled for display. Discovery does not install anything. Keep the vendor's administrator-only access defaults.
+No driver or hardware library ships in RMPCS or runs automatically. Basic counters and Windows/existing local WMI temperature sources remain separate. An explicit opt-in after EXE/MSI installation or the Settings action opens the same administrator-only review window on Windows 11 x64. Choosing its download button obtains fixed official packages, validates them, and opens visible vendor setup. A second saved option enables in-app CPU/GPU/motherboard reads. Selected temperature sources must also be enabled for display. Discovery does not install anything. Keep the vendor's administrator-only access defaults.
 
 | Component | Reviewed version | Official package SHA-256 |
 |---|---|---|
@@ -28,3 +28,9 @@ Signed drivers can contain security defects or cause firmware/anti-cheat compati
 PawnIO is shared software. RMPCS preserves an already installed 2.2.0+ version instead of downgrading it, and does not uninstall it or the protected library directory when RMPCS is removed. To remove PawnIO, stop in-app reads and use Windows Installed apps after checking other software does not depend on it. Component version updates require a reviewed RMPCS release; there is no automatic latest-driver installation.
 
 Official sources and licenses are listed in THIRD-PARTY-NOTICES.md.
+
+## Installer integration in v0.13.8
+
+The optional choice defaults off and is not saved as a future automatic action. The EXE invokes the installed helper only after successful MSI completion, with no reported pending restart; its embedded file manifest and protected-path checks cover the installed helper payload, held read-only against write/delete until the helper exits. Full MSI UI uses success-only Finish control events targeting its installed app file, outside the execute sequence; silent/basic execution, uninstall and failed installation never invoke sensor setup. A separate administrator launch preserves only fixed sensor-setup arguments and awaits the result. The helper has no arbitrary path/URL/command input and does not save preferences or enable monitoring. If Run RMPCS is also selected in the MSI, the normal app opens after review except when a restart is reported. The EXE handles Run RMPCS independently on its final page.
+
+Opening review does not install; the explicit download button starts the existing verifier. Windows signature verification runs off the dispatcher. A protected setup.lock file opened with exclusive sharing serializes component setup across processes. Cancelling the optional stage does not roll back RMPCS. Setup progress is indeterminate while awaiting the vendor; active processes are never forcibly killed. Full sensor license texts are included as flat files because installer/portable manifests use a flat application payload.

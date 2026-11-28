@@ -37,7 +37,38 @@ namespace RMPCS.Bootstrap
             }
         }
         internal static Dictionary<string, string> Manifest()
-        { using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("PayloadManifest")) using (var reader = new StreamReader(stream)) return BootstrapPolicy.ParseManifest(reader.ReadToEnd()); }
+        { return Manifest("PayloadManifest"); }
+        private static Dictionary<string,string> Manifest(string resource)
+        { using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resource)) using (var reader = new StreamReader(stream)) return BootstrapPolicy.ParseManifest(reader.ReadToEnd()); }
+        internal static void ProtectedPath(string path)
+        {
+            for(string current=path;current!=null;current=Path.GetDirectoryName(current))
+            {
+                if((File.GetAttributes(current)&FileAttributes.ReparsePoint)!=0)throw new IOException("Linked installation paths cannot launch elevated sensor setup.");
+                FileSystemSecurity acl=Directory.Exists(current)?(FileSystemSecurity)new DirectoryInfo(current).GetAccessControl():new FileInfo(current).GetAccessControl();
+                Func<IdentityReference,bool> trusted=delegate(IdentityReference sid){return sid!=null&&(sid.Value=="S-1-5-32-544"||sid.Value=="S-1-5-18"||sid.Value=="S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464");};
+                if(!trusted(acl.GetOwner(typeof(SecurityIdentifier))))throw new IOException("Installation path owner is not protected.");
+                foreach(FileSystemAccessRule rule in acl.GetAccessRules(true,true,typeof(SecurityIdentifier)))
+                    if(rule.AccessControlType==AccessControlType.Allow&&(rule.PropagationFlags&PropagationFlags.InheritOnly)==0&&!trusted(rule.IdentityReference)&&(rule.FileSystemRights&(FileSystemRights.Write|FileSystemRights.Delete|FileSystemRights.DeleteSubdirectoriesAndFiles|FileSystemRights.ChangePermissions|FileSystemRights.TakeOwnership))!=0)throw new IOException("Installation path allows non-administrator changes.");
+                if(String.Equals(current,Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),StringComparison.OrdinalIgnoreCase))break;
+            }
+        }
+        internal static HeldPayload OpenInstalledSensorPayload(string root)
+        {
+            var held=new List<FileStream>();
+            try
+            {
+                ProtectedPath(root);
+                foreach(var entry in Manifest("InstalledSensorManifest"))
+                {
+                    string path=Path.Combine(root,entry.Key);ProtectedPath(path);
+                    var stream=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.Read);held.Add(stream);
+                    if(BootstrapPolicy.Hash(stream,false)!=entry.Value)throw new InvalidDataException("Installed sensor-setup helper integrity check failed. Use Settings after repairing RMPCS.");
+                }
+                return new HeldPayload(held);
+            }
+            catch{foreach(var stream in held)stream.Dispose();throw;}
+        }
         internal static bool RuntimePresent()
         {
             string registered = null;
@@ -144,9 +175,12 @@ namespace RMPCS.Bootstrap
             using (var heldSelf = new FileStream(self, FileMode.Open, FileAccess.Read, FileShare.Read))
                 try { Signature.VerifyMicrosoft(self, heldSelf.SafeFileHandle.DangerousGetHandle()); } catch (InvalidDataException) { signatureRejected = true; }
             check(signatureRejected);
+            check(!SetupChoices.OfferSensors(false,0,false)&&SetupChoices.OfferSensors(true,0,false));
+            check(!SetupChoices.OfferSensors(true,3010,false)&&!SetupChoices.OfferSensors(true,0,true)&&!SetupChoices.OfferSensors(true,1602,false)&&!SetupChoices.OfferSensors(true,1603,false));
             if (Installer)
             {
                 using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("InstallerPayload")) check(BootstrapPolicy.Hash(stream, false) == Manifest()["RMPCS.msi"]);
+                var helper=Manifest("InstalledSensorManifest");check(helper.ContainsKey("RMPCS.exe")&&helper.ContainsKey("RMPCS.dll")&&helper.ContainsKey("RMPCS.Core.dll")&&helper.ContainsKey("RMPCS.runtimeconfig.json"));
             }
             else { using (var held = new HeldPayload(OpenVerifiedPayload())) check(held.Count >= 5); }
             return count;
@@ -207,6 +241,24 @@ namespace RMPCS.Bootstrap
                         operationHeading.Text=repair?"Repairing RMPCS":File.Exists(InstalledExe())?"Upgrading RMPCS":"Installing RMPCS";
                         int code = await ExecuteAsync(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "msiexec.exe"), SetupChoices.MsiArguments(msi,desktopChoice.Checked,menuChoice.Checked,adminChoice.Checked,repair), false);
                         if (!BootstrapPolicy.AcceptedExit(code)) throw new InvalidOperationException(code == 1602 ? "RMPCS installation was cancelled." : "Windows Installer returned " + code + ". Review its message and retry.");
+                        if(sensorChoice.Checked)
+                        {
+                            sensorSummary="Optional sensors: deferred; retry from app Settings after restarting.";
+                            if(SetupChoices.OfferSensors(true,code,restartRequired))
+                            {
+                                Stage("Optional temperature sensor setup","RMPCS is installed. Verifying the installed helper before opening its separate review window...");
+                                try
+                                {
+                                    using(var helper=Program.OpenInstalledSensorPayload(Path.GetDirectoryName(InstalledExe())))
+                                    {
+                                        int sensors=await ExecuteAsync(InstalledExe(),"--sensor-setup",true,true);
+                                        if(sensors==3010)restartRequired=true;
+                                        sensorSummary=sensors==0?"Optional sensors: components verified; enable reads in app Settings.":sensors==3010?"Optional sensors: restart required; monitoring stays off.":"Optional sensors: skipped/unfinished; retry from app Settings.";
+                                    }
+                                }
+                                catch(Exception ex){sensorSummary="Optional sensors: not completed; retry from app Settings.";MessageBox.Show(this,"RMPCS was installed successfully. Optional sensor setup could not complete. Use Settings > Realtime system overlay > Temperature sources later.\n\n"+ex.Message,"Optional sensor setup",MessageBoxButtons.OK,MessageBoxIcon.Information);}
+                            }
+                        }
                         CompleteSetup(code == 3010 || restartRequired ? 3010 : 0);
                     }
                 }
@@ -257,12 +309,12 @@ namespace RMPCS.Bootstrap
                 }
             }
         }
-        private async Task<int> ExecuteAsync(string executable, string arguments, bool elevated)
+        private async Task<int> ExecuteAsync(string executable, string arguments, bool elevated,bool sensors=false)
         {
             cancellation.Token.ThrowIfCancellationRequested();
             installing = true; cancel.Enabled = false; progress.Style = ProgressBarStyle.Marquee;
-            status.Text = "Follow the " + (Program.Installer || elevated ? "Windows/Microsoft installer" : "RMPCS application") + " window. Waiting for it to finish...";
-            operationHint.Text=Program.Installer||elevated?"This window remains open. Windows Installer displays detailed progress in its own window. To cancel, use that window and allow any rollback to finish.":"RMPCS is running. Close the application when you are finished; the portable launcher will keep its verified payload protected until then.";
+            status.Text = sensors?"RMPCS is installed. Review the optional sensor window, complete or skip setup, then close that window to return here.":"Follow the " + (Program.Installer || elevated ? "Windows/Microsoft installer" : "RMPCS application") + " window. Waiting for it to finish...";
+            operationHint.Text=sensors?"This optional step has its own review and vendor setup. Cancelling it does not roll back RMPCS. Nothing enables monitoring automatically.":Program.Installer||elevated?"This window remains open. Windows Installer displays detailed progress in its own window. To cancel, use that window and allow any rollback to finish.":"RMPCS is running. Close the application when you are finished; the portable launcher will keep its verified payload protected until then.";
             var start = new ProcessStartInfo(executable, arguments) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(executable) };
             if (elevated) start.Verb = "runas";
             try { using (var process = Process.Start(start)) { if (process == null) throw new IOException("The process did not start."); await Task.Run((Action)process.WaitForExit); return process.ExitCode; } }

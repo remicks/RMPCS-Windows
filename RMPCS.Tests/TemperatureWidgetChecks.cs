@@ -5,6 +5,8 @@ internal static class TemperatureWidgetChecks
 {
     internal static void Run(Action<bool,string> check)
     {
+        foreach(string title in new[]{"Install optional temperature sensors","Choose and display temperature sources","Sensor setup troubleshooting","Arrange transparent metric widgets","Overlay troubleshooting","Find tools in the category tree","Drive optimization walkthrough and troubleshooting"})
+            check(HelpCatalog.Search(title).Any(a=>a.Title==title),"new-feature setup and troubleshooting guides are discoverable through offline Help");
         var source=new TemperatureSource("In-app hardware","CPU",TemperaturePolicy.Key("In-app hardware","/cpu/0/temperature/1"),"Package");
         string Json(params TemperatureSource[] rows)=>JsonSerializer.Serialize(rows);
         check(source.Key.Length==64 && source.Key!=TemperaturePolicy.Key("Windows firmware","/cpu/0/temperature/1"),"sensor identities are stable and isolated by provider");

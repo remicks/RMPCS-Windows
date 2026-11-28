@@ -12,6 +12,7 @@ namespace RMPCS.App;
 
 internal static class SensorComponents
 {
+    internal sealed record SetupOutcome(bool Ready,bool RestartRequired,string Message);
     internal const string DriverUrl = "https://github.com/namazso/PawnIO.Setup/releases/download/2.2.0/PawnIO_setup.exe";
     internal const string DriverHash = "1F519A22E47187F70A1379A48CA604981C4FCF694F4E65B734AAA74A9FBA3032";
     internal const string DriverSigner = "F380DCC9F706E2756A5047B832FFE719E1BC35F5";
@@ -103,9 +104,12 @@ internal static class SensorComponents
         }
         throw new IOException("Too many sensor download redirects.");
     }
-    internal static async Task InstallAsync(Action<string> report)
+    internal static async Task<SetupOutcome> InstallAsync(Action<string> report)
     {
         if(RuntimeInformation.OSArchitecture!=Architecture.X64 || RuntimeInformation.ProcessArchitecture!=Architecture.X64 || Environment.OSVersion.Version.Build<22000 || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)) throw new UnauthorizedAccessException("Use an administrator session on Windows 11 x64.");
+        AssertProtected(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));ProtectDirectory(Root);
+        string gate=Path.Combine(Root,"setup.lock");if(!File.Exists(gate)){using var created=CreateProtectedFile(gate);}AssertProtected(gate);
+        using var lease=new FileStream(gate,FileMode.Open,FileAccess.ReadWrite,FileShare.None); // Across installer and Settings processes; never force another setup to stop.
         report("Downloading pinned official sensor library and PawnIO 2.2.0 installer. No driver has run.");
         byte[] library=await Download(LibraryUrl,LibraryHash,12_000_000), driver=await Download(DriverUrl,DriverHash,4_000_000);
         AssertProtected(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));ProtectDirectory(Root); ProtectDirectory(LibraryRoot);
@@ -118,16 +122,18 @@ internal static class SensorComponents
                 StageLibrary(path,data,entry.Hash);
                 using var verified=OpenLibrary(name);
             }
-        if(DriverReady()){report("An existing PawnIO 2.2.0+ installation was retained. Reviewed library components are ready; enable in-app reads explicitly. No driver setup was run.");return;}
+        if(DriverReady())return new(true,false,"Existing PawnIO 2.2.0+ retained; libraries verified. Enable in-app reads, discover/select sources and Apply in Settings. No driver setup was run. Sensor availability is hardware-dependent.");
         string staging=Path.Combine(Root,"Setup-"+Guid.NewGuid().ToString("N")); ProtectDirectory(staging); string setup=Path.Combine(staging,"PawnIO_setup.exe");
         try
         {
             using(var file=CreateProtectedFile(setup)) await file.WriteAsync(driver);
             using var held=new FileStream(setup,FileMode.Open,FileAccess.Read,FileShare.Read); CheckHash(held,DriverHash); held.Position=0;
-            VerifyDriverSignature(setup,held.SafeFileHandle.DangerousGetHandle());
+            await Task.Run(()=>VerifyDriverSignature(setup,held.SafeFileHandle.DangerousGetHandle()));
             report("Hash, protected staging, Authenticode trust and pinned namazso.eu signer verified. Complete the visible official setup; Windows security settings are unchanged.");
             using var process=System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(setup) { UseShellExecute=true,Verb="runas",WorkingDirectory=staging }) ?? throw new IOException("Driver setup did not start.");
-            await process.WaitForExitAsync(); report($"Official setup exited with code {process.ExitCode}. Restart if requested, then explicitly enable and discover in-app sensors. No monitoring was enabled automatically.");
+            await process.WaitForExitAsync();
+            bool restart=process.ExitCode==3010,ready=(process.ExitCode is 0 or 3010) && DriverReady();
+            return new(ready,restart,restart?"The vendor reports a restart is required. Restart Windows before enabling in-app reads. No monitoring was enabled automatically.":ready?"PawnIO registration and verified libraries are present. Restart if the vendor requested it, then enable in-app reads, discover/select sensors and Apply in Settings. No monitoring was enabled automatically.":$"Vendor setup closed (exit {process.ExitCode}) without confirmed completion. RMPCS remains installed. Restart if requested or retry from Settings; no monitoring was enabled.");
         }
         finally { try { File.Delete(setup); Directory.Delete(staging,false); } catch(IOException) { } catch(UnauthorizedAccessException) { } }
     }

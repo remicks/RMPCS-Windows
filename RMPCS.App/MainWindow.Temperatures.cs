@@ -70,11 +70,13 @@ public partial class MainWindow
     private async void TemperatureSetup_Click(object sender,RoutedEventArgs e)
     {
         if(busy||TestMode)return;
-        if(!admin){TemperatureStatus.Text="Relaunch RMPCS as administrator to install the optional sensor components. Other providers remain available.";return;}
-        if(!Confirm("Download reviewed LibreHardwareMonitor 0.9.6 components (MPL-2.0) and open the official PawnIO 2.2.0 kernel-driver setup?\n\nThis adds privileged third-party hardware access for CPU/GPU/motherboard sensors and may need a restart. Signed code can still contain bugs; firmware and anti-cheat compatibility are not guaranteed.\n\nThe setup must match a pinned hash, trusted signature and publisher. Secure Boot, Memory Integrity and the vulnerable-driver blocklist will not be changed. Nothing installs silently, and low-level reads stay off until you explicitly enable them. Other software may share this driver; RMPCS uninstall will not remove it."))return;
         SetBusy(true);StopButton.IsEnabled=false;
-        try{await SensorComponents.InstallAsync(text=>Dispatcher.Invoke(()=>TemperatureStatus.Text=text));}
-        catch(Exception ex)when(ex is not OutOfMemoryException){TemperatureStatus.Text="Sensor setup stopped: "+ex.Message+" Windows security settings were not changed.";}
+        try
+        {
+            int code=await SensorSetupWindow.OpenAsync(this);
+            TemperatureStatus.Text=code==0?"Optional components verified. Enable in-app reads, discover/select sensors and Apply overlay settings. Restart first if the vendor requested it.":code==3010?"Restart Windows before using in-app sensors. Monitoring remains unchanged.":"Optional setup was skipped, cancelled or unsuccessful. RMPCS remains available; see Help > Sensor setup troubleshooting or retry this button.";
+        }
+        catch(Exception ex)when(ex is not OutOfMemoryException){TemperatureStatus.Text="Optional setup could not open: "+ex.Message+" See Help > Sensor setup troubleshooting.";}
         finally{SetBusy(false);}
     }
     private void UnlockWidgets_Click(object sender,RoutedEventArgs e)
