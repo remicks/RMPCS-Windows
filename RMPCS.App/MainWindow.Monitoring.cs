@@ -12,6 +12,9 @@ public partial class MainWindow
     private HwndSource? overlayShortcutSource;
     private bool overlayReady, overlayHotkeyRegistered;
     private double overlayX = .95, overlayY = .05;
+    private OverlayPreferences overlayViewDraft = new OverlayPreferences().Normalize();
+    private int overlayViewIndex;
+    private bool loadingOverlayViews;
     private const int OverlayHotkeyId = 0x524D;
     private void InitializeOverlay()
     {
@@ -21,6 +24,8 @@ public partial class MainWindow
         OverlayOpacityChoice.ItemsSource = new[] { 50, 60, 70, 80, 90, 100 };
         OverlayFontChoice.ItemsSource = new[] { "App font" }.Concat(FontCatalog.Names).ToArray();
         OverlayPositionChoice.ItemsSource = OverlayPreferences.Positions;
+        OverlayViewMetricChoice.ItemsSource = new[] { "CPU", "RAM", "Network (download and upload)", "System drive available", "Windows uptime" };
+        OverlayNetworkScaleChoice.ItemsSource = new[] { 1, 10, 100, 1000 };
         RefreshOverlayDisplays(preferences.Overlay.Monitor);
         SourceInitialized += (_, _) =>
         {
@@ -51,25 +56,53 @@ public partial class MainWindow
         OverlayStartupChoice.IsChecked = options.Enabled; OverlayCpuChoice.IsChecked = options.Cpu;
         OverlayMemoryChoice.IsChecked = options.Memory; OverlayNetworkChoice.IsChecked = options.Network;
         OverlayDiskChoice.IsChecked = options.DiskSpace; OverlayUptimeChoice.IsChecked = options.Uptime;
-        OverlayGraphChoice.IsChecked = options.Graphs; OverlayTopmostChoice.IsChecked = options.Topmost;
+        loadingOverlayViews = true; overlayViewDraft = options; overlayViewIndex = 0;
+        OverlayViewMetricChoice.SelectedIndex = 0; LoadOverlayViews(); loadingOverlayViews = false;
+        OverlayNetworkScaleChoice.SelectedItem = options.NetworkScaleMiB;
+        OverlayTopmostChoice.IsChecked = options.Topmost;
         OverlayLockedChoice.IsChecked = options.Locked; OverlayClickThroughChoice.IsChecked = options.ClickThrough;
         OverlayHotkeyChoice.IsChecked = options.Hotkey; OverlayIntervalChoice.SelectedItem = options.IntervalSeconds;
         OverlayTextChoice.SelectedItem = options.TextSize; OverlayWidthChoice.SelectedItem = options.Width;
         OverlayOpacityChoice.SelectedItem = options.OpacityPercent; OverlayFontChoice.SelectedItem = options.Font;
         OverlayPositionChoice.SelectedItem = options.Position; RefreshOverlayDisplays(options.Monitor);
     }
-    private OverlayPreferences OverlayChoices() => new OverlayPreferences
+    private MetricViewPreferences DraftViews() => overlayViewIndex switch { 1 => overlayViewDraft.MemoryView!, 2 => overlayViewDraft.NetworkView!, 3 => overlayViewDraft.DiskView!, 4 => overlayViewDraft.UptimeView!, _ => overlayViewDraft.CpuView! };
+    private void LoadOverlayViews()
     {
+        var views = DraftViews();
+        OverlayViewNumbers.IsChecked = views.Numbers; OverlayViewCircle.IsChecked = views.Circle;
+        OverlayViewCircleValue.IsChecked = views.CircleWithValue; OverlayViewBar.IsChecked = views.Bar; OverlayViewGraph.IsChecked = views.Graph;
+    }
+    private void CaptureOverlayViews()
+    {
+        var views = new MetricViewPreferences { Numbers = OverlayViewNumbers.IsChecked == true, Circle = OverlayViewCircle.IsChecked == true,
+            CircleWithValue = OverlayViewCircleValue.IsChecked == true, Bar = OverlayViewBar.IsChecked == true, Graph = OverlayViewGraph.IsChecked == true };
+        overlayViewDraft = overlayViewIndex switch { 1 => overlayViewDraft with { MemoryView = views }, 2 => overlayViewDraft with { NetworkView = views },
+            3 => overlayViewDraft with { DiskView = views }, 4 => overlayViewDraft with { UptimeView = views }, _ => overlayViewDraft with { CpuView = views } };
+    }
+    private void OverlayViewMetric_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (loadingOverlayViews || OverlayViewNumbers is null || OverlayViewMetricChoice.SelectedIndex < 0) return;
+        CaptureOverlayViews(); overlayViewIndex = OverlayViewMetricChoice.SelectedIndex; LoadOverlayViews();
+    }
+    private OverlayPreferences OverlayChoices()
+    {
+        CaptureOverlayViews();
+        return new OverlayPreferences
+        {
         Enabled = OverlayStartupChoice.IsChecked == true, Cpu = OverlayCpuChoice.IsChecked == true,
         Memory = OverlayMemoryChoice.IsChecked == true, Network = OverlayNetworkChoice.IsChecked == true,
         DiskSpace = OverlayDiskChoice.IsChecked == true, Uptime = OverlayUptimeChoice.IsChecked == true,
-        Graphs = OverlayGraphChoice.IsChecked == true, Topmost = OverlayTopmostChoice.IsChecked == true,
+        CpuView = overlayViewDraft.CpuView, MemoryView = overlayViewDraft.MemoryView, NetworkView = overlayViewDraft.NetworkView,
+        DiskView = overlayViewDraft.DiskView, UptimeView = overlayViewDraft.UptimeView,
+        NetworkScaleMiB = OverlayNetworkScaleChoice.SelectedItem is int scale ? scale : 10, Topmost = OverlayTopmostChoice.IsChecked == true,
         Locked = OverlayLockedChoice.IsChecked == true, ClickThrough = OverlayClickThroughChoice.IsChecked == true,
         Hotkey = OverlayHotkeyChoice.IsChecked == true, IntervalSeconds = OverlayIntervalChoice.SelectedItem is int interval ? interval : 2,
         TextSize = OverlayTextChoice.SelectedItem is int text ? text : 14, Width = OverlayWidthChoice.SelectedItem is int width ? width : 280,
         OpacityPercent = OverlayOpacityChoice.SelectedItem is int opacity ? opacity : 90, Font = OverlayFontChoice.SelectedItem as string ?? "App font",
         Monitor = OverlayMonitorChoice.SelectedValue as string ?? "Current", Position = OverlayPositionChoice.SelectedItem as string ?? "Top right", X = overlayX, Y = overlayY
-    }.Normalize();
+        }.Normalize();
+    }
     private void ApplyOverlayPreferences(bool startup = false)
     {
         if (!overlayReady || TestMode) return;

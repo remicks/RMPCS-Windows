@@ -1,5 +1,15 @@
 namespace RMPCS.Core;
 
+public sealed record MetricViewPreferences
+{
+    public bool Numbers { get; init; } = true;
+    public bool Circle { get; init; }
+    public bool CircleWithValue { get; init; }
+    public bool Bar { get; init; }
+    public bool Graph { get; init; }
+    public bool Any() => Numbers || Circle || CircleWithValue || Bar || Graph;
+}
+
 public sealed record OverlayPreferences
 {
     public bool Enabled { get; init; }
@@ -9,6 +19,13 @@ public sealed record OverlayPreferences
     public bool DiskSpace { get; init; } = true;
     public bool Uptime { get; init; } = true;
     public bool Graphs { get; init; } = true;
+    // Graphs is retained only to migrate v0.13.5 preferences when per-metric views are absent.
+    public MetricViewPreferences? CpuView { get; init; }
+    public MetricViewPreferences? MemoryView { get; init; }
+    public MetricViewPreferences? NetworkView { get; init; }
+    public MetricViewPreferences? DiskView { get; init; }
+    public MetricViewPreferences? UptimeView { get; init; }
+    public int NetworkScaleMiB { get; init; } = 10;
     public bool Topmost { get; init; } = true;
     public bool Locked { get; init; }
     public bool ClickThrough { get; init; }
@@ -25,6 +42,9 @@ public sealed record OverlayPreferences
     public static readonly string[] Positions = ["Top left", "Top right", "Bottom left", "Bottom right", "Custom"];
     public OverlayPreferences Normalize() => this with
     {
+        CpuView = CpuView ?? new() { Graph = Graphs }, MemoryView = MemoryView ?? new() { Graph = Graphs },
+        NetworkView = NetworkView ?? new(), DiskView = DiskView ?? new(), UptimeView = UptimeView ?? new(),
+        NetworkScaleMiB = NetworkScaleMiB is 1 or 10 or 100 or 1000 ? NetworkScaleMiB : 10,
         IntervalSeconds = IntervalSeconds is 1 or 2 or 5 ? IntervalSeconds : 2,
         TextSize = TextSize is 12 or 14 or 16 or 18 ? TextSize : 14,
         Width = Width is 220 or 280 or 340 ? Width : 280,
@@ -33,18 +53,21 @@ public sealed record OverlayPreferences
         Monitor = SidebarLayout.ValidMonitor(Monitor) ? Monitor : "Current",
         Position = Positions.Contains(Position, StringComparer.Ordinal) ? Position : "Top right",
         X = double.IsFinite(X) ? Math.Clamp(X, 0, 1) : .95,
-        Y = double.IsFinite(Y) ? Math.Clamp(Y, 0, 1) : .05,
-        // A visible CPU row is preferable to an empty overlay after malformed/old preferences.
-        Cpu = Cpu || !(Memory || Network || DiskSpace || Uptime)
+        Y = double.IsFinite(Y) ? Math.Clamp(Y, 0, 1) : .05
     };
+    public bool HasVisibleMetrics() => Cpu && (CpuView?.Any() ?? true) || Memory && (MemoryView?.Any() ?? true) ||
+        Network && (NetworkView?.Any() ?? true) || DiskSpace && (DiskView?.Any() ?? true) || Uptime && (UptimeView?.Any() ?? true);
+    public OverlayPreferences SamplingChoices() => this with { Cpu = Cpu && (CpuView?.Any() ?? true),
+        Memory = Memory && (MemoryView?.Any() ?? true), Network = Network && (NetworkView?.Any() ?? true),
+        DiskSpace = DiskSpace && (DiskView?.Any() ?? true), Uptime = Uptime && (UptimeView?.Any() ?? true) };
 }
 
 public readonly record struct CpuTimes(ulong Idle, ulong Kernel, ulong User);
 public readonly record struct NetworkBytes(long Received, long Sent);
 public sealed record MonitorSample(double Time, CpuTimes? Cpu, ulong? TotalMemory, ulong? AvailableMemory,
-    IReadOnlyDictionary<string, NetworkBytes>? Network, ulong? DiskFree, long UptimeMilliseconds);
+    IReadOnlyDictionary<string, NetworkBytes>? Network, ulong? DiskFree, long UptimeMilliseconds, ulong? DiskCapacity = null);
 public sealed record MonitorReading(double? Cpu, double? MemoryPercent, ulong? MemoryUsed, ulong? MemoryTotal,
-    double? DownloadBytes, double? UploadBytes, ulong? DiskFree, long UptimeMilliseconds);
+    double? DownloadBytes, double? UploadBytes, ulong? DiskFree, long UptimeMilliseconds, double? DiskAvailablePercent = null);
 
 public static class Monitoring
 {
@@ -72,8 +95,10 @@ public static class Monitoring
         }
         ulong? used = current.TotalMemory is > 0 && current.AvailableMemory is ulong available && available <= current.TotalMemory.Value ? current.TotalMemory.Value - available : null;
         double? memory = used is ulong count ? 100d * count / current.TotalMemory!.Value : null;
-        return new(cpu, memory, used, used is null ? null : current.TotalMemory, down, up, current.DiskFree, Math.Clamp(current.UptimeMilliseconds, 0, TimeSpan.MaxValue.Ticks / TimeSpan.TicksPerMillisecond));
+        double? disk = current.DiskCapacity is > 0 && current.DiskFree is ulong free && free <= current.DiskCapacity.Value ? 100d * free / current.DiskCapacity.Value : null;
+        return new(cpu, memory, used, used is null ? null : current.TotalMemory, down, up, current.DiskFree, Math.Clamp(current.UptimeMilliseconds, 0, TimeSpan.MaxValue.Ticks / TimeSpan.TicksPerMillisecond), disk);
     }
+    public static double? RelativePercent(double? value, double reference) => value is double n && double.IsFinite(n) && n >= 0 && double.IsFinite(reference) && reference > 0 && double.IsFinite(n / reference * 100) ? n / reference * 100 : null;
     public static ScreenArea Place(ScreenArea work, int width, int height, OverlayPreferences options)
     {
         if (work.Width <= 0 || work.Height <= 0) throw new ArgumentException("No usable monitor work area.");

@@ -1,4 +1,12 @@
-# RMPCS 0.13.5 - Rusty's PC Toolkit
+# RMPCS 0.13.6 - Rusty's PC Toolkit
+
+## Independent overlay metric views v0.13.6
+
+In **Settings > Realtime system overlay > Metric display styles**, choose CPU, RAM, Network, system-drive space or uptime, then independently select **Standalone numeric values**, **Plain circle gauge**, **Circle with numerical value inside**, **Bar gauge**, and **History graph**. Any combination is supported, including numbers + a value circle + a bar + a graph. Plain circles and value circles are separate options and can coexist. The selected metric's on/off switch is unchanged. Switch metrics in the editor to review each one's saved view choices, then Apply overlay settings.
+
+CPU/RAM gauges show usage percentages; system-drive gauges show available space as a percentage of total capacity. Download and upload have separate displays sharing the network view choices. Their gauges/graphs use an explicit 1/10/100/1000 MiB/s reference, not link utilization; above-reference readings are labeled while standalone/inside-circle rates retain the actual value. Uptime gauges/graphs show the current 24-hour uptime cycle, with the actual elapsed duration in value circles. Unknown gauges have no filled arc/bar and are labeled unavailable rather than replaced by zero. Numeric views can remain available even when a gauge's reference is unavailable.
+
+Hidden views trigger no extra sampling, and all view types can be off while a metric remains selected. All metrics/views off pauses the overlay timer. Graphs retain at most 60 samples per display, and the views add no animations, drivers, dependencies, privileges or network requests. Long combinations scroll within the overlay when click-through is off; the Hide control stays above the scrolling region. Existing v0.13.5 numeric/CPU-RAM graph choices migrate automatically. Metric views are persisted with the existing per-user preferences and undo safeguards. The setup-guide groundwork for v0.14.0 remains unchanged.
 
 ## Realtime system overlay v0.13.5
 
@@ -74,9 +82,9 @@ Validation includes geometry/preference tests, WPF page routing, real positionin
 
 ## Downloads and first launch
 
-- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.5/RMPCS.Setup.exe)
-- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.5/RMPCS-Setup-0.13.5-x64.msi)
-- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.5/RMPCS-v0.13.5-win-x64-portable.zip)
+- [Setup EXE with optional prerequisite installation](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.6/RMPCS.Setup.exe)
+- [Standalone MSI for PCs that already have the runtime](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.6/RMPCS-Setup-0.13.6-x64.msi)
+- [Portable ZIP with first-run launcher](https://github.com/remicks/RMPCS-Windows/releases/download/v0.13.6/RMPCS-v0.13.6-win-x64-portable.zip)
 - [Runtime requirements and official Microsoft links](RUNTIMES.md)
 
 **Installed edition:** run `RMPCS.Setup.exe`. It detects the runtime and offers to install the missing Microsoft .NET 10 Windows x64 Desktop Runtime before opening the embedded MSI. The MSI installs under Program Files, offers branded desktop and Start Menu shortcuts and an uninstall entry, and leaves startup/schedules off. You can instead run the MSI directly if the runtime is already installed.
@@ -232,9 +240,9 @@ On Windows 11 with the .NET 10 SDK, from the source root:
 dotnet run --project RMPCS.Tests/RMPCS.Tests.csproj -c Release
 dotnet publish RMPCS.App/RMPCS.App.csproj -c Release --self-contained false -o artifacts/App
 dotnet artifacts/App/RMPCS.dll --smoke-test
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.13.5-x64.msi
-dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.13.5-x64.msi artifacts/App Installer/TaskCleanup.ps1
-./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.13.5-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- artifacts/App Installer/TaskCleanup.ps1 artifacts/RMPCS-Setup-0.13.6-x64.msi
+dotnet run --project RMPCS.Packaging/RMPCS.Packaging.csproj -c Release -- --verify artifacts/RMPCS-Setup-0.13.6-x64.msi artifacts/App Installer/TaskCleanup.ps1
+./Bootstrap/Build.ps1 -AppPath artifacts/App -MsiPath artifacts/RMPCS-Setup-0.13.6-x64.msi -OutputPath "$PWD/artifacts/Bootstrap"
 ```
 
 The bootstrap compiler is the Windows .NET Framework x64 C# compiler. No external MSI compiler or third-party runtime package is required. Build the MSI after publishing the app, then build the launchers so their embedded payload/manifests match that exact release. Never change app files inside a portable package without rebuilding its launcher manifest.

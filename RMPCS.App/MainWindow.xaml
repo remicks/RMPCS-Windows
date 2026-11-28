@@ -157,7 +157,18 @@
      <CheckBox x:Name="OverlayNetworkChoice" Style="{StaticResource SettingSwitch}" Content="Network download / upload rates"/>
      <CheckBox x:Name="OverlayDiskChoice" Style="{StaticResource SettingSwitch}" Content="System-drive available space (every 30 seconds)"/>
      <CheckBox x:Name="OverlayUptimeChoice" Style="{StaticResource SettingSwitch}" Content="Windows uptime"/>
-     <CheckBox x:Name="OverlayGraphChoice" Style="{StaticResource SettingSwitch}" Content="Small CPU / RAM graphs (last 60 samples)"/>
+     <Expander Header="Metric display styles — combine any options"><StackPanel>
+      <TextBlock Text="Choose a metric to edit its views. These independent checkboxes can be combined, for example Numbers + Circle with value + Bar. They never change the metric's on/off switch above." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,10"/>
+      <ComboBox x:Name="OverlayViewMetricChoice" SelectionChanged="OverlayViewMetric_Changed" AutomationProperties.Name="Metric whose display styles are being edited"/>
+      <CheckBox x:Name="OverlayViewNumbers" Style="{StaticResource SettingSwitch}" Content="Standalone numeric values"/>
+      <CheckBox x:Name="OverlayViewCircle" Style="{StaticResource SettingSwitch}" Content="Plain circle gauge"/>
+      <CheckBox x:Name="OverlayViewCircleValue" Style="{StaticResource SettingSwitch}" Content="Circle with numerical value inside"/>
+      <CheckBox x:Name="OverlayViewBar" Style="{StaticResource SettingSwitch}" Content="Bar gauge"/>
+      <CheckBox x:Name="OverlayViewGraph" Style="{StaticResource SettingSwitch}" Content="History graph (last 60 samples)"/>
+      <TextBlock Text="Views are remembered separately for each metric. You can turn every view off while leaving a metric selected; hidden metrics are not sampled. Long layouts scroll inside the overlay when click-through is off." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,10"/>
+      <TextBlock Text="Network gauge / graph reference (MiB/s, each direction)"/><ComboBox x:Name="OverlayNetworkScaleChoice" AutomationProperties.Name="Network visualization reference in MiB per second"/>
+      <TextBlock Text="CPU / RAM show usage percentages; drive gauges show available-space percentage. Network views use the chosen reference, not measured link capacity; values above it fill the gauge and are labeled. Uptime views show the current 24-hour uptime cycle, with actual duration inside value circles." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12"/>
+     </StackPanel></Expander>
      <TextBlock Text="Update interval (seconds)"/><ComboBox x:Name="OverlayIntervalChoice" AutomationProperties.Name="Overlay update interval in seconds"/>
      <TextBlock Text="Text size"/><ComboBox x:Name="OverlayTextChoice" AutomationProperties.Name="Overlay text size"/>
      <TextBlock Text="Font"/><ComboBox x:Name="OverlayFontChoice" AutomationProperties.Name="Overlay font"/>

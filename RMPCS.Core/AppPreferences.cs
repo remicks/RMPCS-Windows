@@ -23,7 +23,7 @@ public sealed record AppPreferences
     public string SidebarEdge { get; init; } = "Right";
     public string SidebarMonitor { get; init; } = "Current";
     public int SidebarWidth { get; init; } = 400;
-    public OverlayPreferences Overlay { get; init; } = new();
+    public OverlayPreferences Overlay { get; init; } = new OverlayPreferences().Normalize();
     public static readonly string[] Pages = ["Health", "Maintenance", "Automation", "Startup", "History", "Settings", "Help", "Diagnostics", "Protection", "Drives"];
     public AppPreferences Normalize() => this with
     {

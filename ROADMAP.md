@@ -1,6 +1,6 @@
 # RMPCS roadmap
 
-Current build: v0.13.5 adds an opt-in local system-monitor overlay and a manual, informational preview of the v0.14.0 setup guide. Guarded v0.13.0 drive optimization and previous fixes remain available.
+Current build: v0.13.6 adds independent, combinable per-metric overlay views: numbers, plain circles, circles with values, bars and graphs. The v0.13.5 monitoring safeguards, manual setup-guide preview, guarded drive optimization and previous fixes remain available.
 
 ## v0.14.0 first-run guide
 

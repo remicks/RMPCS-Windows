@@ -11,6 +11,7 @@ internal sealed class MonitorProbe
 {
     private double diskTime = double.NegativeInfinity;
     private ulong? diskFree;
+    private ulong? diskCapacity;
     internal MonitorSample Read(OverlayPreferences options)
     {
         double time = Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
@@ -34,12 +35,12 @@ internal sealed class MonitorProbe
         }
         if (options.DiskSpace && time - diskTime >= 30)
         {
-            diskTime = time; diskFree = null;
+            diskTime = time; diskFree = diskCapacity = null;
             string? root = Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.System));
-            if (root is not null && DriveOptimization.ValidRoot(root) && GetDiskFreeSpaceExW(root, out ulong available, out _, out _)) diskFree = available;
+            if (root is not null && DriveOptimization.ValidRoot(root) && GetDiskFreeSpaceExW(root, out ulong available, out ulong capacity, out _)) { diskFree = available; diskCapacity = capacity; }
         }
         return new(time, cpu, haveMemory ? memory.TotalPhysical : null, haveMemory ? memory.AvailablePhysical : null,
-            network, options.DiskSpace ? diskFree : null, options.Uptime ? Environment.TickCount64 : 0);
+            network, options.DiskSpace ? diskFree : null, options.Uptime ? Environment.TickCount64 : 0, options.DiskSpace ? diskCapacity : null);
     }
     [StructLayout(LayoutKind.Sequential)] private struct MemoryStatus
     { public uint Length, Load; public ulong TotalPhysical, AvailablePhysical, TotalPage, AvailablePage, TotalVirtual, AvailableVirtual, AvailableExtended; }
